@@ -7,7 +7,9 @@
         "./*"
       ]
     },
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "skipLibCheck": true,          // ✅ 타입 검사 건너뜀 (외부 라이브러리 타입 오류 방지)
+    "esModuleInterop": true        // ✅ CommonJS 및 ESM 호환성 확보
   },
   "include": [
     "**/*.ts",
