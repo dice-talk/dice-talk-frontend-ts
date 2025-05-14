@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from 'react-native';
 
 // ✅ 타입 선언 (Optional)
 type ThemeValue = typeof DarkTheme | typeof DefaultTheme;
