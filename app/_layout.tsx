@@ -4,13 +4,10 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { useColorScheme } from 'react-native';
-
 // ✅ 타입 선언 (Optional)
 type ThemeValue = typeof DarkTheme | typeof DefaultTheme;
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -20,13 +17,10 @@ export default function RootLayout() {
     return null;
   }
 
-
-  const theme: ThemeValue = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
-
   return (
-    <ThemeProvider value={theme}>
+    <ThemeProvider value={DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(onBoard)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
