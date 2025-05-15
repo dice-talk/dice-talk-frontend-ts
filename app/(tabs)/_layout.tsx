@@ -5,12 +5,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Footer from "../../components/footer/Footer";
 
 export default function TabLayout() {
-  const [currentTab, setCurrentTab] = useState<string>("index");
+  const [currentTab, setCurrentTab] = useState<string>("home");
   const router = useRouter();
   const pathname = usePathname();
 
+  // useEffect(() => {
+  //   const path = pathname.split("/")[1] || "home";
+  //   setCurrentTab(path);
+  // }, [pathname]);
+
   useEffect(() => {
-    const path = pathname.split("/")[1] || "index";
+    // ✅ 첫 렌더링에서 /home으로 자동 이동
+    if (pathname === "/(tabs)" || pathname === "/") {
+      router.replace("/home");
+    }
+
+    const path = pathname.split("/")[1] || "home";
     setCurrentTab(path);
   }, [pathname]);
 
