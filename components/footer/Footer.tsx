@@ -14,7 +14,7 @@ export default function Footer({ currentTab, onTabPress }: FooterProps) {
 
   return (
     <View style={[styles.footer, { height: footerHeight }]}>
-      <FooterButton name="index" active={currentTab === "index"} onPress={() => onTabPress("index")} />
+      <FooterButton name="home" active={currentTab === "home"} onPress={() => onTabPress("home")} />
       <FooterButton name="history" active={currentTab === "history"} onPress={() => onTabPress("history")} />
       <FooterButton name="chat" active={currentTab === "chat"} onPress={() => onTabPress("chat")} />
       <FooterButton name="profile" active={currentTab === "profile"} onPress={() => onTabPress("profile")} />
