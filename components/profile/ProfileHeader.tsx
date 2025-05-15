@@ -1,6 +1,6 @@
 // src/components/Profile/ProfileHeader.tsx
-import Dice from "@/assets/profile/dice.svg";
-import GradientLine from "@/component/common/GradientLine";
+import Dice from "@/assets/images/profile/dice.svg";
+import GradientLine from "@/components/common/GradientLine";
 import { Ionicons } from '@expo/vector-icons';
 import { Image, StyleSheet, Text, View } from "react-native";
 

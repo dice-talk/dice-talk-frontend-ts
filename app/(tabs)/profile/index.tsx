@@ -1,9 +1,9 @@
 // src/screens/Profile/ProfileScreen.tsx
-import GradientBackground from "@/component/common/GradientBackground";
-import GradientLine from "@/component/common/GradientLine";
-import LogoutButton from "@/component/profile/LogoutButton";
-import ProfileHeader from "@/component/profile/ProfileHeader";
-import ProfileInfoCard from "@/component/profile/ProfileInfoCard";
+import LogoutButton from "@/components/profile/LogoutButton";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileInfoCard from "@/components/profile/ProfileInfoCard";
+import GradientBackground from "@/components/common/GradientBackground";
+import GradientLine from "@/components/common/GradientLine";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 //import { useMemberStore } from "@/zustand/stores/memberStore";

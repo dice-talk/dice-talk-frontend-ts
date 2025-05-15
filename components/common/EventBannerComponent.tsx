@@ -18,9 +18,9 @@ const EventBannerComponent = () => {
   useEffect(() => {
     // 목 데이터로 테스트
     const dummyData = [
-      { id: 1, imageUrl: 'https://via.placeholder.com/400x200?text=Banner+1', title: '배너 1' },
-      { id: 2, imageUrl: 'https://via.placeholder.com/400x200?text=Banner+2', title: '배너 2' },
-      { id: 3, imageUrl: 'https://via.placeholder.com/400x200?text=Banner+3', title: '배너 3' },
+      { id: 1, imageUrl: './assets/images/EventBanner/eventbanner_01.png', title: '배너 1' },
+      { id: 2, imageUrl: './assets/images/EventBanner/eventbanner_02.png', title: '배너 2' },
+      { id: 3, imageUrl: './assets/images/EventBanner/eventbanner_03.png', title: '배너 3' },
     ];
     setEventBanner(dummyData);
   }, []);

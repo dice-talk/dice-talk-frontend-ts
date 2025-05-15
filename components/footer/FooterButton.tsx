@@ -14,7 +14,7 @@ const validIcons = [
   type IoniconName = (typeof validIcons)[number];
   
   type FooterItemProps = {
-    name: "index" | "history" | "chat" | "profile" | "plus";
+    name: "home" | "history" | "chat" | "profile" | "plus";
     active: boolean;
     onPress: () => void;
   };  
@@ -24,7 +24,7 @@ export default function FooterButton({ name, active, onPress }: FooterItemProps)
     const screenHeight = Dimensions.get("window").height;
     const footerHeight = screenHeight * 0.1;
     const iconName = {
-        index: "home-outline",
+        home: "home-outline",
         history: "time-outline",
         chat: "chatbubbles-outline",
         profile: "person-outline",
