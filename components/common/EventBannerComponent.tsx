@@ -1,7 +1,8 @@
 import { EventBanner } from "@/types/EventBanner";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from "react-native";
-
+import ThemeCarousel from "@/components/home/ThemeCarousel"
+import ThemeCarouselPage from "@/components/home/ThemeCarouselPage"
 
 // 현재 기기의 화면 너비를 가져와서 배너 이미지 너비로 사용
 const { width } = Dimensions.get("window");
@@ -19,9 +20,9 @@ const EventBannerComponent = () => {
   useEffect(() => {
     // 목 데이터로 테스트
     const imageMap: Record<string, any> = {
-        banner1: require('@/assets/images/EventBanner/eventBanner_01.png'),
-        banner2: require('@/assets/images/EventBanner/eventBanner_02.png'),
-        banner3: require('@/assets/images/EventBanner/eventBanner_03.png'),
+        banner1: require('@/assets/images/eventBanner/eventBanner_01.png'),
+        banner2: require('@/assets/images/eventBanner/eventBanner_02.png'),
+        banner3: require('@/assets/images/eventBanner/eventBanner_03.png'),
       };
       
       const dummyData = [
@@ -31,6 +32,8 @@ const EventBannerComponent = () => {
       ];
     setEventBanner(dummyData);
   }, []);
+
+  const BANNER_HEIGHT = height * 0.2;
   
 
   // flatList 스크롤제어를 위한 참조 변수 (리랜더링 되어도 값이 유지된다))
@@ -55,10 +58,10 @@ const EventBannerComponent = () => {
     }
   };
   return (
-    <View style={styles.container}>
-        <View>
+    <View >
+        <View style={[styles.container, { height: BANNER_HEIGHT }]}>
             <FlatList
-                style={{ width: width, height: '65%' }} // 배너 높이 조정
+                style={{ width: width}} // 배너 높이 조정
                 ref={flatListRef}
                 // 응답 데이버에서 배열 데이터 출력
                 data={eventBanner}
@@ -74,7 +77,7 @@ const EventBannerComponent = () => {
                 // 각 항목(배너)을 렌더링하는 함수
                 renderItem={({ item }) => (
                     // 디바이스 화면에 맞춰 비율로 이미지 크기 조정
-                <Image source={ item.imageUrl} style={{ width: width, height: '65%'}} />
+                <Image source={ item.imageUrl} style={{ width: width, height: BANNER_HEIGHT}} />
                 )}
                 // 스크롤 마지막에서 한번더 스크롤시 실행되는 함수 (0번 인덱스로 돌아감))
                 onMomentumScrollEnd={onMomentumScrollEnd}
@@ -89,7 +92,8 @@ const EventBannerComponent = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: width,
+
   },
   imageContainer: {
     width: width,
