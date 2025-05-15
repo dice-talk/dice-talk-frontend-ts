@@ -35,10 +35,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     marginTop: 16,
   },
   text: {
+    fontFamily: "Pretendard",
     marginLeft: 8,
     fontSize: 16,
     color: "#7d7d7d",

@@ -93,12 +93,13 @@ export default function FooterButton({ name, active, onPress }: FooterItemProps)
                     </LinearGradient>
                 </LinearGradient>
                 {/* 텍스트 */}
-                <Text style={
-                    { color: active ? "#B28EF8" : "#7d7d7d", marginTop: 6,
-                        fontSize: 10,
-                        fontWeight: active ? '800' : '400',
-                        letterSpacing: 0.2,
-                    }}> 
+                <Text style={{
+                    fontFamily: active ? "Pretendard-Bold" : "Pretendard",
+                    color: active ? "#B28EF8" : "#7d7d7d", marginTop: 6,
+                    fontSize: 10,
+                    fontWeight: active ? '800' : '400',
+                    letterSpacing: 0.2,
+                }}> 
                     {name.charAt(0).toUpperCase() + name.slice(1)}
                 </Text>
             </Animated.View>
