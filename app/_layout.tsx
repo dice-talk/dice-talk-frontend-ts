@@ -9,7 +9,10 @@ type ThemeValue = typeof DarkTheme | typeof DefaultTheme;
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Pretendard: require("../assets/fonts/Pretendard-Regular.otf"),
+    "Pretendard-Bold": require("../assets/fonts/Pretendard-Bold.otf"),
+    "Pretendard-Medium": require("../assets/fonts/Pretendard-Medium.otf"),
+    "Pretendard-SemiBold": require("../assets/fonts/Pretendard-SemiBold.otf"),
   });
 
   if (!loaded) {

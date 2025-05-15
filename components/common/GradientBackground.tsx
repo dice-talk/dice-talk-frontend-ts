@@ -6,8 +6,8 @@ const { width, height } = Dimensions.get("window");
 
 export default function GradientBackground() {
   // 반원 높이는 전체 화면 높이의 약 35%로 설정
-  const gradientHeight = height * 0.35;
-  const gradientWidth = width * 1.2; // 너비는 화면보다 약간 넓게 설정 (반원 효과)
+  const gradientHeight = height * 0.54;
+  const gradientWidth = width * 1.36; // 너비는 화면보다 약간 넓게 설정 (반원 효과)
 
   return (
     <View style={styles.container}>
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   gradient: {
     width: "100%",
     height: "100%",
-    borderBottomLeftRadius: 400, // 반원 효과
-    borderBottomRightRadius: 400,
+    borderBottomLeftRadius: 230, // 반원 효과
+    borderBottomRightRadius: 230,
   },
 });

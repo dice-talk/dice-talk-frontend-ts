@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 export default function Plus() {
   return (
     <View style={styles.container}>
-      <Text>Plus</Text>
+      <Text style={{ fontFamily: "Pretendard" }}>Plus</Text>
     </View>
   );
 }

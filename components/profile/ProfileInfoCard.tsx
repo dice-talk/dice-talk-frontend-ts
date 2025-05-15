@@ -10,19 +10,19 @@ export default function ProfileInfoCard() {
     <View style={styles.container}>
       <Pressable style={styles.card}>
         <MyInfo />
-        <Text>나의 정보</Text>
+        <Text style={styles.cardText}>나의 정보</Text>
       </Pressable>
       <Pressable style={styles.card}>
         <Inquiry />
-        <Text>나의 문의 조회</Text>
+        <Text style={styles.cardText}>나의 문의 조회</Text>
       </Pressable>
       <Pressable style={styles.card}>
         <Usage />
-        <Text>DICE 사용 내역</Text>
+        <Text style={styles.cardText}>DICE 사용 내역</Text>
       </Pressable>
       <Pressable style={styles.card}>
         <Charge />
-        <Text>DICE 충전하기</Text>
+        <Text style={styles.cardText}>DICE 충전하기</Text>
       </Pressable>
     </View>
   );
@@ -36,13 +36,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   card: {
-    width: "45%",
+    width: "46%",
+    height: 130,
     alignItems: "center",
+    justifyContent: "center",
     padding: 12,
     backgroundColor: "#F9F9FF",
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 32,
     borderWidth: 1,
     borderColor: "#B19ADE",
+  },
+  cardText: {
+    fontFamily: "Pretendard",
+    marginTop: 8,
+    textAlign: "center",
+    fontSize: 15,
+    color: "rgba(0, 0, 0, 0.7)",
   },
 });
