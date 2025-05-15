@@ -2,6 +2,7 @@
 import Dice from "@/assets/images/profile/dice.svg";
 import { Ionicons } from '@expo/vector-icons';
 import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import GradientButton from "../common/GradientButton";
 import GradientLine from "../common/GradientLine";
 
 type ProfileHeaderProps = {
@@ -9,6 +10,7 @@ type ProfileHeaderProps = {
   profileImage: string;
   diceCount: number;
   isInChat: boolean;
+  mode?: "profile" | "myInfo" | "question";
 };
 
 const PROFILE_SIZE = 100;
@@ -18,6 +20,7 @@ export default function ProfileHeader({
   profileImage,
   diceCount,
   isInChat,
+  mode = "profile",
 }: ProfileHeaderProps) {
   const windowWidth = Dimensions.get("window").width;
 
@@ -27,24 +30,37 @@ export default function ProfileHeader({
         <Image source={{ uri: profileImage || "/assets/icons/profile.svg" }} style={styles.profileImage} />
       </View>
       <Text style={styles.nickname}>세침한 세찌{/*{nickname}*/}</Text>
-      {/*{isInChat ? ( */}
+      {isInChat ? (
       <View style={styles.statusRow}>
         <Ionicons name="chatbubbles-outline" size={18} color="rgba(0, 0, 0, 0.5)" />
           <Text style={styles.statusText}>채팅 참여중</Text>
         </View>
-      {/*) : (
+      ) : (
         <View style={styles.statusRow} />
-      )}*/}
+      )}
       <View style={{ width: windowWidth - 32, alignSelf: "center", marginTop: 4 }}>
         <GradientLine />
       </View>
-      <View style={styles.diceCountContainer}>
-        <View style={styles.diceCountRow}>
-          <Text style={styles.diceCount}>My Dice</Text>
+      {mode === "profile" && (
+        <View style={styles.diceCountContainer}>
+          <View style={styles.diceCountRow}>
+            <Text style={styles.diceCount}>My Dice</Text>
           <Dice />
         </View>
         <Text style={styles.diceCount}>{diceCount}개</Text>
       </View>
+      )}
+      {mode === "myInfo" && (
+        <View style={styles.editRow}>
+          <Ionicons name="create-outline" size={18} color="#B19ADE" />
+          <Text style={styles.editText}>수정하기</Text>
+        </View>
+      )}
+      {mode === "question" && (
+        <View style={styles.buttonRow}>
+          <GradientButton title="1:1 문의하기" />
+        </View>
+      )}
     </View>
   );
 }
@@ -109,5 +125,23 @@ const styles = StyleSheet.create({
     fontFamily: "Pretendard",
     fontSize: 16,
     color: "#7d7d7d",
+  },
+  editRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    width: "90%",
+    marginTop: 8,
+  },
+  editText: {
+    fontFamily: "Pretendard-Bold",
+    color: "#B19ADE",
+    fontSize: 15,
+    marginLeft: 4,
+  },
+  buttonRow: {
+    alignItems: "flex-end",
+    width: "90%",
+    marginTop: 8,
   },
 });

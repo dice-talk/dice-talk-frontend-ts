@@ -54,11 +54,14 @@ const EventBannerComponent = () => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
   };
+
+  const BANNER_HEIGHT = height * 0.13;
+
   return (
-    <View style={styles.container}>
-        <View>
+    <View>
+        <View style={[styles.container, { height: BANNER_HEIGHT }]}>
             <FlatList
-                style={{ width: width, height: '65%' }} // 배너 높이 조정
+                style={{ width: width}} // 배너 높이 조정
                 ref={flatListRef}
                 // 응답 데이버에서 배열 데이터 출력
                 data={eventBanner}
@@ -74,7 +77,7 @@ const EventBannerComponent = () => {
                 // 각 항목(배너)을 렌더링하는 함수
                 renderItem={({ item }) => (
                     // 디바이스 화면에 맞춰 비율로 이미지 크기 조정
-                <Image source={ item.imageUrl} style={{ width: width, height: '65%'}} />
+                <Image source={ item.imageUrl} style={{ width: width, height: BANNER_HEIGHT}} />
                 )}
                 // 스크롤 마지막에서 한번더 스크롤시 실행되는 함수 (0번 인덱스로 돌아감))
                 onMomentumScrollEnd={onMomentumScrollEnd}
@@ -89,7 +92,7 @@ const EventBannerComponent = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: width,
   },
   imageContainer: {
     width: width,

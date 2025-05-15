@@ -1,14 +1,10 @@
 // src/screens/Profile/ProfileScreen.tsx
 import GradientBackground from "@/components/common/GradientBackground";
-import GradientLine from "@/components/common/GradientLine";
-import LogoutButton from "@/components/profile/LogoutButton";
 import ProfileHeader from "@/components/profile/ProfileHeader";
-import ProfileInfoCard from "@/components/profile/ProfileInfoCard";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 //import { useMemberStore } from "@/zustand/stores/memberStore";
 import { getMemberInfo } from "@/api/memberApi";
-import { useRouter } from "expo-router";
 
 type MemberInfo = {
     nickname: string;
@@ -17,15 +13,7 @@ type MemberInfo = {
     isInChat: boolean;
   };
 
-  type TabPage = "MyInfoPage" | "QuestionPage" | "UsagePage" | "ChargePage";
-
-export default function ProfileScreen() {
-    const router = useRouter();
-  //const { memberId } = useMemberStore();
-
-//   useEffect(() => {
-//     getMemberInfo(memberId);
-//   }, [memberId]);
+export default function MyInfoPage() {
   // ✅ 로컬 상태로 memberInfo 관리
   const [memberInfo, setMemberInfo] = useState<MemberInfo>({
     nickname: "",
@@ -44,10 +32,6 @@ useEffect(() => {
     fetchMemberInfo();
   }, []);
 
-  const handleTabPress = (tabName: TabPage) => {
-    router.push(`/profile/${tabName}`);
-  };
-
 
   return (
     <View style={styles.container}>
@@ -61,13 +45,10 @@ useEffect(() => {
         </View>
         <View style={styles.contentContainer}>
             <View style={styles.headerContainer}>
-                <ProfileHeader {...memberInfo} mode="profile" />
+                <ProfileHeader {...memberInfo} mode="myInfo" />
             </View>
-                <ProfileInfoCard onTabPress={handleTabPress}/>
-                <GradientLine />
-                <LogoutButton />
-            </View>
-        </ScrollView>
+        </View>
+    </ScrollView>
     </View>
   );
 }
