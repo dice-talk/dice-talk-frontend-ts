@@ -18,7 +18,6 @@ const validIcons = [
     active: boolean;
     onPress: () => void;
   };  
-  
 
 export default function FooterButton({ name, active, onPress }: FooterItemProps) {
     const screenHeight = Dimensions.get("window").height;
