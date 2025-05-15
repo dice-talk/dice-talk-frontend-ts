@@ -1,9 +1,9 @@
 // src/components/Profile/ProfileInfoCard.tsx
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Charge from "../../assets/profile/charge.svg";
-import Inquiry from "../../assets/profile/inquiry.svg";
-import MyInfo from "../../assets/profile/myInfo.svg";
-import Usage from "../../assets/profile/usage.svg";
+import Charge from "../../assets/images/profile/charge.svg";
+import Inquiry from "../../assets/images/profile/inquiry.svg";
+import MyInfo from "../../assets/images/profile/myInfo.svg";
+import Usage from "../../assets/images/profile/usage.svg";
 
 export default function ProfileInfoCard() {
   return (

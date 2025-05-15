@@ -2,7 +2,7 @@ import { Slot, usePathname, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Footer from "../../component/footer/Footer";
+import Footer from "../../components/footer/Footer";
 
 export default function TabLayout() {
   const [currentTab, setCurrentTab] = useState<string>("index");
@@ -17,8 +17,8 @@ export default function TabLayout() {
   const handleTabPress = (tabName: string) => {
     setCurrentTab(tabName);
     switch (tabName) {
-      case "index":
-        router.push("/");
+      case "home":
+        router.push("/home");
         break;
       case "history":
         router.push("/history");
