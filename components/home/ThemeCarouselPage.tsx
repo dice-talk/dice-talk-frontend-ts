@@ -1,9 +1,8 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle, Dimensions } from 'react-native';
-import DiceFriends from '@/assets/images/home/diceFriends.svg'; // svg 경로 맞게 수정
+import { Dimensions, StyleSheet, View, ViewStyle } from 'react-native';
+import { ReactNode } from 'react';
 
 interface IPage {
-  item: { num: number; color: string };
+  item: { num: number; icon: ReactNode };
   style: ViewStyle;
 }
 
@@ -11,8 +10,8 @@ export default function Page({ item, style }: IPage) {
   const { width, height } = Dimensions.get('window');
   return (
     <View style={{ flex: 1 }}>
-      <View style={[styles.pageItem, style]}>
-        <DiceFriends width={width * 0.60}/>
+      <View style={[styles.pageItem, style, { marginTop: height * 0.15, zIndex: -1 }]}>
+        {item.icon}
       </View>
     </View>
   );
@@ -20,7 +19,7 @@ export default function Page({ item, style }: IPage) {
 
 const styles = StyleSheet.create({
   pageItem: {
-
+    // backgroundColor: 'blue',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
