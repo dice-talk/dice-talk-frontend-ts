@@ -79,12 +79,14 @@ const styles = StyleSheet.create({
     height: '60%',
     justifyContent: 'center',
     alignItems: 'center',
+    // backgroundColor: 'red',
   },
   indicatorWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
+    // backgroundColor: 'blue',
   },
   indicator: {
     marginHorizontal: 4,
