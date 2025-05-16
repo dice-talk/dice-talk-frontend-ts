@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FlatList, View, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 import Page from './ThemeCarouselPage';
 
 interface ICarousel {
@@ -35,7 +35,7 @@ export default function Carousel({ pages, pageWidth, gap, offset }: ICarousel) {
         data={pages}
         decelerationRate="fast"
         horizontal
-        keyExtractor={(item: any) => `page__${item.color}`}
+        keyExtractor={(item: any, index: number) => `page__${index}`}
         onScroll={onScroll}
         pagingEnabled
         renderItem={renderItem}
@@ -63,12 +63,14 @@ const styles = StyleSheet.create({
     height: '60%',
     justifyContent: 'center',
     alignItems: 'center',
+    // backgroundColor: 'red',
   },
   indicatorWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
+    // backgroundColor: 'blue',
   },
   indicator: {
     marginHorizontal: 4,

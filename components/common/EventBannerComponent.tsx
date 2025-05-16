@@ -93,13 +93,14 @@ const EventBannerComponent = () => {
 const styles = StyleSheet.create({
   container: {
     width: width,
-
+    // backgroundColor: 'red',
   },
   imageContainer: {
     width: width,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative', // 자식 요소의 절대 위치를 위해 필요
+    // backgroundColor: 'blue',
   },
   pageIndicator: {
     position: 'absolute',
@@ -113,7 +114,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // 수직 중앙 정렬
     alignItems: 'center', // 수평 중앙 정렬
     flexDirection: 'row',
-    zIndex: 1, // zIndex를 사용하여 앞에 배치
+    zIndex: 40, // zIndex를 사용하여 앞에 배치
+    // backgroundColor: 'yellow',
 
   },
   pageText: {
