@@ -31,6 +31,20 @@ export const updateRegion = async (region: string) => {
     }
 };
 
+// 비밀번호 변경
+export const updatePassword = async (oldPassword: string, newPassword: string) => {
+    try {
+        const response = await axiosWithToken.post("/password", {
+            oldPassword,
+            newPassword,
+        });
+        return response.data;
+    } catch (error) {
+        console.error("🚨 비밀번호 변경 실패:", error);
+        throw error;
+    }
+};
+
 // 익명 회원 정보 조회
 export const getAnonymousInfo = async (memberId: number) => {
     try{

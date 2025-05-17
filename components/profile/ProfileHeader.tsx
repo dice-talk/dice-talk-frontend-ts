@@ -126,7 +126,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   buttonRow: {
-    alignItems: "flex-end",
+    alignItems: "center",
+    justifyContent: "center",
     width: "90%",
     marginTop: 8,
   },

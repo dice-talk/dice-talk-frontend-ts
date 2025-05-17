@@ -8,6 +8,7 @@ export default function () {
         <Stack.Screen name="QuestionPage" options={{ headerShown: false }} />
         <Stack.Screen name="UsagePage" options={{ headerShown: false }} />
         <Stack.Screen name="ChargePage" options={{ headerShown: false }} />
+        <Stack.Screen name="ChangePasswordPage" options={{ headerShown: false }} />
       </Stack>
     );
 }
