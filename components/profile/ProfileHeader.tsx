@@ -13,7 +13,8 @@ type ProfileHeaderProps = {
   mode?: "profile" | "myInfo" | "question";
 };
 
-const PROFILE_SIZE = 100;
+const { width, height } = Dimensions.get("window");
+const PROFILE_SIZE = height * 0.12; // 화면 높이의 12%로 프로필 원 크기 지정
 
 export default function ProfileHeader({
   nickname,
@@ -22,39 +23,34 @@ export default function ProfileHeader({
   isInChat,
   mode = "profile",
 }: ProfileHeaderProps) {
-  const windowWidth = Dimensions.get("window").width;
-
   return (
-    <View style={styles.container}>
-      <View style={styles.profileImageContainer}>
-        <Image source={{ uri: profileImage || "/assets/icons/profile.svg" }} style={styles.profileImage} />
+    <View style={[styles.container, { marginTop: height * 0.13 }]}> {/* 비율로 위치 조정 */}
+      <View style={[styles.profileImageContainer, { width: PROFILE_SIZE, height: PROFILE_SIZE, borderRadius: PROFILE_SIZE / 2 }]}> 
+        <Image source={{ uri: profileImage || "/assets/icons/profile.svg" }} style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} />
       </View>
-      <Text style={styles.nickname}>세침한 세찌{/*{nickname}*/}</Text>
-      {isInChat ? (
+      <Text style={styles.nickname}> 세침한 세찌 {/*{nickname} */} </Text>
+      {/*{isInChat ? ( */}
       <View style={styles.statusRow}>
         <Ionicons name="chatbubbles-outline" size={18} color="rgba(0, 0, 0, 0.5)" />
           <Text style={styles.statusText}>채팅 참여중</Text>
         </View>
-      ) : (
+      {/*}) : (
         <View style={styles.statusRow} />
-      )}
-      <View style={{ width: windowWidth - 32, alignSelf: "center", marginTop: 4 }}>
+      )}*/}
+      <View style={{ width: width * 0.9, alignSelf: "center", marginTop: 0 }}>
         <GradientLine />
       </View>
       {mode === "profile" && (
-        <View style={styles.diceCountContainer}>
-          <View style={styles.diceCountRow}>
+        <View style={[styles.diceCountContainer, { marginBottom: height * 0.06, width: width * 0.75 }]}> 
+          <View style={[styles.diceCountRow]}>
             <Text style={styles.diceCount}>My Dice</Text>
-          <Dice />
+            <Dice />
+          </View>
+          <Text style={[styles.diceCount]}>{diceCount}개</Text>
         </View>
-        <Text style={styles.diceCount}>{diceCount}개</Text>
-      </View>
       )}
       {mode === "myInfo" && (
-        <View style={styles.editRow}>
-          <Ionicons name="create-outline" size={18} color="#B19ADE" />
-          <Text style={styles.editText}>수정하기</Text>
-        </View>
+        <View style={styles.statusRow} />
       )}
       {mode === "question" && (
         <View style={styles.buttonRow}>
@@ -70,40 +66,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 0,
-    marginTop: -100,
-    width: "100%",
+    width: width * 0.9,
   },
   profileImageContainer: {
-    width: PROFILE_SIZE,
-    height: PROFILE_SIZE,
-    borderRadius: PROFILE_SIZE / 2,
     backgroundColor: "#F9F9FF",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
     borderColor: "#B19ADE",
   },
-  profileImage: {
-    width: PROFILE_SIZE - 8,
-    height: PROFILE_SIZE - 8,
-    borderRadius: (PROFILE_SIZE - 8) / 2,
-  },
+  profileImage: {},
   nickname: {
     fontFamily: "Pretendard-Bold",
     fontSize: 18,
     color: "#7d7d7d",
-    marginTop: 4,
+    marginTop: height * 0.01,
     textAlign: "center",
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: "center",
-    marginTop: 8,
+    marginTop: height * 0.01,
     minHeight: 22,
   },
   statusText: {
-    fontFamily: "Pretendard",
+    fontFamily: "Pretendard-Bold",
     fontSize: 14,
     color: "rgba(0, 0, 0, 0.5)",
     marginLeft: 8,
@@ -112,9 +100,7 @@ const styles = StyleSheet.create({
   diceCountContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // 양쪽으로 균등하게 배치
-    width: "75%", // 너비를 지정하여 가운데 정렬
-    marginBottom: 16,
+    justifyContent: "space-between",
   },
   diceCountRow: {
     flexDirection: "row",

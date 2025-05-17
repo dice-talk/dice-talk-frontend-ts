@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type MemberStore = {
+type AnonymousStore = {
     memberId: number;
     nickname: string;
     profileImage: string;
@@ -16,7 +16,7 @@ type MemberStore = {
   };
 
 // ✅ Zustand 상태 관리 스토어 생성 (useMemberStore)
-  export const useMemberStore = create<MemberStore>((set) => ({
+  export const useAnonymousStore = create<AnonymousStore>((set) => ({
     // ✅ 초기 상태값 설정
     memberId: 0,
     nickname: "",
