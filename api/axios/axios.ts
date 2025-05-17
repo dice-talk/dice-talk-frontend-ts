@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 // ✅ Base URL을 상단에서 직접 지정
-const BASE_URL = "http://localhost:8080";
+export const BASE_URL =  "http://192.168.0.7:8080" //"http://localhost:8080";
 
 // ✅ 기본 axios 인스턴스 (토큰 불필요)
 export const axiosWithoutToken: AxiosInstance = axios.create({

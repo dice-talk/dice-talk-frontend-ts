@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 //import { useMemberStore } from "@/zustand/stores/memberStore";
 import { getAnonymousInfo, updateRegion } from "@/api/memberApi";
+import TossAuth from "@/components/common/TossAuth";
 import RegionDropDown from "@/components/profile/RegionDropDown";
 import MyInfoField from "@/components/profile/myInfoPage/MyInfoField";
 import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore";
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from "expo-router";
-
 type AnonymousInfo = {
     nickname: string;
     profileImage: string;
@@ -41,6 +41,8 @@ export default function MyInfoPage() {
     isInChat: false,
   });
 
+  const [showTossAuth, setShowTossAuth] = useState(false);
+
 useEffect(() => {
     const fetchMemberInfo = async () => {
       const memberId = 1; // 테스트용 memberId, 실제로는 로그인된 사용자 ID로 대체
@@ -57,11 +59,42 @@ useEffect(() => {
   };
 
   const handlePhoneAuth = () => {
+    setShowTossAuth(true);
     console.log("인증하기");
   };
 
+    // ✅ Toss 인증 성공 시 이름 & 핸드폰 번호 업데이트
+    const handleAuthSuccess = (userInfo: { name: string; phone: string }) => {
+    console.log("✅ 인증 성공:", userInfo);
+
+    const updatedInfo = { ...memberInfo };
+
+    // ✅ 이름 변경 감지
+    if (userInfo.name !== memberInfo.name) {
+        updatedInfo.name = userInfo.name;
+        console.log("✅ 이름 업데이트:", userInfo.name);
+    }
+
+    // ✅ 휴대폰 번호 변경 감지
+    if (userInfo.phone !== memberInfo.phone) {
+        updatedInfo.phone = userInfo.phone;
+        console.log("✅ 휴대폰 번호 업데이트:", userInfo.phone);
+    }
+
+    // ✅ 상태 업데이트
+    useMemberInfoStore.getState().updateMemberInfo(updatedInfo);
+    setShowTossAuth(false);
+};
+
+  // ✅ Toss 인증 실패 처리 (모달 닫기)
+  const handleAuthFailure = () => {
+    console.log("❌ Toss 인증 실패");
+    setShowTossAuth(false);
+  };
+
+
   const handlePasswordChange = () => {
-    console.log("비밀번호 변경");
+    router.push("/profile/ChangePasswordPage");
   };
 
   const handleRegionChange = (city: string, district: string) => {
@@ -75,6 +108,13 @@ useEffect(() => {
 
   return (
     <View style={styles.container}>
+          {/* TossAuth 인증 모달 */}
+          {showTossAuth && (
+                <TossAuth 
+                    onAuthSuccess={handleAuthSuccess} 
+                    onAuthFailure={handleAuthFailure} 
+                />
+            )}
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}

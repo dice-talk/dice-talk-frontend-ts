@@ -40,7 +40,7 @@ export default function GradientHeader({ title }: GradientHeaderProps) {
 const styles = StyleSheet.create({
   header: {
     width: width,
-    height: 56,
+    height: 60,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
