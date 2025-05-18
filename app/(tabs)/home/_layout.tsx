@@ -1,7 +1,7 @@
+import EventBannerComponent from "@/components/common/EventBannerComponent";
 import { Slot } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import EventBannerComponent from "@/components/common/EventBannerComponent";
 
 export default function HomeLayout() {
 
