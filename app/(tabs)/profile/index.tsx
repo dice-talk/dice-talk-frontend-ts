@@ -1,13 +1,13 @@
 // src/screens/Profile/ProfileScreen.tsx
-import GradientBackground from "@/components/common/GradientBackground";
 import GradientLine from "@/components/common/GradientLine";
+import GradientBackground from "@/components/profile/GradientBackground";
 import LogoutButton from "@/components/profile/LogoutButton";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileInfoCard from "@/components/profile/ProfileInfoCard";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 //import { useMemberStore } from "@/zustand/stores/memberStore";
-import { getMemberInfo } from "@/api/memberApi";
+import { getAnonymousInfo } from "@/api/memberApi";
 import { useRouter } from "expo-router";
 
 type MemberInfo = {
@@ -37,7 +37,7 @@ export default function ProfileScreen() {
 useEffect(() => {
     const fetchMemberInfo = async () => {
       const memberId = 1; // 테스트용 memberId, 실제로는 로그인된 사용자 ID로 대체
-      const info = await getMemberInfo(memberId);
+      const info = await getAnonymousInfo(memberId);
       if (info) setMemberInfo(info);
     };
 
@@ -56,18 +56,15 @@ useEffect(() => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.gradientContainer}>
-          <GradientBackground />
+      <GradientBackground>
+        <ProfileHeader {...memberInfo} mode="profile" />
+      </GradientBackground>
+        <View style={[styles.contentContainer, { marginTop: height * 0.41 }]}>
+          <ProfileInfoCard onTabPress={handleTabPress}/>
+          <GradientLine />
+          <LogoutButton />
         </View>
-        <View style={styles.contentContainer}>
-            <View style={styles.headerContainer}>
-                <ProfileHeader {...memberInfo} mode="profile" />
-            </View>
-                <ProfileInfoCard onTabPress={handleTabPress}/>
-                <GradientLine />
-                <LogoutButton />
-            </View>
-        </ScrollView>
+      </ScrollView>
     </View>
   );
 }

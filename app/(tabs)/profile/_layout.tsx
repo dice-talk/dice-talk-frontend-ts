@@ -2,12 +2,15 @@ import { Stack } from "expo-router";
 
 export default function () {
     return (
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="MyInfoPage" options={{ headerShown: false }} />
-        <Stack.Screen name="QuestionPage" options={{ headerShown: false }} />
-        <Stack.Screen name="UsagePage" options={{ headerShown: false }} />
-        <Stack.Screen name="ChargePage" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="MyInfoPage" />
+        <Stack.Screen name="QuestionPage" />
+        <Stack.Screen name="UsagePage" />
+        <Stack.Screen name="ChargePage" />
+        <Stack.Screen name="ChangePasswordPage" />
+
+        <Stack.Screen name="question/_layout" />
       </Stack>
     );
 }
