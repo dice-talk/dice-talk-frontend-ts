@@ -1,7 +1,8 @@
 import { EventBanner } from "@/types/EventBanner";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from "react-native";
-
+import ThemeCarousel from "@/components/home/ThemeCarousel"
+import ThemeCarouselPage from "@/components/home/ThemeCarouselPage"
 
 // 현재 기기의 화면 너비를 가져와서 배너 이미지 너비로 사용
 const { width } = Dimensions.get("window");
@@ -19,9 +20,9 @@ const EventBannerComponent = () => {
   useEffect(() => {
     // 목 데이터로 테스트
     const imageMap: Record<string, any> = {
-        banner1: require('@/assets/images/EventBanner/eventBanner_01.png'),
-        banner2: require('@/assets/images/EventBanner/eventBanner_02.png'),
-        banner3: require('@/assets/images/EventBanner/eventBanner_03.png'),
+        banner1: require('@/assets/images/eventBanner/eventBanner_01.png'),
+        banner2: require('@/assets/images/eventBanner/eventBanner_02.png'),
+        banner3: require('@/assets/images/eventBanner/eventBanner_03.png'),
       };
       
       const dummyData = [
@@ -31,6 +32,8 @@ const EventBannerComponent = () => {
       ];
     setEventBanner(dummyData);
   }, []);
+
+  const BANNER_HEIGHT = height * 0.2;
   
 
   // flatList 스크롤제어를 위한 참조 변수 (리랜더링 되어도 값이 유지된다))
@@ -58,6 +61,7 @@ const EventBannerComponent = () => {
   const BANNER_HEIGHT = height * 0.13;
 
   return (
+
     <View>
         <View style={[styles.container, { height: BANNER_HEIGHT }]}>
             <FlatList
@@ -99,6 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative', // 자식 요소의 절대 위치를 위해 필요
+    // backgroundColor: 'blue',
   },
   pageIndicator: {
     position: 'absolute',
@@ -112,7 +117,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // 수직 중앙 정렬
     alignItems: 'center', // 수평 중앙 정렬
     flexDirection: 'row',
-    zIndex: 1, // zIndex를 사용하여 앞에 배치
+    zIndex: 40, // zIndex를 사용하여 앞에 배치
+    // backgroundColor: 'yellow',
 
   },
   pageText: {
