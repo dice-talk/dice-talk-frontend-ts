@@ -2,6 +2,7 @@ import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import IsPlanned from '@/assets/images/home/isPlanned.svg';
 import CustomButton from '../home/CustomButton';
+import { useRouter } from 'expo-router';
 
 interface CustomBottomSheetProps {
   isPlanned: boolean;
@@ -26,6 +27,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
   isPlanned,
   onClose,
 }) => {
+  const router = useRouter();
   // 테마 준비 중일 경우
   if (isPlanned) {
     return (
@@ -39,6 +41,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
       <IsPlanned width={width * 0.4} height={width * 0.4} style={{ marginTop: 30 }}/>
       <Text style={styles.isPLannedDescription}>{description}</Text>
       <View style={{ marginTop: height * 0.05, flexDirection: 'row', justifyContent: 'space-between', gap: width * 0.1 }}>
+        <CustomButton label="참여하기" onPress={() => router.push('/home/optionPage')} />
         <CustomButton label="창 닫기" onPress={onClose} />
       </View>
     </View>
@@ -57,7 +60,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
       </View>
       <Text style={styles.description}>{description}</Text>
       <View style={{ marginTop: height * 0.12, flexDirection: 'row', justifyContent: 'space-between', gap: width * 0.1 }}>
-        <CustomButton label="참여하기" onPress={() => {}} />
+        <CustomButton label="참여하기" onPress={() => router.push('/home/optionPage')} />
         <CustomButton label="창 닫기" onPress={onClose} />
       </View>
     </View>
