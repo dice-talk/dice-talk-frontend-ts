@@ -7,7 +7,7 @@ type GradientButtonProps = {
   onPress?: () => void;
 };
 
-export default function GradientButton({
+export default function MediumButton({
   title,
   onPress,
 }: GradientButtonProps) {

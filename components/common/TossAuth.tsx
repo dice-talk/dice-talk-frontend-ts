@@ -3,7 +3,7 @@ import * as Crypto from "expo-crypto";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, AppState, AppStateStatus, SafeAreaView } from "react-native";
+import { ActivityIndicator, Alert, AppState, AppStateStatus, Modal, StyleSheet, View } from "react-native";
 import uuid from "react-native-uuid";
 
 // ✅ 사용자 정보 타입 정의
@@ -31,16 +31,12 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/Sig
   useEffect(() => {
     const requestToss = async () => {
       try {
-        // const res = await fetch(`${BASE_URL}/auth/request`, {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        // });
-        const res = await axiosWithoutToken.post("/auth/request");
-        const data = res.data;
-        //const data = await res.json();
+        // ✅ axios를 사용하여 인증 요청
+        const { data } = await axiosWithoutToken.post("/auth/request");
         console.log("✅ 인증 요청 응답:", data);
         setTxId(data.txId);
 
+        // ✅ Toss 인증 URL 요청
         const appUriRes = await fetch(
           `https://cert.toss.im/api-client/v1/transactions/${data.txId}`
         );
@@ -79,13 +75,8 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/Sig
       setLoading(true);
       console.log("✅ 사용자 정보 조회 시작");
 
-      // const res = await fetch(`${BASE_URL}/auth/cert?txId=${txId}`, {
-      //   method: "POST",
-      // });
-      const res = await axiosWithoutToken.post(`/auth/cert?txId=${txId}`);
-      const data: TossUserInfo = res.data;
-
-      // const data: TossUserInfo = await res.json();
+      // ✅ axios를 사용하여 사용자 정보 조회
+      const { data } = await axiosWithoutToken.post(`/auth/cert?txId=${txId}`);
       console.log("✅ 사용자 정보:", data);
 
       // ✅ 사용자 정보 페이지로 이동 (회원가입으로 연결)
@@ -98,6 +89,7 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/Sig
             name: data.name,
             phone: data.phone,
             birth: data.birth,
+            gender: data.gender,
           },
         });
       }
@@ -150,8 +142,30 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/Sig
   }, [txId, pendingUrl]);
 
   return (
-    <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      {loading && <ActivityIndicator size="large" />}
-    </SafeAreaView>
+    <View style={{ flex: 1 }}>
+      {/* ✅ 로딩 모달 */}
+      <Modal visible={loading} transparent={true} animationType="fade">
+        <View style={styles.modalContainer}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#B28EF8" />
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContainer: {
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+})

@@ -24,7 +24,7 @@ export default function ProfileHeader({
   mode = "profile",
 }: ProfileHeaderProps) {
   return (
-    <View style={[styles.container, { marginTop: height * 0.13 }]}> {/* 비율로 위치 조정 */}
+    <View style={[styles.container, { marginTop: height * 0.12 }]}> {/* 비율로 위치 조정 */}
       <View style={[styles.profileImageContainer, { width: PROFILE_SIZE, height: PROFILE_SIZE, borderRadius: PROFILE_SIZE / 2 }]}> 
         <Image source={{ uri: profileImage || "/assets/icons/profile.svg" }} style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} />
       </View>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   buttonRow: {
     alignItems: "center",
     justifyContent: "center",
-    width: "90%",
-    marginTop: 8,
+    width: "100%",
+    marginBottom: 32,
   },
 });

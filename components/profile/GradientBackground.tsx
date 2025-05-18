@@ -7,7 +7,7 @@ const { width, height } = Dimensions.get("window");
 
 export default function GradientBackground({ children }: { children?: ReactNode }) {
   // 비율 기반으로 높이, 위치, 곡률 계산
-  const gradientHeight = height * 0.37; // 38% (이미지 참고)
+  const gradientHeight = height * 0.4; // 38% (이미지 참고)
   const gradientWidth = width * 1;
   const borderRadius = width * 0.1; // 곡률도 비율로
 
