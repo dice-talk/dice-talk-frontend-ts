@@ -1,8 +1,6 @@
 import { EventBanner } from "@/types/EventBanner";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from "react-native";
-import ThemeCarousel from "@/components/home/ThemeCarousel"
-import ThemeCarouselPage from "@/components/home/ThemeCarouselPage"
 
 // 현재 기기의 화면 너비를 가져와서 배너 이미지 너비로 사용
 const { width } = Dimensions.get("window");
@@ -20,9 +18,9 @@ const EventBannerComponent = () => {
   useEffect(() => {
     // 목 데이터로 테스트
     const imageMap: Record<string, any> = {
-        banner1: require('@/assets/images/eventBanner/eventBanner_01.png'),
-        banner2: require('@/assets/images/eventBanner/eventBanner_02.png'),
-        banner3: require('@/assets/images/eventBanner/eventBanner_03.png'),
+        banner1: require('@/assets/images/EventBanner/eventBanner_01.png'),
+        banner2: require('@/assets/images/EventBanner/eventBanner_02.png'),
+        banner3: require('@/assets/images/EventBanner/eventBanner_03.png'),
       };
       
       const dummyData = [
@@ -57,8 +55,6 @@ const EventBannerComponent = () => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
   };
-
-  const BANNER_HEIGHT = height * 0.13;
 
   return (
 
