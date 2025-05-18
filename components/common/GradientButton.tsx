@@ -1,9 +1,18 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
 
+type QuestionPage = "QuestionRegisterPage"
+
 export default function GradientButton({ title, onPress }: { title: string; onPress?: () => void }) {
+  const router = useRouter();
+
+  const handlePress = (page: QuestionPage) => {
+    router.push({ pathname: `/profile/question/${page}` });
+  };
+
   return (
-    <Pressable onPress={onPress} style={styles.buttonWrapper}>
+    <Pressable onPress={() => handlePress("QuestionRegisterPage")} style={styles.buttonWrapper}>
       <LinearGradient
         colors={["#B28EF8", "#F476E5"]}
         start={{ x: 0, y: 0 }}
@@ -18,7 +27,7 @@ export default function GradientButton({ title, onPress }: { title: string; onPr
 
 const styles = StyleSheet.create({
   buttonWrapper: {
-    alignSelf: "flex-end",
+    alignSelf: "center",
   },
   button: {
     borderRadius: 20,
