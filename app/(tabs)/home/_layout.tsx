@@ -8,7 +8,9 @@ export default function HomeLayout() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <EventBannerComponent />
+        <View style={{ zIndex: 1 }}>
+          <EventBannerComponent />
+        </View>
         <View style={styles.mainContent}>
           <Slot />
         </View>
@@ -27,6 +29,7 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
+    // backgroundColor: 'yellow',
   },
   content: {
     flex: 1,
