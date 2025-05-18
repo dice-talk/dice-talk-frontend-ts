@@ -59,7 +59,7 @@ useEffect(() => {
       <GradientBackground>
         <ProfileHeader {...memberInfo} mode="profile" />
       </GradientBackground>
-        <View style={[styles.contentContainer, { marginTop: height * 0.38 }]}>
+        <View style={[styles.contentContainer, { marginTop: height * 0.41 }]}>
           <ProfileInfoCard onTabPress={handleTabPress}/>
           <GradientLine />
           <LogoutButton />

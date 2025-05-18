@@ -1,10 +1,12 @@
 // src/screens/Profile/ProfileScreen.tsx
 import GradientBackground from "@/components/profile/GradientBackground";
-import LogoutButton from "@/components/profile/LogoutButton";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import { useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 //import { useMemberStore } from "@/zustand/stores/memberStore";
+import Pagination from "@/components/common/Pagination";
+import QuestionList from "@/components/profile/question/QuestionList";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 type MemberInfo = {
@@ -14,7 +16,7 @@ type MemberInfo = {
     isInChat: boolean;
   };
 
-export default function ProfileScreen() {
+export default function QuestionPage() {
     const router = useRouter();
   //const { memberId } = useMemberStore();
 
@@ -29,6 +31,10 @@ export default function ProfileScreen() {
     isInChat: false,
   });
 
+  const handleBack = () => {
+    router.back();
+  };
+
 
   return (
     <View style={styles.container}>
@@ -37,11 +43,21 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+    {/* Header 영역 */}
+    <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <Ionicons name="chevron-back" size={28} color="rgba(0, 0, 0, 0.4)" />
+        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>나의 문의</Text>
+        </View>
+    </View>
       <GradientBackground>
         <ProfileHeader {...memberInfo} mode="question" />
       </GradientBackground>
-        <View style={[styles.contentContainer, { marginTop: height * 0.38 }]}>
-          <LogoutButton />
+        <View style={[styles.contentContainer, { marginTop: height * 0.3 }]}>
+            <QuestionList />
+            <Pagination currentPage={1} totalPages={10} onPageChange={() => {}} />
         </View>
       </ScrollView>
     </View>
@@ -60,21 +76,35 @@ const styles = StyleSheet.create({
       scrollContent: {
         paddingBottom: height * 0.1, // Footer와의 간격 유지
       },
-      gradientContainer: {
+      headerContainer: {
+        width: "100%",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 20,
+        paddingVertical: 24,
+        position: "relative",
+        zIndex: 10,
+      },
+      backButton: {
         position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: height * 1.5, // 스크롤 전체를 덮도록 설정
+        left: 16,
+        justifyContent: "center",
+        alignItems: "center",
+      },
+      headerTitleContainer: {
+        flex: 1,
+        alignItems: "center",
+      },
+      headerTitle: {
+        fontSize: 20,
+        fontFamily: "Pretendard-Bold",
+        color: "#7d7d7d", //"rgba(0, 0, 0, 0.4)",
       },
       contentContainer: {
         paddingHorizontal: 8, // 좌우 여백 추가
         marginHorizontal: 8, // 여백이 더 명확하도록
         backgroundColor: "rgba(255, 255, 255, 0)", // 배경을 살짝 투명하게 추가
-      },
-      headerContainer: {
-        alignItems: "center",
-        paddingTop: height * 0.25, // 그라데이션이 프로필에 자연스럽게 겹치도록
       },
   });
 

@@ -108,13 +108,13 @@ useEffect(() => {
 
   return (
     <View style={styles.container}>
-          {/* TossAuth 인증 모달 */}
-          {showTossAuth && (
-                <TossAuth 
-                    onAuthSuccess={handleAuthSuccess} 
-                    onAuthFailure={handleAuthFailure} 
-                />
-            )}
+        {/* TossAuth 인증 모달 */}
+        {showTossAuth && (
+            <TossAuth 
+                onAuthSuccess={handleAuthSuccess} 
+                onAuthFailure={handleAuthFailure} 
+            />
+        )}
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
@@ -132,7 +132,7 @@ useEffect(() => {
       <GradientBackground>
         <ProfileHeader {...anonymousInfo} mode="myInfo" />
       </GradientBackground>
-        <View style={[styles.contentContainer, { marginTop: height * 0.31 }]}>
+        <View style={[styles.contentContainer, { marginTop: height * 0.33 }]}>
         <MyInfoField iconName="person-outline" label="이름" value={memberInfo.name ?? ""} editable={false} />
         <MyInfoField iconName="mail-outline" label="이메일" value={memberInfo.email ?? ""} editable={false} />
         <MyInfoField iconName="male-outline" label="성별" value={memberInfo.gender ?? ""} editable={false} />
