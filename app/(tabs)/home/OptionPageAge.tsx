@@ -15,13 +15,17 @@ const OptionPageAge = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.textBoxContainer}>
+      <View style={{ marginLeft: width * 0.05, alignItems: 'flex-start' }}>
         <TextBox
-          width={width * 0.35}
+          width={width * 0.1}
           height={height * 0.15}
           text="지역"
         />
       </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.textStyle}>서울시 강남구</Text>
+      </View>
+      <GradientLine />
       <View style={styles.textBoxContainer}>
         <TextBox
           width={width * 0.35}
@@ -29,14 +33,17 @@ const OptionPageAge = () => {
           text="나이를 선택해주세요"
         />
       </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.textStyle}>어떤 나이의 사람들과 이야기를 나누고 싶나요?</Text>
+      </View>
       <GradientLine />
       <View style={styles.selectBoxContainer}>
         <SelectBox 
           width={width * 0.35} 
           height={height * 0.15} 
-          text="서울" 
-          isSelected={selectedBox === '서울'}
-          onSelect={() => handleSelect('서울')}
+          text="20대 초반" 
+          isSelected={selectedBox === '20대 초반'}
+          onSelect={() => handleSelect('20대 초반')}
         />
         <SelectBox 
           width={width * 0.35} 
@@ -58,6 +65,7 @@ const OptionPageAge = () => {
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
+    height: height * 0.9,
   },
   text: {
     fontSize: 17,

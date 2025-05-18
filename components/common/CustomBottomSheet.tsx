@@ -41,7 +41,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
       <IsPlanned width={width * 0.4} height={width * 0.4} style={{ marginTop: 30 }}/>
       <Text style={styles.isPLannedDescription}>{description}</Text>
       <View style={{ marginTop: height * 0.05, flexDirection: 'row', justifyContent: 'space-between', gap: width * 0.1 }}>
-        <CustomButton label="참여하기" onPress={() => router.push('/home/optionPage')} />
+        <CustomButton label="참여하기" onPress={() => router.push('/home/OptionPageAge')} />
         <CustomButton label="창 닫기" onPress={onClose} />
       </View>
     </View>
@@ -60,7 +60,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
       </View>
       <Text style={styles.description}>{description}</Text>
       <View style={{ marginTop: height * 0.12, flexDirection: 'row', justifyContent: 'space-between', gap: width * 0.1 }}>
-        <CustomButton label="참여하기" onPress={() => router.push('/home/optionPage')} />
+        <CustomButton label="참여하기" onPress={() => router.push('/home/OptionPageRegion')} />
         <CustomButton label="창 닫기" onPress={onClose} />
       </View>
     </View>
