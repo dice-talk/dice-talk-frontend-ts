@@ -57,8 +57,12 @@ const EventBannerComponent = () => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
   };
+
+  const BANNER_HEIGHT = height * 0.13;
+
   return (
-    <View >
+
+    <View>
         <View style={[styles.container, { height: BANNER_HEIGHT }]}>
             <FlatList
                 style={{ width: width}} // 배너 높이 조정
@@ -93,7 +97,6 @@ const EventBannerComponent = () => {
 const styles = StyleSheet.create({
   container: {
     width: width,
-    // backgroundColor: 'red',
   },
   imageContainer: {
     width: width,
