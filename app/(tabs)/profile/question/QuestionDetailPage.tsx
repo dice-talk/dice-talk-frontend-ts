@@ -1,8 +1,10 @@
 // src/screens/profile/question/QuestionDetailPage.tsx
 import Toast from "@/components/common/Toast";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
+    Dimensions,
+    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -10,78 +12,99 @@ import {
     View
 } from "react-native";
 //import CancelModal from "@/components/common/CancelModal";
-import { deleteQuestion, getQuestionDetail, updateQuestion } from "@/api/questionApi";
+import { deleteQuestion } from "@/api/questionApi";
 import GradientHeader from "@/components/common/GradientHeader";
-import MediumButton from "@/components/profile/myInfoPage/MediumButton";
+import Answer from "@/components/profile/question/Answer";
 import FileButton from "@/components/profile/question/FileButton";
+import QuestionButton from "@/components/profile/question/QuestionButton";
 
 type QuestionDetail = {
+  questionId: number;
   title: string;
   content: string;
   createAt: string;
-  questionAnswerStatus: string;
+  questionStatus: string;
   questionImage?: string[];
-  answer?: string;
+  answer?: {
+    content: string;
+    createAt: string;
+    images: string[] | null;
+  } | null;
 };
 
 export default function QuestionDetailPage() {
   const router = useRouter();
   const { questionId } = useLocalSearchParams();
-  const [questionDetail, setQuestionDetail] = useState<QuestionDetail | null>(null);
+  const [questionDetail, setQuestionDetail] = useState<QuestionDetail | null>({
+    questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_ANSWERED", questionImage: ["@/assets/images/home/diceFriends.png"],
+        answer: {
+            content: "다른분들과 이야기를 더 나눠보세요",
+            createAt: "2025-05-13",
+            images: ["@/assets/images/home/diceFriends.png"]
+        }
+        //questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_REGISTERED", questionImage: ["@/assets/images/home/diceFriends.png"],
+  });
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editTitle, setEditTitle] = useState("");
-  const [editContent, setEditContent] = useState("");
-  const [charCount, setCharCount] = useState(0);
+  const [editTitle, setEditTitle] = useState(questionDetail?.title);
+  const [editContent, setEditContent] = useState(questionDetail?.content);
+  const [charCount, setCharCount] = useState(questionDetail?.content?.length || 0);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  useEffect(() => {
-    if (!questionId) return;
-    fetchQuestionDetail();
-  }, [questionId]);
 
-  const fetchQuestionDetail = async () => {
-    try {
-      const response = await getQuestionDetail(1, Number(questionId));
-      setQuestionDetail(response.data);
-      setEditTitle(response.data.title);
-      setEditContent(response.data.content);
-      setSelectedImages(response.data.questionImage || []);
-    } catch (error) {
-      console.error("🚨 문의 상세 조회 실패:", error);
-    }
-  };
+
+//   useEffect(() => {
+//     if (!questionId) return;
+//     fetchQuestionDetail();
+//   }, [questionId]);
+
+//   const fetchQuestionDetail = async () => {
+//     try {
+//       const response = await getQuestionDetail(1, Number(questionId));
+//       setQuestionDetail(response.data);
+//       setEditTitle(response.data.title);
+//       setEditContent(response.data.content);
+//       setSelectedImages(response.data.questionImage || []);
+//     } catch (error) {
+//       console.error("🚨 문의 상세 조회 실패:", error);
+//     }
+//   };
 
   const handleEdit = () => {
     setIsEditMode(true);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editTitle.trim() || !editContent.trim()) {
-      setToastMessage("제목과 내용을 입력해주세요.");
-      setShowToast(true);
-      return;
-    }
-
-    try {
-      await updateQuestion(Number(questionId), {
-        memberId: 1,
-        questionId: Number(questionId),
-        title: editTitle,
-        content: editContent,
-        images: selectedImages,
-      });
-      setShowToast(true);
-      setToastMessage("문의가 수정되었습니다.");
-      setIsEditMode(false);
-      fetchQuestionDetail();
-    } catch (error) {
-      setToastMessage("문의 수정에 실패했습니다.");
-      setShowToast(true);
-    }
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
   };
+
+   const handleSaveEdit = async () => {
+    console.log("editTitle", editTitle);
+    // if (!editTitle.trim() || !editContent.trim()) {
+    //   setToastMessage("제목과 내용을 입력해주세요.");
+    //   setShowToast(true);
+    //   return;
+    // }
+
+//     try {
+//       await updateQuestion(Number(questionId), {
+//         memberId: 1,
+//         questionId: Number(questionId),
+//         title: editTitle,
+//         content: editContent,
+//         images: selectedImages,
+//       });
+//       setShowToast(true);
+//       setToastMessage("문의가 수정되었습니다.");
+//       setIsEditMode(false);
+//       fetchQuestionDetail();
+//     } catch (error) {
+//       setToastMessage("문의 수정에 실패했습니다.");
+//       setShowToast(true);
+//     }
+   };
 
   const handleDelete = () => {
     setModalVisible(true);
@@ -107,7 +130,10 @@ export default function QuestionDetailPage() {
   return (
     <View style={styles.container}>
       <GradientHeader title="QnA 상세보기" />
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>제목</Text>
           {isEditMode ? (
@@ -115,17 +141,18 @@ export default function QuestionDetailPage() {
               style={styles.input}
               value={editTitle}
               onChangeText={setEditTitle}
-              placeholder="제목을 입력해주세요."
               placeholderTextColor="#9CA3AF"
             />
           ) : (
             <Text style={styles.input}>{questionDetail?.title}</Text>
           )}
+        <Text style={styles.createAt}>{questionDetail?.createAt}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>내용</Text>
           {isEditMode ? (
+            <>
             <TextInput
               style={styles.textArea}
               value={editContent}
@@ -137,27 +164,55 @@ export default function QuestionDetailPage() {
               textAlignVertical="top"
               maxLength={500}
             />
+            <Text style={styles.charCount}>{charCount}/500</Text>
+            </>
           ) : (
-            <Text style={styles.text}>{questionDetail?.content}</Text>
+            <View style={styles.contentContainer}>
+                <Text style={styles.text}>{questionDetail?.content}</Text>
+            </View>
           )}
-          <Text style={styles.charCount}>{charCount}/500</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>첨부 이미지</Text>
-          <FileButton onImageSelect={handleImageSelect} />
+            <Text style={styles.sectionLabel}>첨부 이미지</Text>
+            {isEditMode ? (
+            <FileButton onImageSelect={handleImageSelect} />
+            ) : (
+            <View style={styles.imagePreviewContainer}>
+                {questionDetail?.questionImage?.length ? (
+                questionDetail.questionImage.map((imageUri, index) => (
+                    <View key={index} style={styles.imageWrapper}>
+                    <Image
+                        source={{ uri: imageUri }}
+                        style={styles.imagePreview}
+                        resizeMode="contain"
+                    />
+                    </View>
+                ))
+                ) : (
+                <Text style={styles.noImageText}>첨부된 이미지가 없습니다.</Text>
+                )}
+            </View>
+            )}
         </View>
-
-        <View style={styles.saveButtonContainer}>
-          {isEditMode ? (
-            <MediumButton title="저장" onPress={handleSaveEdit} />
-          ) : (
-            <>
-              <MediumButton title="수정" onPress={handleEdit} />
-              <MediumButton title="삭제" onPress={handleDelete} />
-            </>
-          )}
-        </View>
+        <View style={styles.gradientBorder}/>
+        {questionDetail?.questionStatus !== "QUESTION_ANSWERED" ? (
+            <View style={styles.saveButtonContainer}>
+            {isEditMode ? (
+                <>
+                <QuestionButton title="수정" onPress={handleSaveEdit} />
+                <QuestionButton title="취소" onPress={handleCancelEdit} />
+                </>
+            ) : (
+                <>
+                <QuestionButton title="수정" onPress={handleEdit} />
+                <QuestionButton title="삭제" onPress={handleDelete} />
+                </>
+            )}
+            </View>
+        ) : (
+            <Answer answer={questionDetail?.answer} />
+        )}
       </ScrollView>
 
       {/* Toast 메시지 */}
@@ -177,6 +232,8 @@ export default function QuestionDetailPage() {
   );
 }
 
+const { height, width } = Dimensions.get("window");
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -184,6 +241,9 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+  },
+  scrollContent: {
+    paddingBottom: height * 0.15, // Footer와의 간격 유지
   },
   section: {
     marginBottom: 24,
@@ -193,13 +253,21 @@ const styles = StyleSheet.create({
     fontFamily: "Pretendard-Medium",
     color: "#4B5563",
     marginBottom: 8,
+    marginTop: 10,
   },
   input: {
     fontSize: 16,
     color: "#1F2937",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    paddingBottom: 4,
+    borderBottomColor: "#B28EF8",
+    paddingBottom: 10,
+    marginTop: 10,
+  },
+  createAt: {
+    fontSize: 12,
+    color: "#666666",
+    textAlign: "right",
+    marginTop: 10,
   },
   textArea: {
     borderWidth: 1,
@@ -219,9 +287,48 @@ const styles = StyleSheet.create({
     color: "#666666",
     textAlign: "right",
   },
+  contentContainer: {
+    padding: 16,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    minHeight: 140,
+  },
+  imagePreviewContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 8,
+  },
+  imageWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  imagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  noImageText: {
+    fontSize: 14,
+    color: "#666666",
+    marginTop: 8,
+  },
+  gradientBorder: {
+    width: "100%",
+    borderWidth: 0.3, // ✅ 0.3px Border 적용
+    borderColor: "#B28EF8",
+    //borderRadius: 0.5,
+  },
   saveButtonContainer: {
     marginTop: 16,
+    marginBottom: 10,
+    marginRight: 8,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
+    gap: 30,
   },
 });
