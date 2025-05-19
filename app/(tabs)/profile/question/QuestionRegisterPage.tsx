@@ -6,12 +6,12 @@ import FileButton from "@/components/profile/question/FileButton";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from "react-native";
 
 export default function QuestionRegisterPage() {
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   underline: {
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#B28EF8",
   },
   textArea: {
     borderWidth: 1,

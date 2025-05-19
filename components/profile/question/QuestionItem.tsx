@@ -6,11 +6,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 interface QuestionItemProps {
   questionId: number;
   title: string;
-  date: string;
+  createAt: string;
   answered: boolean;
 }
 
-export default function QuestionItem({ title, date, answered, questionId }: QuestionItemProps) {
+export default function QuestionItem({ title, createAt, answered, questionId }: QuestionItemProps) {
   const router = useRouter();
 
   const handlePress = () => {
@@ -44,7 +44,7 @@ export default function QuestionItem({ title, date, answered, questionId }: Ques
         ) : (
           <Text style={styles.date} />
         )}
-            <Text style={styles.date}> {date}</Text>
+            <Text style={styles.date}> {createAt}</Text>
           </View>
         </View>
         {/* 아래쪽 Gradient Line */}
