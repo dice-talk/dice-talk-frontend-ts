@@ -21,7 +21,6 @@ export default function Carousel({ pages, pageWidth, gap, offset }: ICarousel) {
       <Page item={item} style={{ width: pageWidth, marginHorizontal: gap / 2 }} />
     );
   }
-
   // 스크롤 시 현재 페이지 index 계산
   const onScroll = (e: any) => {
     
@@ -36,13 +35,6 @@ export default function Carousel({ pages, pageWidth, gap, offset }: ICarousel) {
   return (
     <View style={styles.container}>
       <FlatList
-        // ios 자동 보정 기능 비활성화
-        automaticallyAdjustContentInsets={false}
-        // 첫 페이지 시작 위치에 대한 여백 추가
-        contentContainerStyle={{
-          // 좌우 여백 추가 (offest 보정)
-          paddingHorizontal: offset + gap / 2,
-        }}
         // 렌더링할 페이지 리스트
         data={pages}
         // 스크롤 속도 설정
@@ -62,7 +54,10 @@ export default function Carousel({ pages, pageWidth, gap, offset }: ICarousel) {
         // 스크롤 정렬 방식
         snapToAlignment="start"
         // 수평 스크롤 인디케이터 숨김
-        showsHorizontalScrollIndicator={false}
+        automaticallyAdjustContentInsets={false}
+        contentContainerStyle={{
+          paddingHorizontal: offset + gap / 2,
+        }}
       />
       <View style={styles.indicatorWrapper}>
         {Array.from({ length: pages.length }, (_, i) => i).map((i) => (

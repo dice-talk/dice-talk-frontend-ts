@@ -1,8 +1,6 @@
 import { EventBanner } from "@/types/EventBanner";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from "react-native";
-import ThemeCarousel from "@/components/home/ThemeCarousel"
-import ThemeCarouselPage from "@/components/home/ThemeCarouselPage"
 
 // 현재 기기의 화면 너비를 가져와서 배너 이미지 너비로 사용
 const { width } = Dimensions.get("window");
@@ -33,9 +31,6 @@ const EventBannerComponent = () => {
     setEventBanner(dummyData);
   }, []);
 
-  const BANNER_HEIGHT = height * 0.2;
-  
-
   // flatList 스크롤제어를 위한 참조 변수 (리랜더링 되어도 값이 유지된다))
   const flatListRef = useRef<FlatList<EventBanner>>(null);
 
@@ -58,7 +53,7 @@ const EventBannerComponent = () => {
     }
   };
 
-  const BANNER_HEIGHT = height * 0.13;
+  const BANNER_HEIGHT = height * 0.2;
 
   return (
 
