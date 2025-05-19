@@ -4,16 +4,31 @@ import { Dimensions, Pressable, StyleSheet, Text } from "react-native";
 // 🔹 GradientButton Props 타입 지정
 type GradientButtonProps = {
   title: string;
+  height : number,
+  width : number,
+  fontSize : number,
+  size: 'max' | 'custom',
   onPress?: () => void;
 };
 
 export default function MediumButton({
   title,
+  height,
+  width,
+  fontSize,
+  size,
   onPress,
 }: GradientButtonProps) {
+  // const screenWidth = Dimensions.get("window").width;
+  // const buttonWidth = screenWidth * 0.79; // ✅ 화면의 85% 너비
+  // const buttonHeight = 48; // ✅ 적당한 높이 (사용자가 깔끔하다고 느끼는 크기)
+
   const screenWidth = Dimensions.get("window").width;
-  const buttonWidth = screenWidth * 0.79; // ✅ 화면의 85% 너비
-  const buttonHeight = 48; // ✅ 적당한 높이 (사용자가 깔끔하다고 느끼는 크기)
+
+  // size가 'max'일 경우 기본값 적용
+  const buttonWidth = size === 'max' ? screenWidth * 0.85 : width;
+  const buttonHeight = size === 'max' ? height * 0.06 : height;
+  const buttonFontSize = size === 'max' ? 16 : fontSize;
 
   return (
     <Pressable onPress={onPress} style={[styles.buttonWrapper, { width: buttonWidth, height: buttonHeight }]}> 
@@ -23,7 +38,7 @@ export default function MediumButton({
         end={{ x: 1, y: 0 }}
         style={[styles.button, { width: buttonWidth, height: buttonHeight }]}
       >
-        <Text style={styles.buttonText}>{title}</Text>
+        <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>{title}</Text>
       </LinearGradient>
     </Pressable>
   );
@@ -42,6 +57,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontFamily: "Pretendard-Bold",
-    fontSize: 16, // ✅ 적당한 텍스트 크기
   },
 });
