@@ -8,7 +8,7 @@ export default function HomeLayout() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={{ zIndex: 1 }}>
+        <View style={{ zIndex: 1, position: 'absolute', top: 0, left: 0, right: 0}}>
           <EventBannerComponent />
         </View>
         <View style={styles.mainContent}>
