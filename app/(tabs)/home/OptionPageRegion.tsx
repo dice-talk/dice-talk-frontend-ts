@@ -19,7 +19,7 @@ const OptionPageRegion = () => {
       <View style={styles.textBoxContainer}>
         <TextBox
           width={width * 0.35}
-          height={height * 0.15}
+          height={height * 0.11}
           text="지역을 선택해주세요"
         />
       </View>
@@ -30,20 +30,20 @@ const OptionPageRegion = () => {
       <View style={styles.selectBoxContainer}>
         <SelectBox 
           width={width * 0.35} 
-          height={height * 0.15} 
+          height={height * 0.11} 
           text="서울" 
           isSelected={selectedBox === '서울'}
           onSelect={() => handleSelect('서울')}
         />
         <SelectBox 
           width={width * 0.35} 
-          height={height * 0.15} 
+          height={height * 0.11} 
           text="랜덤" 
           isSelected={selectedBox === '랜덤'}
           onSelect={() => handleSelect('랜덤')}
         />
       </View>
-      <View style={styles.buttonContainer}>
+      <View style={styles.fixedButtonContainer}>
         <CustomButton
           label="확인"
           onPress={() => {
@@ -88,6 +88,14 @@ const styles = StyleSheet.create({
     color: '#b5b5b5',
     fontSize: 17,
     fontWeight: '300',
-  }
+  },
+  fixedButtonContainer: {
+    flex: 1,
+    position: 'absolute',
+    bottom: height * -0.14, // 혹은 height * 0.05 등으로 조정
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
 });
 export default OptionPageRegion;

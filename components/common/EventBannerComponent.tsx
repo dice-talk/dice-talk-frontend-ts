@@ -53,7 +53,7 @@ const EventBannerComponent = () => {
     }
   };
 
-  const BANNER_HEIGHT = height * 0.13;
+  const BANNER_HEIGHT = height * 0.2;
 
   return (
 
