@@ -89,8 +89,6 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
         <MainBackground 
-          width={width} 
-          height={height} 
           style={{
             position: 'absolute',
             top: '50%',
@@ -153,6 +151,7 @@ const HomeScreen = () => {
   );
 };
 
+const height = Dimensions.get("window").height;
 const styles = StyleSheet.create({
   container: {
     flex: 1,

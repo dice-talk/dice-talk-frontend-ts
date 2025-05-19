@@ -18,7 +18,7 @@ const OptionPageAge = () => {
       <View style={{ marginLeft: width * 0.05, alignItems: 'flex-start' }}>
         <TextBox
           width={width * 0.1}
-          height={height * 0.15}
+          height={height * 0.11}
           text="지역"
         />
       </View>
@@ -29,7 +29,7 @@ const OptionPageAge = () => {
       <View style={styles.textBoxContainer}>
         <TextBox
           width={width * 0.35}
-          height={height * 0.15}
+          height={height * 0.11}
           text="나이를 선택해주세요"
         />
       </View>
@@ -40,20 +40,20 @@ const OptionPageAge = () => {
       <View style={styles.selectBoxContainer}>
         <SelectBox 
           width={width * 0.35} 
-          height={height * 0.15} 
+          height={height * 0.11} 
           text="20대 초반" 
           isSelected={selectedBox === '20대 초반'}
           onSelect={() => handleSelect('20대 초반')}
         />
         <SelectBox 
           width={width * 0.35} 
-          height={height * 0.15} 
+          height={height * 0.11} 
           text="랜덤" 
           isSelected={selectedBox === '랜덤'}
           onSelect={() => handleSelect('랜덤')}
         />
       </View>
-      <View style={styles.buttonContainer}>
+      <View style={styles.fixedButtonContainer}>
         <CustomButton
           label="확인"
           onPress={() => {}}
@@ -65,16 +65,16 @@ const OptionPageAge = () => {
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
-    height: height * 0.9,
+    // height: height * 0.9,
   },
   text: {
     fontSize: 17,
     fontWeight: '300', // 'light' 대신 '300' 사용
-    marginTop: height * 0.05,
+    // marginTop: height * 0.01,
     color: '#b5b5b5',
   },
   selectBoxContainer: {
-    marginTop: height * 0.02,
+    // marginTop: height * 0.01,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   buttonContainer: {
-    marginTop: height * 0.15, // 원하는 만큼 조정 (0.15도 가능)
+    marginTop: height * 0.05, // 원하는 만큼 조정 (0.15도 가능)
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -97,6 +97,13 @@ const styles = StyleSheet.create({
     color: '#b5b5b5',
     fontSize: 17,
     fontWeight: '300',
-  }
+  },
+  fixedButtonContainer: {
+    position: 'absolute',
+    bottom: height * -0.14, // 혹은 height * 0.05 등으로 조정
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
 });
 export default OptionPageAge;
