@@ -1,38 +1,51 @@
 // src/screens/QuestionListScreen.tsx
+import { getQuestions } from "@/api/questionApi";
 import QuestionItem from "@/components/profile/question/QuestionItem";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
+// src/types/Question.ts
+export type Question = {
+    memberId: number;
+    title: string;
+    content: string;
+    createAt: string;
+    questionStatus: "QUESTION_REGISTERED" | "QUESTION_ANSWERED";
+    questionImage: string | null;
+    questionId: number;
+};
+
+
 export default function QuestionList() {
-  //const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const questions = [
-    { questionId: 1, title: "욕설 신고합니다.", date: "2025-03-16", questionStatus: "QUESTION_ANSWERED" },
-    { questionId: 1, title: "네모지만 부드러운 네몽님이..", date: "2025-02-13", questionStatus: "QUESTION_ANSWERED" },
-    { questionId: 1, title: "이게 맞는건가요?", date: "2025-02-03", questionStatus: "QUESTION_ANSWERED" },
-    { questionId: 1, title: "하트 받고싶어요.", date: "2025-01-22", questionStatus: "QUESTION_ANSWERED" },
-  ];
+  // const questions = [
+  //   { questionId: 1, title: "욕설 신고합니다.", date: "2025-03-16", questionStatus: "QUESTION_REGISTERED" },
+  //   { questionId: 2, title: "네모지만 부드러운 네몽님이..", date: "2025-02-13", questionStatus: "QUESTION_REGISTERED" },
+  //   { questionId: 3, title: "이게 맞는건가요?", date: "2025-02-03", questionStatus: "QUESTION_ANSWERED", answeId: 1, cotnet: "맞습니다~", createAt: "2025-05-13"},
+  //   { questionId: 4, title: "하트 받고싶어요.", date: "2025-01-22", questionStatus: "QUESTION_ANSWERED", answeId: 1, cotnet: "다른분들과 이야기를 더 나눠보세요", createAt: "2025-05-13"},
+  // ];
 
-  // useEffect(() => {
-  //   fetchQuestions();
-  // }, [currentPage]);
+  useEffect(() => {
+    fetchQuestions();
+  }, [currentPage]);
 
-  // const fetchQuestions = async () => {
-  //   try {
-  //     const memberId = 1; // ✅ 실제로는 로그인된 사용자의 ID로 변경 필요
-  //     const data = await getQuestions(memberId, currentPage);
-  //     setQuestions(data.data);
-  //     setTotalPages(data.pageinfo.totalPages);
-  //   } catch (error) {
-  //     console.error("🚨 질문 전체 조회 실패:", error);
-  //   }
-  // };
+  const fetchQuestions = async () => {
+    try {
+      const memberId = 1; // ✅ 실제로는 로그인된 사용자의 ID로 변경 필요
+      const data = await getQuestions(memberId, currentPage);
+      setQuestions(data.data);
+      setTotalPages(data.pageinfo.totalPages);
+    } catch (error) {
+      console.error("🚨 질문 전체 조회 실패:", error);
+    }
+  };
 
-  // const handlePageChange = (page: number) => {
-  //   setCurrentPage(page);
-  // };
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   return (
     <View style={styles.container}>
@@ -45,7 +58,7 @@ export default function QuestionList() {
           <QuestionItem
             key={index}
             title={question.title}
-            date={question.date}
+            createAt={question.createAt}
             answered={question.questionStatus === "QUESTION_ANSWERED"}
             questionId={question.questionId}
           />
