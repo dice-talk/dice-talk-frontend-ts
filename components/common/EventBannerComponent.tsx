@@ -31,9 +31,6 @@ const EventBannerComponent = () => {
     setEventBanner(dummyData);
   }, []);
 
-  const BANNER_HEIGHT = height * 0.2;
-  
-
   // flatList 스크롤제어를 위한 참조 변수 (리랜더링 되어도 값이 유지된다))
   const flatListRef = useRef<FlatList<EventBanner>>(null);
 
@@ -55,6 +52,8 @@ const EventBannerComponent = () => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
   };
+
+  const BANNER_HEIGHT = height * 0.2;
 
   return (
 
