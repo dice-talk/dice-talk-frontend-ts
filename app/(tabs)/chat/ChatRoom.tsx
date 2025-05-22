@@ -3,6 +3,7 @@ import HanaSvg from '@/assets/images/chat/hana.svg';
 import Nemo from '@/assets/images/chat/nemo.svg';
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
+import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import { useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 
@@ -15,6 +16,7 @@ interface ChatMessage {
   nickname: string;
   message: string;
   time: string;
+  isMe?: boolean; // 내가 보낸 메시지인지 여부
 }
 
 const ChatRoom = () => {
@@ -27,36 +29,41 @@ const ChatRoom = () => {
       profileImage: HanaSvg,
       nickname: "한가로운 하나",
       message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?",
-      time: "오후 6:58"
+      time: "오후 6:58",
+      isMe: false
     },
     {
       id: 2,
       profileImage: HanaSvg,
       nickname: "한가로운 하나",
       message: "정말 재밌어서 추천드려요",
-      time: "오후 6:58"
+      time: "오후 6:58",
+      isMe: false
     },
     {
       id: 3,
       profileImage: Nemo,
       nickname: "네모지만 부드러운 네모",
       message: "와! 저도 어제 봤는데 사람이 많더라구요",
-      time: "오후 6:59"
+      time: "오후 6:59",
+      isMe: true
     },
     {
       id: 4,
       profileImage: Nemo,
       nickname: "네모지만 부드러운 네모",
       message: "저는 펩시파에요",
-      time: "오후 6:59"
+      time: "오후 6:59",
+      isMe: true
     },
     {
       id: 5,
       profileImage: Nemo,
       nickname: "네모지만 부드러운 네모",
       message: "다오님은요?",
-      time: "오후 6:59"
-    }
+      time: "오후 6:59",
+      isMe: true
+    },
   ];
 
   return (
@@ -78,29 +85,48 @@ const ChatRoom = () => {
             {/* 메시지 렌더링 */}
             {messages.map((message, index) => {
               // 이전 메시지가 같은 사람인지 확인
-              const isConsecutive = index > 0 && messages[index - 1].nickname === message.nickname;
+              const isConsecutive = index > 0 && 
+                messages[index - 1].nickname === message.nickname &&
+                messages[index - 1].isMe === message.isMe;
               
               // 이전 메시지와 시간 및 닉네임이 동일한지 확인 (시간 표시 여부 결정)
               let showTime = true;
               if (index < messages.length - 1) {
                 const nextMessage = messages[index + 1];
                 // 다음 메시지가 같은 사람이고 시간이 같으면 현재 메시지의 시간은 숨김
-                if (message.nickname === nextMessage.nickname && message.time === nextMessage.time) {
+                if (message.nickname === nextMessage.nickname && 
+                    message.time === nextMessage.time &&
+                    message.isMe === nextMessage.isMe) {
                   showTime = false;
                 }
               }
               
-              return (
-                <ChatMessageLeft
-                    key={message.id}
-                    profileImage={message.profileImage}
-                    nickname={message.nickname}
-                    message={message.message}
-                    time={message.time}
-                    isConsecutive={isConsecutive}
-                    showTime={showTime}
-                />
-              );
+              // 내가 보낸 메시지면 오른쪽, 아니면 왼쪽에 표시
+              if (message.isMe) {
+                return (
+                  <ChatMessageRight
+                      key={message.id}
+                      profileImage={message.profileImage}
+                      nickname={message.nickname}
+                      message={message.message}
+                      time={message.time}
+                      isConsecutive={isConsecutive}
+                      showTime={showTime}
+                  />
+                );
+              } else {
+                return (
+                  <ChatMessageLeft
+                      key={message.id}
+                      profileImage={message.profileImage}
+                      nickname={message.nickname}
+                      message={message.message}
+                      time={message.time}
+                      isConsecutive={isConsecutive}
+                      showTime={showTime}
+                  />
+                );
+              }
             })}
         </ScrollView>
 
@@ -134,7 +160,7 @@ const styles = StyleSheet.create({
     marginBottom: SCREEN_HEIGHT * 0.05, // Footer 높이만큼 여백 추가
   },
   scrollContent: {
-    paddingHorizontal: SCREEN_WIDTH * 0.05,
+    paddingHorizontal: SCREEN_WIDTH * 0.025, // 양쪽 여백 약간 늘림
     paddingBottom: SCREEN_HEIGHT * 0.05, // 하단 패딩 추가하여 마지막 메시지가 잘 보이도록 함
   },
 });
