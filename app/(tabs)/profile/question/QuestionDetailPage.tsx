@@ -37,13 +37,13 @@ export default function QuestionDetailPage() {
   const router = useRouter();
   const { questionId } = useLocalSearchParams();
   const [questionDetail, setQuestionDetail] = useState<QuestionDetail | null>({
-    questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_ANSWERED", questionImage: ["@/assets/images/home/diceFriends.png"],
-        answer: {
-            content: "다른분들과 이야기를 더 나눠보세요",
-            createAt: "2025-05-13",
-            images: ["@/assets/images/home/diceFriends.png"]
-        }
-        //questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_REGISTERED", questionImage: ["@/assets/images/home/diceFriends.png"],
+    // questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_ANSWERED", questionImage: ["@/assets/images/home/diceFriends.png"],
+    //     answer: {
+    //         content: "다른분들과 이야기를 더 나눠보세요",
+    //         createAt: "2025-05-13",
+    //         images: ["@/assets/images/home/diceFriends.png"]
+    //     }
+        questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_REGISTERED", questionImage: ["@/assets/images/home/diceFriends.png"],
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState(questionDetail?.title);
