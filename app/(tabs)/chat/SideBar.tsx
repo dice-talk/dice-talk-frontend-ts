@@ -31,7 +31,12 @@ const SideBar = ({ visible, onClose }: SideBarProps) => {
         ]}
       >
         <View style={styles.content}>
-          <Text style={styles.text}>SideBar</Text>
+          <View style={styles.topSection}>
+            <Text>Top Area</Text>
+          </View>
+          <View style={styles.bottomSection}>
+            <Text>Bottom Area</Text>
+          </View>
         </View>
       </Animated.View>
     </View>
@@ -47,21 +52,36 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   sidebar: {
+    height: "100%",
     position: "absolute",
     top: 0,
     bottom: 0,
     right: 0,
-    width: width * 0.75,
+    width: width * 0.8,
     backgroundColor: "#fff",
     zIndex: 2,
     justifyContent: "center",
     alignItems: "center",
   },
   content: {
-    padding: 20,
+    flex: 1,
+    width: "100%", // 사이드바 너비에 맞춤
+    backgroundColor: "white",
   },
   text: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+  topSection: {
+    flex: 1,
+    backgroundColor: "red",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  bottomSection: {
+    flex: 2,
+    backgroundColor: "blue",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
