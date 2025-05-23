@@ -2,6 +2,7 @@ import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴�
 import HanaSvg from '@/assets/images/chat/hana.svg';
 import Nemo from '@/assets/images/chat/nemo.svg';
 import ChatHeader from "@/components/chat/ChatHeader";
+import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import { BlurView } from 'expo-blur';
@@ -145,6 +146,9 @@ const ChatRoom = () => {
             visible={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
         />
+        <View style={styles.inputContainer}>
+          <ChatInput />
+        </View>
     </View>
   );
 };
@@ -167,10 +171,20 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     marginTop: SCREEN_HEIGHT * 0.075, // ChatHeader의 높이만큼 여백 추가
-    marginBottom: SCREEN_HEIGHT * 0.05, // Footer 높이만큼 여백 추가
+    marginBottom: SCREEN_HEIGHT * 0.07, // ChatInput 높이만큼 여백 추가
   },
   scrollContent: {
     paddingHorizontal: SCREEN_WIDTH * 0.025, // 양쪽 여백 약간 늘림
     paddingBottom: SCREEN_HEIGHT * 0.05, // 하단 패딩 추가하여 마지막 메시지가 잘 보이도록 함
   },
+  inputContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_HEIGHT * 0.07,
+    backgroundColor: "#ffffff",
+    // borderTopWidth: 1,
+    // borderTopColor: "#F9BCC1",
+  }
 });
