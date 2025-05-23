@@ -1,11 +1,12 @@
 // AgreementScreen 컴포넌트 (예: app/(onBoard)/register/agreement.tsx)
 import LogoIcon from '@/assets/images/login/logo_icon.svg'; // SVG 사용 시
 import TossAuth from '@/components/common/TossAuth';
+import UnderageRestrictionModal from '@/components/login/UnderageRestrictionModal'; // 미성년자 모달 임포트
 import MediumButton from '@/components/profile/myInfoPage/MediumButton'; // 경로 예시
 import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // memberInfoStore 임포트
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router'; // useLocalSearchParams 임포트
-import { useEffect, useState } from "react"; // React, useEffect 임포트
+import { useEffect, useState } from "react"; // React 임포트
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Term {
@@ -28,6 +29,7 @@ export default function Agreement() {
     const params = useLocalSearchParams<{ updatedAgreements?: string }>(); // 파라미터 타입 정의
     const [checkedTerms, setCheckedTerms] = useState<boolean[]>(() => terms.map(() => false));
     const [showTossAuth, setShowTossAuth] = useState(false);
+    const [showUnderageModal, setShowUnderageModal] = useState(false); // 미성년자 모달 상태
     const updateMemberInfoInStore = useMemberInfoStore((state) => state.updateMemberInfo); // memberInfoStore 임포트
 
     // DetailAgreement에서 돌아올 때 상태 업데이트
@@ -74,13 +76,34 @@ export default function Agreement() {
 
     const handleAuthSuccess = (userInfo: { name: string; phone: string; gender?: string; birthDate?: string; }) => { 
         console.log("✅ 인증 성공:", userInfo);
+        setShowTossAuth(false);
+
+        if (userInfo.birthDate) {
+            const birthDateStr = userInfo.birthDate; // YYYYMMDD 또는 YYYY-MM-DD 형식 가정
+            const year = parseInt(birthDateStr.substring(0, 4), 10);
+            const month = parseInt(birthDateStr.substring(birthDateStr.length === 8 ? 4 : 5, birthDateStr.length === 8 ? 6 : 7), 10) -1; // JS month is 0-indexed
+            const day = parseInt(birthDateStr.substring(birthDateStr.length === 8 ? 6 : 8, birthDateStr.length === 8 ? 8 : 10), 10);
+
+            const today = new Date();
+            const birthDate = new Date(year, month, day);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            if (age < 18) {
+                setShowUnderageModal(true);
+                return;
+            }
+        }
+
         updateMemberInfoInStore({
             name: userInfo.name,
             phone: userInfo.phone,
             gender: userInfo.gender, 
             birth: userInfo.birthDate, 
         });
-        setShowTossAuth(false);
         router.push('/(onBoard)/register/SignupInput');
     };
     
@@ -105,6 +128,13 @@ export default function Agreement() {
     return (
         <>
             {showTossAuth && <TossAuth onAuthSuccess={handleAuthSuccess} onAuthFailure={handleAuthFailure} />}
+            <UnderageRestrictionModal 
+                visible={showUnderageModal}
+                onGoLogin={() => {
+                    setShowUnderageModal(false);
+                    router.replace('/(onBoard)'); // 로그인 페이지로 이동
+                }}
+            />
             <View style={styles.container}>
                 <View style={styles.illustrationBox}>
                     <LogoIcon width={250} height={250}/>
@@ -113,6 +143,9 @@ export default function Agreement() {
                     <Ionicons name={allAgreed ? 'checkbox' : 'square-outline'} size={24} color="#B28EF8" />
                     <Text style={styles.checkAllText}>아래 항목에 전부 동의합니다.</Text>
                 </TouchableOpacity>
+                {/* <TouchableOpacity onPress={() => setShowUnderageModal(true)} >
+                    <Text>테스트</Text>
+                </TouchableOpacity> */}
                 <View style={styles.contentBox}>
                     {terms.map((term, i) => (
                         <View key={term.id} style={styles.termRow}>
