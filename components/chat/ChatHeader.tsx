@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 
 // 👉 아이콘은 SVG 또는 PNG로 대체 가능
@@ -20,25 +20,22 @@ export default function ChatHeader({
   backgroundColor = "#ffffff",      // 기본값
 }: ChatHeaderProps) {
   const router = useRouter();
-
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <Pressable onPress={() => router.back()}>
         <BackIcon width={28} height={28} />
       </Pressable>
-
       <Text style={[styles.title, { color: fontColor }]}>{title}</Text>
-
       <Pressable onPress={onToggleSidebar}>
         <MenuIcon width={28} height={28} />
       </Pressable>
     </View>
   );
 }
-
+const { height } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
-    height: 60,
+    height: height * 0.07,
     paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",

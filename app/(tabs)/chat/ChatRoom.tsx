@@ -6,6 +6,7 @@ import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import { useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { BlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -68,7 +69,19 @@ const ChatRoom = () => {
 
   return (
     <View style={styles.container}>
-        <View style={styles.headerContainer}>
+        {/* ChatHeader 블러 효과 */}
+        {sidebarOpen && (
+          <BlurView 
+            intensity={20} 
+            tint="dark" 
+            style={[
+              StyleSheet.absoluteFill, 
+              { zIndex: 3 }
+            ]} 
+          />
+        )}
+
+        <View style={[styles.headerContainer, { zIndex: sidebarOpen ? 2 : 3 }]}>
             <ChatHeader
                 title="하트시그널"
                 fontColor="#A45C73"
