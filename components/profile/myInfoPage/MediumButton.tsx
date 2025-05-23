@@ -1,5 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Dimensions, Pressable, StyleSheet, Text } from "react-native";
+import {
+  Dimensions,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  ViewStyle,
+} from "react-native";
 
 // 🔹 GradientButton Props 타입 지정
 type GradientButtonProps = {
@@ -9,6 +16,7 @@ type GradientButtonProps = {
   fontSize : number,
   size: 'max' | 'custom',
   onPress?: () => void;
+  customStyle?: StyleProp<ViewStyle>;
 };
 
 export default function MediumButton({
@@ -18,6 +26,7 @@ export default function MediumButton({
   fontSize,
   size,
   onPress,
+  customStyle,
 }: GradientButtonProps) {
   // const screenWidth = Dimensions.get("window").width;
   // const buttonWidth = screenWidth * 0.79; // ✅ 화면의 85% 너비
@@ -31,12 +40,15 @@ export default function MediumButton({
   const buttonFontSize = size === 'max' ? 16 : fontSize;
 
   return (
-    <Pressable onPress={onPress} style={[styles.buttonWrapper, { width: buttonWidth, height: buttonHeight }]}> 
+    <Pressable 
+      onPress={onPress} 
+      style={[styles.buttonWrapper, { width: buttonWidth, height: buttonHeight }, customStyle]}
+    > 
       <LinearGradient
         colors={["#B28EF8", "#F476E5"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={[styles.button, { width: buttonWidth, height: buttonHeight }]}
+        style={[styles.button, { width: '100%', height: '100%' }]}
       >
         <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>{title}</Text>
       </LinearGradient>
