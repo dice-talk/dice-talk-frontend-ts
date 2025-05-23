@@ -4,9 +4,9 @@ import Nemo from '@/assets/images/chat/nemo.svg';
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
+import { BlurView } from 'expo-blur';
 import { useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
-import { BlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -89,7 +89,6 @@ const ChatRoom = () => {
                 onToggleSidebar={() => setSidebarOpen(true)}
             />
         </View>
-
         <ScrollView 
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
@@ -101,7 +100,6 @@ const ChatRoom = () => {
               const isConsecutive = index > 0 && 
                 messages[index - 1].nickname === message.nickname &&
                 messages[index - 1].isMe === message.isMe;
-              
               // 이전 메시지와 시간 및 닉네임이 동일한지 확인 (시간 표시 여부 결정)
               let showTime = true;
               if (index < messages.length - 1) {
@@ -113,7 +111,6 @@ const ChatRoom = () => {
                   showTime = false;
                 }
               }
-              
               // 내가 보낸 메시지면 오른쪽, 아니면 왼쪽에 표시
               if (message.isMe) {
                 return (
