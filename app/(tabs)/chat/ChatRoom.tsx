@@ -6,9 +6,11 @@ import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import GptNotice from "@/components/chat/GptNotice";
+import ChatProfile from "@/components/chat/ChatProfile";
 import { BlurView } from 'expo-blur';
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import ReadingTag from "@/components/chat/ReadingTag";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -26,6 +28,7 @@ const ChatRoom = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotice, setShowNotice] = useState(true);
   const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
+  const [selectedProfile, setSelectedProfile] = useState<{ nickname: string, SvgComponent: React.FC<React.SVGProps<SVGSVGElement>> } | null>(null);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -114,12 +117,14 @@ const ChatRoom = () => {
                 onParticipate={handleParticipate}
               />
             )}
+            
         </View>
         <ScrollView 
             style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
         >
+          <ReadingTag />
             {/* 메시지 렌더링 */}
             {messages.map((message, index) => {
               // 이전 메시지가 같은 사람인지 확인
@@ -148,6 +153,7 @@ const ChatRoom = () => {
                       time={message.time}
                       isConsecutive={isConsecutive}
                       showTime={showTime}
+                      onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
                   />
                 );
               } else {
@@ -160,6 +166,7 @@ const ChatRoom = () => {
                       time={message.time}
                       isConsecutive={isConsecutive}
                       showTime={showTime}
+                      onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
                   />
                 );
               }
@@ -174,6 +181,15 @@ const ChatRoom = () => {
         <View style={styles.inputContainer}>
           <ChatInput />
         </View>
+        {selectedProfile && (
+          <View style={{ ...StyleSheet.absoluteFillObject, zIndex: 3, justifyContent: 'center', alignItems: 'center' }}>
+            <ChatProfile
+              profileImage={selectedProfile.SvgComponent}
+              nickname={selectedProfile.nickname}
+              onClose={() => setSelectedProfile(null)}
+            />
+          </View>
+        )}
     </View>
   );
 };
