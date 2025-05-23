@@ -7,13 +7,13 @@ import FileButton from "@/components/profile/question/FileButton";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Dimensions,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  Dimensions,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -73,7 +73,7 @@ export default function QuestionRegisterPage() {
     } catch (error) {
       console.error("문의 등록 실패:", error);
       setToastMessage("문의 등록에 실패했습니다.");
-      //setShowSuccessModal(true);
+      setShowSuccessModal(true);
       setShowToast(true);
     }
   };
