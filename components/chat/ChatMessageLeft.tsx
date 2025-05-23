@@ -32,7 +32,7 @@ const ChatMessageLeft = ({
       {!isConsecutive && (
         <>
           {typeof profileImage === 'string' ? (
-            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+      <Image source={{ uri: profileImage }} style={styles.profileImage} />
           ) : (
             <View style={styles.profileImage}>
               <View style={styles.svgContainer}>
@@ -40,14 +40,14 @@ const ChatMessageLeft = ({
               </View>
             </View>
           )}
-          <View style={styles.messageWrapper}>
-            <Text style={styles.nickname}>{nickname}</Text>
+      <View style={styles.messageWrapper}>
+        <Text style={styles.nickname}>{nickname}</Text>
 
             {/* 말풍선 박스와 시간 */}
             <View style={styles.bubbleContainer}>
-              <View style={styles.bubble}>
-                <Text style={styles.message}>{message}</Text>
-              </View>
+        <View style={styles.bubble}>
+          <Text style={styles.message}>{message}</Text>
+        </View>
               {showTime && <Text style={styles.time}>{time}</Text>}
             </View>
           </View>
@@ -63,7 +63,7 @@ const ChatMessageLeft = ({
             </View>
             {showTime && <Text style={styles.time}>{time}</Text>}
           </View>
-        </View>
+      </View>
       )}
     </View>
   );
