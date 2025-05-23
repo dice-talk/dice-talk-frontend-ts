@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 export default function History() {
   return (
     <View style={styles.container}>
-      <Text style={{ fontFamily: "Pretendard" }}>History</Text>
+      <Text style={{ fontFamily: "Pretendard" }}>History!!</Text>
     </View>
   );
 }
