@@ -31,7 +31,7 @@ const LendingPage = ( ) => {
   
           {/* 문의하기 및 정책 링크는 디자인 및 실제 기능 구현에 따라 조정 */}
           <View style={styles.extraLinksContainer}>
-            <TouchableOpacity onPress={() => router.push('/(onBoard)/FindInfo')} /* 실제 문의하기 경로로 수정 */ >
+            <TouchableOpacity onPress={() => router.push('/(onBoard)/NonMemberQuestion')} /* 실제 문의하기 경로로 수정 */ >
               <Text style={styles.extraLinkText}>문의하기</Text>
             </TouchableOpacity> 
             <View style={styles.policyContainer}>
