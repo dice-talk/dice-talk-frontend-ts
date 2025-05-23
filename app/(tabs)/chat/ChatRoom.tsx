@@ -5,8 +5,9 @@ import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
+import GptNotice from "@/components/chat/GptNotice";
 import { BlurView } from 'expo-blur';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -23,6 +24,17 @@ interface ChatMessage {
 
 const ChatRoom = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showNotice, setShowNotice] = useState(true);
+  const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
+  
+  // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
+  useEffect(() => {
+    if (showNotice) {
+      setScrollViewMarginTop(SCREEN_HEIGHT * 0.12); // GptNotice가 표시될 때 여백 증가
+    } else {
+      setScrollViewMarginTop(SCREEN_HEIGHT * 0.075); // GptNotice가 없을 때 기본 여백
+    }
+  }, [showNotice]);
   
   // 샘플 메시지 데이터
   const messages: ChatMessage[] = [
@@ -67,7 +79,14 @@ const ChatRoom = () => {
       isMe: true
     },
   ];
-
+  const hideNotice = () => {
+    setShowNotice(false);
+  };
+  const handleParticipate = () => {
+    // 참여하기 버튼 클릭 시 수행할 작업
+    console.log('이벤트 참여!');
+    // 필요하다면 여기에 이벤트 참여 로직 추가
+  };
   return (
     <View style={styles.container}>
         {/* ChatHeader 블러 효과 */}
@@ -81,7 +100,6 @@ const ChatRoom = () => {
             ]} 
           />
         )}
-
         <View style={[styles.headerContainer, { zIndex: sidebarOpen ? 2 : 3 }]}>
             <ChatHeader
                 title="하트시그널"
@@ -89,9 +107,16 @@ const ChatRoom = () => {
                 backgroundColor="#ffffff"
                 onToggleSidebar={() => setSidebarOpen(true)}
             />
+            {showNotice && (
+              <GptNotice 
+                text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
+                onHide={hideNotice}
+                onParticipate={handleParticipate}
+              />
+            )}
         </View>
         <ScrollView 
-            style={styles.scrollView}
+            style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
         >
@@ -170,7 +195,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: SCREEN_HEIGHT * 0.075, // ChatHeader의 높이만큼 여백 추가
     marginBottom: SCREEN_HEIGHT * 0.07, // ChatInput 높이만큼 여백 추가
   },
   scrollContent: {
@@ -184,7 +208,5 @@ const styles = StyleSheet.create({
     right: 0,
     height: SCREEN_HEIGHT * 0.07,
     backgroundColor: "#ffffff",
-    // borderTopWidth: 1,
-    // borderTopColor: "#F9BCC1",
   }
 });
