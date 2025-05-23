@@ -8,12 +8,14 @@ interface GptNoticeProps {
   text?: string;
   onHide?: () => void;
   onParticipate?: () => void;
+  width?: number; // 너비 비율을 props로 받을 수 있도록 추가
 }
 
 const GptNotice = ({ 
   text = "공지사항",
   onHide = () => {},
-  onParticipate = () => {} 
+  onParticipate = () => {},
+  width = 0.9 // 기본값으로 화면 너비의 90%
 }: GptNoticeProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -30,48 +32,56 @@ const GptNotice = ({
   };
 
   return (
-    <View style={[
-      styles.container, 
-      isExpanded ? styles.containerExpanded : null
-    ]}>
-      <View style={styles.mainContent}>
-        <View style={styles.leftIcon}>
-          <Megaphone width={20} height={20} />
+    <View style={styles.containerWrapper}>
+      <View style={[
+        styles.container, 
+        { width: screenWidth * width },
+        isExpanded ? styles.containerExpanded : null
+      ]}>
+        <View style={styles.mainContent}>
+          <View style={styles.leftIcon}>
+            <Megaphone width={20} height={20} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.text} numberOfLines={1} ellipsizeMode="tail">
+              {text}
+            </Text>
+          </View>
+          <Pressable 
+            style={styles.rightIcon} 
+            onPress={toggleExpand}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            {isExpanded ? (
+              <UpArrow width={20} height={20} />
+            ) : (
+              <DownArrow width={20} height={20} />
+            )}
+          </Pressable>
         </View>
-        <View style={styles.textContainer}>
-          <Text style={styles.text} numberOfLines={1} ellipsizeMode="tail">
-            {text}
-          </Text>
-        </View>
-        <Pressable 
-          style={styles.rightIcon} 
-          onPress={toggleExpand}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          {isExpanded ? (
-            <UpArrow width={20} height={20} />
-          ) : (
-            <DownArrow width={20} height={20} />
-          )}
-        </Pressable>
+        {isExpanded && (
+          <View style={styles.buttonContainer}>
+            <Pressable style={styles.button} onPress={handleHide}>
+              <Text style={styles.buttonText}>다시 열지 않음</Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={handleParticipate}>
+              <Text style={styles.buttonText}>참여하기</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
-      {isExpanded && (
-        <View style={styles.buttonContainer}>
-          <Pressable style={styles.button} onPress={handleHide}>
-            <Text style={styles.buttonText}>다시 열지 않음</Text>
-          </Pressable>
-          <Pressable style={styles.button} onPress={handleParticipate}>
-            <Text style={styles.buttonText}>참여하기</Text>
-          </Pressable>
-        </View>
-      )}
     </View>
   );
 };
 
 export default GptNotice;
-const { height, width } = Dimensions.get("window");
+const { height, width: screenWidth } = Dimensions.get("window");
 const styles = StyleSheet.create({
+  containerWrapper: {
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 5,
+  },
   container: {
     borderRadius: 10,
     backgroundColor: "#B19ADE",
@@ -109,8 +119,9 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     // justifyContent: "space-between",
-    gap: width * 0.015,
+    gap: screenWidth * 0.015,
     paddingTop: height * 0.04,
+    justifyContent: 'center',
   },
   button: {
     backgroundColor: "white",
@@ -118,7 +129,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     alignItems: "center",
     justifyContent: "center",
-    width: width * 0.48,
+    width: screenWidth * 0.43,
   },
   buttonText: {
     color: "#333",

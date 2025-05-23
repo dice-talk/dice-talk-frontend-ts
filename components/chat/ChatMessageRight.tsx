@@ -1,5 +1,5 @@
 import React from "react";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -11,15 +11,17 @@ interface ChatMessageProps {
   time: string;
   isConsecutive?: boolean; // 연속된 메시지인지 여부
   showTime?: boolean; // 시간을 표시할지 여부
+  onPressProfile?: () => void;
 }
 
-const ChatMessageRight = ({ 
-  profileImage, 
-  nickname, 
-  message, 
-  time, 
+const ChatMessageRight = ({
+  profileImage,
+  nickname,
+  message,
+  time,
   isConsecutive = false,
-  showTime = true
+  showTime = true,
+  onPressProfile,
 }: ChatMessageProps) => {
   const ProfileImage = profileImage as React.FC<SvgProps>;
   
@@ -33,7 +35,6 @@ const ChatMessageRight = ({
         <>
           <View style={styles.messageWrapper}>
             <Text style={styles.nickname}>{nickname}</Text>
-
             {/* 말풍선 박스와 시간 */}
             <View style={styles.bubbleContainer}>
               {showTime && <Text style={styles.time}>{time}</Text>}
@@ -42,19 +43,19 @@ const ChatMessageRight = ({
               </View>
             </View>
           </View>
-          
           {typeof profileImage === 'string' ? (
             <Image source={{ uri: profileImage }} style={styles.profileImage} />
           ) : (
-            <View style={styles.profileImage}>
-              <View style={styles.svgContainer}>
-                <ProfileImage width="60%" height="60%" />
+            <TouchableOpacity onPress={onPressProfile}>
+              <View style={styles.profileImage}>
+                <View style={styles.svgContainer}>
+                  <ProfileImage width="60%" height="60%" />
+                </View>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
         </>
       )}
-
       {/* 연속 메시지일 때는 메시지만 표시 */}
       {isConsecutive && (
         <View style={styles.consecutiveMessageWrapper}>

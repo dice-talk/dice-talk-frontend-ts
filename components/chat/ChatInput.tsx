@@ -40,7 +40,7 @@ const ChatInput = () => {
   );
 };
 
-export default ChatInput;
+export default ChatInput; 
 
 const { width } = Dimensions.get('window');
 

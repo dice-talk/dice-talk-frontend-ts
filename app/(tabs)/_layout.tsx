@@ -62,7 +62,7 @@ export default function TabLayout() {
             <Slot />
           </View>
           {shouldShowFooter && (
-            <Footer currentTab={currentTab} onTabPress={handleTabPress} />
+          <Footer currentTab={currentTab} onTabPress={handleTabPress} />
           )}
         </View>
       </SafeAreaView>

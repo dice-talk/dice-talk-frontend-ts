@@ -2,6 +2,8 @@ import ChatExit from "@/assets/images/chat/chatExit.svg";
 import ChatNoticeOnOff from "@/assets/images/chat/chatNoticeOnOff.svg";
 import Silence from "@/assets/images/chat/silence.svg";
 import Siren from "@/assets/images/chat/siren.svg";
+import ExitCostModal from "@/components/chat/ExitCostModal";
+import CustomCostModal from "@/components/common/CustomCostModal";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Dimensions, Pressable, StyleSheet, View } from "react-native";
@@ -9,9 +11,34 @@ import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 const ChatFooter = () => {
   const router = useRouter();
   const [isSilenced, setIsSilenced] = useState(false);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+  const [costModalVisible, setCostModalVisible] = useState(false);
 
   const handleExitPress = () => {
+    // 첫 번째 모달만 열기
+    setExitModalVisible(true);
+  };
+
+  const handleExitCancel = () => {
+    // 첫 번째 모달만 닫기
+    setExitModalVisible(false);
+  };
+
+  const handleExitConfirm = () => {
+    // 첫 번째 모달 닫고 두 번째 모달 열기
+    setExitModalVisible(false);
+    setCostModalVisible(true);
+  };
+
+  const handleCostConfirm = () => {
+    // 두 번째 모달 닫고 채팅방 나가기
+    setCostModalVisible(false);
     router.push("/chat");
+  };
+
+  const handleCostCancel = () => {
+    // 두 번째 모달만 닫기
+    setCostModalVisible(false);
   };
 
   const toggleSilence = () => {
@@ -26,7 +53,7 @@ const ChatFooter = () => {
           onPress={handleExitPress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <ChatExit />
+      <ChatExit />
         </Pressable>
         <View style={styles.rightContainer}>
           <Pressable 
@@ -35,9 +62,25 @@ const ChatFooter = () => {
           >
             {isSilenced ? <Silence /> : <ChatNoticeOnOff />}
           </Pressable>
-          <Siren />
+        <Siren />
         </View>
       </View>
+
+      {/* 채팅방 나가기 확인 모달 */}
+      <ExitCostModal
+        visible={exitModalVisible}
+        onClose={handleExitCancel}
+        onConfirm={handleExitConfirm}
+      />
+
+      {/* 다이스 사용 모달 */}
+      <CustomCostModal
+        visible={costModalVisible}
+        onClose={handleCostCancel}
+        onConfirm={handleCostConfirm}
+        // content="하루에 2번 이상 \n채팅방을 나가셨습니다."
+        diceCount={7}
+      />
     </View>
   );
 };
