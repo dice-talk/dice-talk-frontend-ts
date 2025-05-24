@@ -247,8 +247,7 @@ const ChatRoom = () => {
   // 편지 애니메이션 완료 핸들러
   const handleEnvelopeAnimationComplete = () => {
     console.log('편지 애니메이션 완료!');
-    // 필요시 추가 로직 구현
-    // 예: 특별 이벤트 포인트 지급, 특별 기능 활성화 등
+    setShowEnvelope(false);
   };
   
   return (

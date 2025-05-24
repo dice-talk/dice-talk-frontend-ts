@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, View, TextInput, TouchableOpacity } from "react-native";
+import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import LetterForm from '../../assets/images/event/LetterForm.svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -27,6 +27,8 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
 }) => {
   // 애니메이션 상태
   const [isOpen, setIsOpen] = useState(false);
+  // 편지 내용 상태 추가
+  const [letterText, setLetterText] = useState('');
   
   // 메인 편지 애니메이션 값
   const letterOffset = useRef(new Animated.Value(0)).current;
@@ -34,6 +36,8 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
   const letterOpacity = useRef(new Animated.Value(0)).current;
   const letterFormOpacity = useRef(new Animated.Value(0)).current;
   const letterTextOpacity = useRef(new Animated.Value(0)).current;
+
+  const containerOpacity = useRef(new Animated.Value(1)).current;
   
   // 쌓여있는 편지들 애니메이션 값 (아래로 조금씩 쌓이게)
   const stackedLetters = useRef(
@@ -47,6 +51,11 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
       scale: new Animated.Value(0.8),
     }))
   ).current;
+  
+  // 편지 내용이 있는지 확인하는 함수
+  const isLetterValid = () => {
+    return letterText.trim().length > 0;
+  };
   
   // 애니메이션 실행
   const playAnimation = () => {
@@ -125,10 +134,9 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
       ...stackedLettersAnimations,
       mainLetterAnimation,
     ]).start(() => {
-      // 애니메이션 완료 콜백
-      if (onAnimationComplete) {
-        onAnimationComplete();
-      }
+      // 애니메이션 완료 콜백을 보내기 버튼을 클릭할 때만 호출하도록 변경
+      // onAnimationComplete 콜백은 보내기 버튼 클릭 시 호출될 것임
+      console.log('편지 애니메이션 완료!');
     });
   };
   
@@ -143,8 +151,23 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
     }
   }, []);
   
+  // 보내기 버튼 클릭 핸들러
+  const handleSendPress = () => {
+    // 보내기 버튼 클릭 시 페이드 아웃 애니메이션 후 콜백 호출
+    Animated.timing(containerOpacity, {
+      toValue: 0,
+      duration: 2000,
+      useNativeDriver: true,
+    }).start(() => {
+      // 여기서 onAnimationComplete 콜백을 호출하여 부모 컴포넌트에 완료를 알림
+      if (onAnimationComplete) {
+        onAnimationComplete();
+      }
+    });
+  };
+  
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: containerOpacity }]}>
       <Pressable onPress={playAnimation} disabled={isOpen}>
         <View style={styles.animationContainer}>
           {/* 쌓여있는 편지들 (이미지로 표현) */}
@@ -204,17 +227,30 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
                 style={styles.letterInput}
                 placeholder="마음에 드는 상대에게 보낼 내용을 작성해주세요"
                 placeholderTextColor="#F9BCC1"
+                value={letterText}
+                onChangeText={setLetterText}
+                multiline
               />
             </Animated.View>
             <Animated.View style={[styles.sendButtonWrapper, { opacity: letterTextOpacity }]}>
-              <TouchableOpacity style={styles.sendButton}>
-                <Text style={styles.sendButtonText}>보내기</Text>
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  !isLetterValid() && styles.sendButtonDisabled
+                ]}
+                onPress={handleSendPress}
+                disabled={!isLetterValid()}
+              >
+                <Text style={[
+                  styles.sendButtonText,
+                  !isLetterValid() && styles.sendButtonTextDisabled
+                ]}>보내기</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
         </View>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -284,6 +320,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 10,
     color: '#F9BCC1',
+    height: SCREEN_HEIGHT * 0.1,
+    textAlignVertical: 'top',
   },
   sendButtonWrapper: {
     position: 'absolute',
@@ -301,10 +339,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFD9DF',
   },
+  sendButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+    borderColor: '#D0D0D0',
+  },
   sendButtonText: {
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  sendButtonTextDisabled: {
+    color: '#A0A0A0',
   },
 });
 
