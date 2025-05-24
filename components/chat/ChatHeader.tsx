@@ -1,6 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet, Pressable, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 
 // 👉 아이콘은 SVG 또는 PNG로 대체 가능
 import BackIcon from "@/assets/images/chat/backArrow.svg";
