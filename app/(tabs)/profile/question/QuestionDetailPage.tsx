@@ -3,7 +3,6 @@ import Toast from "@/components/common/Toast";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Dimensions,
     Image,
     ScrollView,
     StyleSheet,
@@ -16,7 +15,9 @@ import { deleteQuestion } from "@/api/questionApi";
 import GradientHeader from "@/components/common/GradientHeader";
 import Answer from "@/components/profile/question/Answer";
 import FileButton from "@/components/profile/question/FileButton";
+
 import QuestionButton from "@/components/profile/question/QuestionButton";
+import { Dimensions } from "react-native";
 
 type QuestionDetail = {
   questionId: number;
@@ -36,13 +37,13 @@ export default function QuestionDetailPage() {
   const router = useRouter();
   const { questionId } = useLocalSearchParams();
   const [questionDetail, setQuestionDetail] = useState<QuestionDetail | null>({
-    questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_ANSWERED", questionImage: ["@/assets/images/home/diceFriends.png"],
-        answer: {
-            content: "다른분들과 이야기를 더 나눠보세요",
-            createAt: "2025-05-13",
-            images: ["@/assets/images/home/diceFriends.png"]
-        }
-        //questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_REGISTERED", questionImage: ["@/assets/images/home/diceFriends.png"],
+    // questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_ANSWERED", questionImage: ["@/assets/images/home/diceFriends.png"],
+    //     answer: {
+    //         content: "다른분들과 이야기를 더 나눠보세요",
+    //         createAt: "2025-05-13",
+    //         images: ["@/assets/images/home/diceFriends.png"]
+    //     }
+        questionId: 4, title: "하트 받고싶어요.", createAt: "2025-01-22", content: "하트 받고싶어요.", questionStatus: "QUESTION_REGISTERED", questionImage: ["@/assets/images/home/diceFriends.png"],
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState(questionDetail?.title);
@@ -126,7 +127,7 @@ export default function QuestionDetailPage() {
   const handleImageSelect = (images: string[]) => {
     setSelectedImages(images);
   };
-
+  const { height, width } = Dimensions.get("window");
   return (
     <View style={styles.container}>
       <GradientHeader title="QnA 상세보기" />
@@ -214,14 +215,12 @@ export default function QuestionDetailPage() {
             <Answer answer={questionDetail?.answer} />
         )}
       </ScrollView>
-
       {/* Toast 메시지 */}
       <Toast
         visible={showToast}
         message={toastMessage}
         onHide={() => setShowToast(false)}
       />
-
       {/* 삭제 확인 모달 */}
       {/* <CancelModal
         visible={modalVisible}

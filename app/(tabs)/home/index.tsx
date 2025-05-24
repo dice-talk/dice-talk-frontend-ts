@@ -98,7 +98,8 @@ const HomeScreen = () => {
           }}
         />
       </View>
-      {/* 케러셀 */}
+      <View style={{ flex: 1, marginTop: height * 0.2 }}>
+         {/* 케러셀 */}
       <ThemeCarousel
         pages={[
           { num: 1, icon: (
@@ -122,6 +123,8 @@ const HomeScreen = () => {
         gap={16}
         offset={width * 0.1}
       />
+      </View>
+     
       <Modal
         visible={isBottomSheetVisible}
         transparent

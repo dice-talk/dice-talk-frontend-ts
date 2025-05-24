@@ -55,6 +55,7 @@ export default function Carousel({ pages, pageWidth, gap, offset }: ICarousel) {
         snapToAlignment="start"
         // 수평 스크롤 인디케이터 숨김
         automaticallyAdjustContentInsets={false}
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: offset + gap / 2,
         }}

@@ -13,6 +13,7 @@ export default function RootLayout() {
     "Pretendard-Bold": require("../assets/fonts/Pretendard-Bold.otf"),
     "Pretendard-Medium": require("../assets/fonts/Pretendard-Medium.otf"),
     "Pretendard-SemiBold": require("../assets/fonts/Pretendard-SemiBold.otf"),
+    "digital": require("../assets/fonts/digital-7.ttf"),
   });
 
   if (!loaded) {
@@ -23,7 +24,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(onBoard)" options={{ headerShown: false }} />
+        {/* <Stack.Screen name="(onBoard)" options={{ headerShown: false }} /> */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
