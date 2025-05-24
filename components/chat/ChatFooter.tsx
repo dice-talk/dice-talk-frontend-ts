@@ -8,7 +8,12 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 
-const ChatFooter = () => {
+interface ChatFooterProps {
+  onClose?: () => void;
+  onSirenPress?: () => void;
+}
+
+const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress }) => {
   const router = useRouter();
   const [isSilenced, setIsSilenced] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
@@ -45,6 +50,15 @@ const ChatFooter = () => {
     setIsSilenced(!isSilenced);
   };
 
+  const handleSirenPress = () => {
+    if (onClose) {
+      onClose(); // 사이드바 닫기
+    }
+    if (onSirenPress) {
+      onSirenPress(); // MessageCheckReport로 전환
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.subContainer}>
@@ -62,7 +76,12 @@ const ChatFooter = () => {
           >
             {isSilenced ? <Silence /> : <ChatNoticeOnOff />}
           </Pressable>
-        <Siren />
+          <Pressable 
+            onPress={handleSirenPress}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Siren />
+          </Pressable>
         </View>
       </View>
 
@@ -93,7 +112,6 @@ const styles = StyleSheet.create({
     flexDirection: "column", // 명시적으로 세로 방향 설정
     alignItems: "center",    
     width: width * 0.8,
-    
   },
   subContainer: {
     flexDirection: "row",

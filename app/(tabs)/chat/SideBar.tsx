@@ -11,6 +11,8 @@ import { SvgProps } from "react-native-svg";
 interface SideBarProps {
   visible: boolean;
   onClose: () => void;
+  onSirenPress?: () => void;
+  onProfilePress?: (nickname: string, SvgComponent: React.FC<SvgProps>) => void;
 }
 
 interface UserData {
@@ -22,7 +24,7 @@ interface UserData {
 
 const { width } = Dimensions.get("window");
 
-const SideBar = ({ visible, onClose }: SideBarProps) => {
+const SideBar = ({ visible, onClose, onSirenPress, onProfilePress }: SideBarProps) => {
   const translateX = useRef(new Animated.Value(width)).current;
 
   // 유저 데이터 정의
@@ -34,6 +36,13 @@ const SideBar = ({ visible, onClose }: SideBarProps) => {
     { id: '5', name: '단호하데 다정한 다오', color: '#D4E6F3', profileSvg: Nemo },
     { id: '6', name: '육감적인 직감파 육땡', color: '#F3D4EE', profileSvg: Nemo },
   ]);
+
+  // 프로필 클릭 핸들러
+  const handleProfilePress = (user: UserData) => {
+    if (onProfilePress) {
+      onProfilePress(user.name, user.profileSvg);
+    }
+  };
 
   useEffect(() => {
     Animated.timing(translateX, {
@@ -65,13 +74,13 @@ const SideBar = ({ visible, onClose }: SideBarProps) => {
           </View>
           <View style={styles.bottomSection}>
             <View style={{ flex: 1, width: '100%' }}>
-              <ActiveUser users={users} />
+              <ActiveUser users={users} onProfilePress={handleProfilePress} />
             </View>
             <View style={{height: height * 0.05, justifyContent: 'center', width: '100%'}}>
             <View style={styles.bottomLine} />
             </View>
             <View style={{height: height * 0.05, justifyContent: 'center', width: '100%'}}>
-              <ChatFooter />
+              <ChatFooter onClose={onClose} onSirenPress={onSirenPress} />
             </View>
           </View>
         </View>
