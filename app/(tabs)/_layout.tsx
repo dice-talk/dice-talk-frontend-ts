@@ -51,6 +51,9 @@ export default function TabLayout() {
     }
   };
 
+  // ChatRoom 화면에서는 Footer를 표시하지 않음
+  const shouldShowFooter = !pathname.includes('/chat/ChatRoom');
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -58,7 +61,9 @@ export default function TabLayout() {
           <View style={styles.content}>
             <Slot />
           </View>
+          {shouldShowFooter && (
           <Footer currentTab={currentTab} onTabPress={handleTabPress} />
+          )}
         </View>
       </SafeAreaView>
     </View>
