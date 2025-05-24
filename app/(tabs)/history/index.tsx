@@ -166,7 +166,7 @@ export default function HistoryScreen() {
       )}
     </View>
   );
-}
+};
 
 const { height, width } = Dimensions.get("window");
 const BANNER_HEIGHT_APPROX = height * 0.2;
@@ -236,4 +236,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     // backgroundColor: 'transparent', // 이전 red 제거
   },
+  bottomSheetWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,     // 다른 요소보다 위에 배치
+    elevation: 10,   // Android용 (zIndex 보완)
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,  // 전체 화면 덮기
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    elevation: 10,
+    justifyContent: 'flex-end', // 바텀시트를 아래로 정렬
+  },
 });
+
