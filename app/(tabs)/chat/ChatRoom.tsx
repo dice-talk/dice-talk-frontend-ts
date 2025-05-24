@@ -308,7 +308,7 @@ const ChatRoom = () => {
             visible={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             onSirenPress={handleSirenPress}
-            // onProfilePress={handleSidebarProfilePress}
+            onProfilePress={handleSidebarProfilePress}
         />
         {/* 하단 영역: 신고 중이면 취소/확인 버튼, 아니면 ChatInput */}
         {showMessageCheckReport ? (
