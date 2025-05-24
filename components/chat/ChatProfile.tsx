@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SvgProps } from "react-native-svg";
 
 interface ChatProfileProps {
-  profileImage: React.FC<React.SVGProps<SVGSVGElement>>;
+  profileImage: React.FC<SvgProps>;
   nickname: string;
   onClose: () => void;
 }
