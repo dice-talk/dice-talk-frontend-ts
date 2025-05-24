@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, View, TextInput, TouchableOpacity } from "react-native";
 import LetterForm from '../../assets/images/event/LetterForm.svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -199,9 +199,18 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
             <Animated.View style={[styles.mainLetterSvgWrapper, { opacity: letterFormOpacity }]}>
               <LetterForm width="100%" height="100%" />
             </Animated.View>
-            <Animated.Text style={[styles.letterGuideText, { opacity: letterTextOpacity }]}>
-              마음에 드는 상대에게 보낼 내용을 작성해주세요
-            </Animated.Text>
+            <Animated.View style={[styles.letterInputWrapper, { opacity: letterTextOpacity }]}>
+              <TextInput
+                style={styles.letterInput}
+                placeholder="마음에 드는 상대에게 보낼 내용을 작성해주세요"
+                placeholderTextColor="#F9BCC1"
+              />
+            </Animated.View>
+            <Animated.View style={[styles.sendButtonWrapper, { opacity: letterTextOpacity }]}>
+              <TouchableOpacity style={styles.sendButton}>
+                <Text style={styles.sendButtonText}>보내기</Text>
+              </TouchableOpacity>
+            </Animated.View>
           </Animated.View>
         </View>
       </Pressable>
@@ -264,15 +273,38 @@ const styles = StyleSheet.create({
     zIndex: 1,
     top: SCREEN_WIDTH * 0.15,
   },
-  letterGuideText: {
+  letterInputWrapper: {
     position: 'absolute',
-    width: '100%',
-    textAlign: 'center',
+    width: '90%',
     top: SCREEN_WIDTH * 0.52,
+    zIndex: 200,
+  },
+  letterInput: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     fontSize: 10,
     color: '#F9BCC1',
-    fontWeight: 'bold',
+  },
+  sendButtonWrapper: {
+    position: 'absolute',
+    bottom: SCREEN_HEIGHT * 0.01,
+    width: SCREEN_WIDTH * 0.5,
+    height: SCREEN_HEIGHT * 0.04,
+    alignItems: 'center',
     zIndex: 200,
+  },
+  sendButton: {
+    backgroundColor: '#FEBFC8',
+    paddingHorizontal: 60,
+    paddingVertical: 3,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#FFD9DF',
+  },
+  sendButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

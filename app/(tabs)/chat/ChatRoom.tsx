@@ -11,6 +11,7 @@ import MessageCheckReport from "@/components/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
 import EnvelopeAnimation from "@/components/event/EnvelopeAnimation";
+import LoveLetterSelect from "@/components/event/LoveLetterSelect";
 import { BlurView } from 'expo-blur';
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -37,6 +38,7 @@ const ChatRoom = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [hasCheckedMessage, setHasCheckedMessage] = useState(false);
   const [showEnvelope, setShowEnvelope] = useState(false);
+  const [showLoveLetterSelect, setShowLoveLetterSelect] = useState(false);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -101,12 +103,22 @@ const ChatRoom = () => {
   };
   
   const handleParticipate = () => {
-    // 참여하기 버튼 클릭 시 수행할 작업
+    // 참여하기 버튼 클릭 시 LoveLetterSelect 모달 표시
     console.log('이벤트 참여!');
+    setShowLoveLetterSelect(true);
+    // 공지사항은 계속 유지
+  };
+  
+  const handleLoveLetterSelectClose = () => {
+    setShowLoveLetterSelect(false);
+  };
+  
+  const handleLoveLetterSelectConfirm = (selectedIndex: number) => {
+    console.log(`선택된 사용자 인덱스: ${selectedIndex}`);
+    // LoveLetterSelect 모달 닫기
+    setShowLoveLetterSelect(false);
     // 편지 애니메이션 표시
     setShowEnvelope(true);
-    // 공지사항 유지 (삭제하지 않음)
-    // setShowNotice(false); // 이 줄을 주석 처리하여 공지가 계속 표시되도록 함
   };
   
   const handleSirenPress = () => {
@@ -343,6 +355,13 @@ const ChatRoom = () => {
         <ReportModal 
           visible={showReportModal} 
           onClose={handleReportModalClose} 
+        />
+        
+        {/* 러브레터 선택 모달 */}
+        <LoveLetterSelect
+          visible={showLoveLetterSelect}
+          onClose={handleLoveLetterSelectClose}
+          onConfirm={handleLoveLetterSelectConfirm}
         />
 
         {/* 편지 애니메이션 */}
