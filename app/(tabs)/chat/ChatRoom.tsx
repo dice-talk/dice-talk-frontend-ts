@@ -10,6 +10,7 @@ import GptNotice from "@/components/chat/GptNotice";
 import MessageCheckReport from "@/components/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
+import EnvelopeAnimation from "@/components/event/EnvelopeAnimation";
 import { BlurView } from 'expo-blur';
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -35,6 +36,7 @@ const ChatRoom = () => {
   const [showMessageCheckReport, setShowMessageCheckReport] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [hasCheckedMessage, setHasCheckedMessage] = useState(false);
+  const [showEnvelope, setShowEnvelope] = useState(false);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -101,7 +103,10 @@ const ChatRoom = () => {
   const handleParticipate = () => {
     // 참여하기 버튼 클릭 시 수행할 작업
     console.log('이벤트 참여!');
-    // 필요하다면 여기에 이벤트 참여 로직 추가
+    // 편지 애니메이션 표시
+    setShowEnvelope(true);
+    // 공지사항 유지 (삭제하지 않음)
+    // setShowNotice(false); // 이 줄을 주석 처리하여 공지가 계속 표시되도록 함
   };
   
   const handleSirenPress = () => {
@@ -227,6 +232,13 @@ const ChatRoom = () => {
     // setSidebarOpen(false);
   };
   
+  // 편지 애니메이션 완료 핸들러
+  const handleEnvelopeAnimationComplete = () => {
+    console.log('편지 애니메이션 완료!');
+    // 필요시 추가 로직 구현
+    // 예: 특별 이벤트 포인트 지급, 특별 기능 활성화 등
+  };
+  
   return (
     <View style={styles.container}>
         {/* ChatHeader 블러 효과 */}
@@ -255,6 +267,7 @@ const ChatRoom = () => {
                 text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
                 onHide={hideNotice}
                 onParticipate={handleParticipate}
+                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
               />
             )}
             
@@ -284,7 +297,7 @@ const ChatRoom = () => {
             visible={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             onSirenPress={handleSirenPress}
-            onProfilePress={handleSidebarProfilePress}
+            // onProfilePress={handleSidebarProfilePress}
         />
         {/* 하단 영역: 신고 중이면 취소/확인 버튼, 아니면 ChatInput */}
         {showMessageCheckReport ? (
@@ -331,6 +344,32 @@ const ChatRoom = () => {
           visible={showReportModal} 
           onClose={handleReportModalClose} 
         />
+
+        {/* 편지 애니메이션 */}
+        {showEnvelope && (
+          <View style={styles.envelopeOverlay}>
+            <EnvelopeAnimation 
+              autoPlay={true}
+              onAnimationComplete={handleEnvelopeAnimationComplete}
+              content={
+                <View style={styles.envelopeContent}>
+                  <Text style={styles.envelopeTitle}>큐피트의 짝대기 이벤트</Text>
+                  <Text style={styles.envelopeText}>
+                    축하합니다!{"\n\n"}
+                    이벤트에 성공적으로 참여하셨습니다.{"\n"}
+                    특별한 혜택이 준비되어 있으니 즐겁게 이용해주세요.
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.envelopeButton}
+                    onPress={() => setShowEnvelope(false)}
+                  >
+                    <Text style={styles.envelopeButtonText}>확인</Text>
+                  </TouchableOpacity>
+                </View>
+              }
+            />
+          </View>
+        )}
     </View>
   );
 };
@@ -420,5 +459,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 9999, // 매우 높은 z-index로 설정하여 맨 앞에 표시
     elevation: 5, // Android에서 z-index와 유사한 역할
+  },
+  envelopeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    elevation: 5,
+  },
+  envelopeContent: {
+    flex: 1,
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  envelopeTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#A45C73',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  envelopeText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  envelopeButton: {
+    backgroundColor: '#A45C73',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 20,
+    marginTop: 15,
+  },
+  envelopeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
