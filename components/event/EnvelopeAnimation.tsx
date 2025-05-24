@@ -94,16 +94,16 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
       
       // 메인 편지 등장
       Animated.parallel([
-        // 편지 위로 이동
+        // 편지 위로 이동 - 중앙에 오도록 조정
         Animated.timing(letterOffset, {
-          toValue: -SCREEN_HEIGHT * 0.1,
+          toValue: 0, // 중앙으로 오도록 0으로 조정
           duration: 1000,
           useNativeDriver: true,
           easing: Easing.out(Easing.back(1.5)),
         }),
         // 편지 확대
         Animated.timing(letterScale, {
-          toValue: 1.3,
+          toValue: 1.2, // 적절한 크기로 조정
           duration: 1000,
           useNativeDriver: true,
           easing: Easing.out(Easing.cubic),
@@ -156,7 +156,7 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
     // 보내기 버튼 클릭 시 페이드 아웃 애니메이션 후 콜백 호출
     Animated.timing(containerOpacity, {
       toValue: 0,
-      duration: 2000,
+      duration: 500,
       useNativeDriver: true,
     }).start(() => {
       // 여기서 onAnimationComplete 콜백을 호출하여 부모 컴포넌트에 완료를 알림

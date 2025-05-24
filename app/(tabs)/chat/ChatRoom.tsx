@@ -15,6 +15,7 @@ import LoveLetterSelect from "@/components/event/LoveLetterSelect";
 import { BlurView } from 'expo-blur';
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SvgProps } from "react-native-svg";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -32,7 +33,7 @@ const ChatRoom = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotice, setShowNotice] = useState(true);
   const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
-  const [selectedProfile, setSelectedProfile] = useState<{ nickname: string, SvgComponent: React.FC<React.SVGProps<SVGSVGElement>> } | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<{ nickname: string, SvgComponent: React.FC<SvgProps> } | null>(null);
   const [showReadingTag, setShowReadingTag] = useState(true);
   const [showMessageCheckReport, setShowMessageCheckReport] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -238,7 +239,7 @@ const ChatRoom = () => {
   };
   
   // SideBar에서 프로필 클릭 시 처리 함수
-  const handleSidebarProfilePress = (nickname: string, SvgComponent: React.FC<React.SVGProps<SVGSVGElement>>) => {
+  const handleSidebarProfilePress = (nickname: string, SvgComponent: React.FC<SvgProps>) => {
     setSelectedProfile({ nickname, SvgComponent });
     // 필요하다면 사이드바 닫기
     // setSidebarOpen(false);
