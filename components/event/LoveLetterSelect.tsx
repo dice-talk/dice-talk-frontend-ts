@@ -29,11 +29,25 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(2);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  // 선택 토글 처리 함수
+  const handleToggleSelection = (index: number) => {
+    // 이미 선택된 항목을 다시 클릭하면 선택 취소
+    if (selectedIndex === index) {
+      setSelectedIndex(null);
+    } else {
+      // 다른 항목을 선택하면 해당 항목으로 선택 변경
+      setSelectedIndex(index);
+    }
+  };
 
   const handleConfirm = () => {
     if (selectedIndex !== null) {
       onConfirm(selectedIndex);
+    } else {
+      // 아무것도 선택하지 않았다면 모달창만 닫기
+      onClose();
     }
   };
 
@@ -55,7 +69,7 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
               label={option.label}
               svgComponent={option.svgComponent}
               selected={selectedIndex === index}
-              onPress={() => setSelectedIndex(index)}
+              onPress={() => handleToggleSelection(index)}
             />
           ))}
         </View>
