@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
   outerContainer: {
     backgroundColor: '#FFFFFF', // 내부 컨테이너와 동일한 배경색 또는 투명
     width: width, 
+    marginBottom: 10,
   },
   gradientBorderTop: {
     height: 1, // 테두리 두께
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1, // 가능한 많은 공간 차지
     justifyContent: 'center',
-    // marginLeft: 16, // profileImage의 marginRight으로 간격 조절됨
+    marginLeft: 16, // profileImage의 marginRight으로 간격 조절됨
   },
   nameText: {
     fontSize: 15,
