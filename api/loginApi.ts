@@ -1,7 +1,7 @@
 import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore";
 import { axiosWithoutToken } from "./axios/axios";
 
-const loginMember = async (email: string, password: string) => {
+export const loginMember = async (email: string, password: string) => {
     try{
         const response = await axiosWithoutToken.post("/auth/login", { email, password });
 

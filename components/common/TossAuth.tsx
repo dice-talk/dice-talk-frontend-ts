@@ -16,11 +16,11 @@ type TossUserInfo = {
 
 type TossAuthProps = {
   onAuthSuccess?: (userInfo: TossUserInfo) => void;
-  targetScreen?: "/(onBoard)/SignUp" // ✅ 인증 성공 후 이동할 페이지 (기본: 회원가입)
+  targetScreen?: "/(onBoard)/register/SignupInput" // ✅ 인증 성공 후 이동할 페이지 (기본: 회원가입)
   onAuthFailure?: () => void;
 };
 
-export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/SignUp", onAuthFailure }: TossAuthProps) {
+export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/register/SignupInput", onAuthFailure }: TossAuthProps) {
   const router = useRouter();
   const [txId, setTxId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -110,9 +110,12 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/Sig
       if (appState.current.match(/inactive|background/) && nextState === "active") {
         console.log("📱 앱 복귀 감지됨");
         const url = await Linking.getInitialURL();
+        console.log("🔗 Retrieved Initial URL:", url); 
         if (url) {
           console.log("🔗 복귀 URL:", url);
           setPendingUrl(url);
+        } else {
+          console.log("🔗 복귀 URL을 가져오지 못했습니다.");
         }
       }
       appState.current = nextState;
