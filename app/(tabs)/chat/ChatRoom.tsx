@@ -11,6 +11,7 @@ import MessageCheckReport from "@/components/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
 import EnvelopeAnimation from "@/components/event/EnvelopeAnimation";
+import LoveArrow from "@/components/event/LoveArrow";
 import LoveLetterSelect from "@/components/event/LoveLetterSelect";
 import { BlurView } from 'expo-blur';
 import { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ const ChatRoom = () => {
   const [hasCheckedMessage, setHasCheckedMessage] = useState(false);
   const [showEnvelope, setShowEnvelope] = useState(false);
   const [showLoveLetterSelect, setShowLoveLetterSelect] = useState(false);
+  const [showLoveArrow, setShowLoveArrow] = useState(false);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -103,11 +105,16 @@ const ChatRoom = () => {
     setShowNotice(false);
   };
   
-  const handleParticipate = () => {
-    // 참여하기 버튼 클릭 시 LoveLetterSelect 모달 표시
-    console.log('이벤트 참여!');
+  // 시크릿 메시지 이벤트 참여하기 버튼 클릭 핸들러
+  const handleSecretMessageParticipate = () => {
+    console.log('시크릿 메시지 이벤트 참여!');
     setShowLoveLetterSelect(true);
-    // 공지사항은 계속 유지
+  };
+  
+  // 사랑의 짝대기 이벤트 참여하기 버튼 클릭 핸들러
+  const handleLoveArrowParticipate = () => {
+    console.log('사랑의 짝대기 이벤트 참여!');
+    setShowLoveArrow(true);
   };
   
   const handleLoveLetterSelectClose = () => {
@@ -120,6 +127,11 @@ const ChatRoom = () => {
     setShowLoveLetterSelect(false);
     // 편지 애니메이션 표시
     setShowEnvelope(true);
+  };
+  
+  // 사랑의 짝대기 모달 닫기 핸들러
+  const handleLoveArrowClose = () => {
+    setShowLoveArrow(false);
   };
   
   const handleSirenPress = () => {
@@ -276,13 +288,20 @@ const ChatRoom = () => {
             )}
             {showNotice && !showMessageCheckReport && (
               <GptNotice 
-                text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
+                text="[시스템] 시크릿 메시지 이벤트가 시작되었습니다."
                 onHide={hideNotice}
-                onParticipate={handleParticipate}
+                onParticipate={handleSecretMessageParticipate}
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
               />
             )}
-            
+            {showNotice && !showMessageCheckReport && (
+              <GptNotice 
+                text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
+                onHide={hideNotice}
+                onParticipate={handleLoveArrowParticipate}
+                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+              />
+            )}
         </View>
         <ScrollView 
             style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
@@ -363,6 +382,14 @@ const ChatRoom = () => {
           onClose={handleLoveLetterSelectClose}
           onConfirm={handleLoveLetterSelectConfirm}
         />
+        
+        {/* 사랑의 짝대기 모달 */}
+        <LoveArrow
+          visible={showLoveArrow}
+          onClose={handleLoveArrowClose}
+          gender="MALE"
+          remainingCount={1}
+        />
 
         {/* 편지 애니메이션 */}
         {showEnvelope && (
@@ -373,11 +400,6 @@ const ChatRoom = () => {
               content={
                 <View style={styles.envelopeContent}>
                   <Text style={styles.envelopeTitle}>큐피트의 짝대기 이벤트</Text>
-                  <Text style={styles.envelopeText}>
-                    축하합니다!{"\n\n"}
-                    이벤트에 성공적으로 참여하셨습니다.{"\n"}
-                    특별한 혜택이 준비되어 있으니 즐겁게 이용해주세요.
-                  </Text>
                   <TouchableOpacity 
                     style={styles.envelopeButton}
                     onPress={() => setShowEnvelope(false)}
