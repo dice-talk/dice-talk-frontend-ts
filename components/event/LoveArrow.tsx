@@ -11,6 +11,7 @@ import SezziWhiteSvg from "@/assets/images/chat/sezzi_white.svg";
 import YukdaengSvg from "@/assets/images/chat/yukdaeng.svg";
 import YukdaengWhiteSvg from "@/assets/images/chat/yukdaeng_white.svg";
 import CountPlusSvg from "@/assets/images/event/countPlus.svg";
+import ToastMessage from "@/components/common/ToastMessage";
 import React, { useState } from "react";
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
@@ -32,6 +33,7 @@ interface CharacterInfo {
 
 const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE", remainingCount }) => {
   const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null);
+  const [showToast, setShowToast] = useState(false);
 
   const handleIncrement = () => {
     // TODO: 필요 시 기능 구현
@@ -54,7 +56,11 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
   };
 
   const handleConfirm = () => {
-    onClose();
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+      onClose();
+    }, 1500);
   };
 
   return (
@@ -71,7 +77,6 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
           style={styles.heartboardImage}
         />
         <Text style={styles.title}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
-        
         <View style={styles.charactersWrapper}>
           <View style={styles.charactersContainer}>
             {characters.map((character, index) => {
@@ -79,7 +84,6 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
               const SvgComponentToRender = isSelected
                 ? character.ColoredSvgComponent
                 : character.WhiteSvgComponent;
-              
               return (
                 <TouchableOpacity
                   key={index}
@@ -114,7 +118,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
         >
           <Text style={styles.confirmButtonText}>확인</Text>
         </TouchableOpacity>
-        
+        <ToastMessage message="선택이 완료되었습니다" visible={showToast} />
       </View>
     </Modal>
   );
@@ -205,5 +209,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     // marginTop: 8,
     gap: 8,
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: SCREEN_HEIGHT * 0.2,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  toastText: {
+    color: 'white',
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

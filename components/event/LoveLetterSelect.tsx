@@ -59,23 +59,23 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.container}>
-          <Text style={styles.title}>당신의 비밀 메세지를 받을{'\n'}사람을 선택해주세요</Text>
-          <View style={styles.divider} />
+    <View style={styles.container}>
+      <Text style={styles.title}>당신의 비밀 메세지를 받을{'\n'}사람을 선택해주세요</Text>
+      <View style={styles.divider} />
 
-          {OPTIONS.map((option, index) => (
-            <SelectableOption
-              key={index}
-              label={option.label}
+      {OPTIONS.map((option, index) => (
+        <SelectableOption
+          key={index}
+          label={option.label}
               svgComponent={option.svgComponent}
-              selected={selectedIndex === index}
+          selected={selectedIndex === index}
               onPress={() => handleToggleSelection(index)}
-            />
-          ))}
+        />
+      ))}
         </View>
-        <View style={styles.confirmButtonWrapper}>
+      <View style={styles.confirmButtonWrapper}>
           <Pressable style={styles.confirmButton} onPress={handleConfirm}>
-            <Text style={styles.confirmButtonText}>확인</Text>
+          <Text style={styles.confirmButtonText}>확인</Text>
           </Pressable>
         </View>
       </View>

@@ -63,7 +63,7 @@ const MessageCheckReport: React.FC<MessageCheckReportProps> = ({ onConfirm, onCa
     const hasCheckedMessage = messages.some(message => message.isChecked);
     if (onCheckedChange) {
       onCheckedChange(hasCheckedMessage);
-    }
+}
   }, [messages, onCheckedChange]);
 
   // 메시지 체크 상태 토글 함수

@@ -13,9 +13,10 @@ import ReportModal from "@/components/chat/ReportModal";
 import EnvelopeAnimation from "@/components/event/EnvelopeAnimation";
 import LoveArrow from "@/components/event/LoveArrow";
 import LoveLetterSelect from "@/components/event/LoveLetterSelect";
+import ResultLoveArrow from "@/components/event/ResultLoveArrow";
 import { BlurView } from 'expo-blur';
 import { useEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -42,6 +43,7 @@ const ChatRoom = () => {
   const [showEnvelope, setShowEnvelope] = useState(false);
   const [showLoveLetterSelect, setShowLoveLetterSelect] = useState(false);
   const [showLoveArrow, setShowLoveArrow] = useState(false);
+  const [showResultLoveArrow, setShowResultLoveArrow] = useState(false);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -117,6 +119,12 @@ const ChatRoom = () => {
     setShowLoveArrow(true);
   };
   
+  // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러
+  const handleLoveArrowResultCheck = () => {
+    console.log('사랑의 짝대기 결과 확인!');
+    setShowResultLoveArrow(true);
+  };
+  
   const handleLoveLetterSelectClose = () => {
     setShowLoveLetterSelect(false);
   };
@@ -132,6 +140,11 @@ const ChatRoom = () => {
   // 사랑의 짝대기 모달 닫기 핸들러
   const handleLoveArrowClose = () => {
     setShowLoveArrow(false);
+  };
+  
+  // 사랑의 짝대기 결과 모달 닫기 핸들러
+  const handleResultLoveArrowClose = () => {
+    setShowResultLoveArrow(false);
   };
   
   const handleSirenPress = () => {
@@ -302,6 +315,14 @@ const ChatRoom = () => {
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
               />
             )}
+            {showNotice && !showMessageCheckReport && (
+              <GptNotice 
+                text="[시스템] 사랑의 짝대기 결과를 확인해주세요!!"
+                onHide={hideNotice}
+                onParticipate={handleLoveArrowResultCheck}
+                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+              />
+            )}
         </View>
         <ScrollView 
             style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
@@ -390,7 +411,25 @@ const ChatRoom = () => {
           gender="MALE"
           remainingCount={1}
         />
-
+        
+        {/* 사랑의 짝대기 결과 모달 */}
+        <Modal
+          visible={showResultLoveArrow}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={handleResultLoveArrowClose}
+        >
+          <View style={styles.modalContainer}>
+            <ResultLoveArrow 
+              selections={[
+                { from: 1, to: 2 }, // 왼쪽 Hana → 오른쪽 Nemo (파란색)
+                { from: 2, to: 5 }, // 오른쪽 Dao → 왼쪽 Sezzi (빨간색)
+                { from: 3, to: 6 }  // 왼쪽 Dori → 오른쪽 Yukdaeng (파란색)
+              ]}
+            />
+          </View>
+        </Modal>
+        
         {/* 편지 애니메이션 */}
         {showEnvelope && (
           <View style={styles.envelopeOverlay}>
@@ -544,5 +583,22 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '500',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  closeButton: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#A45C73',
+    borderRadius: 20,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
