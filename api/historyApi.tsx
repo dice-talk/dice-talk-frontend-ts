@@ -1,14 +1,23 @@
+
 // SVG 에셋 임포트 (SideBar.tsx와 유사하게, 실제 경로에 맞게 조정 필요)
 // 기본 이미지도 그대로 사용 가능
 export const defaultProfilePng = require('@/assets/images/profile/profile_default.png');
 
 // SVG 프로필 이미지 임포트 (경로를 실제 프로젝트에 맞게 확인/수정 필요)
-import DaoSvg from '@/assets/images/chat/dao.svg'; // dao.svg가
-import DoriSvg from '@/assets/images/chat/dori.svg'; // dori.svg 추가
-import HanaSvg from '@/assets/images/chat/hana.svg';
-import NemoSvg from '@/assets/images/chat/nemo.svg';
-import SezziSvg from '@/assets/images/chat/sezzi.svg'; // sezzi.svg 추가
-import YukdaengSvg from '@/assets/images/chat/yukdaeng.svg'; // yukdaeng.svg 추가
+import LoveDaoSvg from '@/assets/images/history/loveChat/loveDao.svg'; // dao.svg가
+import LoveDoriSvg from '@/assets/images/history/loveChat/loveDori.svg'; // dori.svg 추가
+import LoveHanaSvg from '@/assets/images/history/loveChat/loveHana.svg';
+import LoveNemoSvg from '@/assets/images/history/loveChat/loveNemo.svg';
+import LoveSezziSvg from '@/assets/images/history/loveChat/loveSezzi.svg'; // sezzi.svg 추가
+import LoveYukdaengSvg from '@/assets/images/history/loveChat/loveYukdaeng.svg'; // yukdaeng.svg 추가
+
+// SVG 프로필 이미지 임포트 (경로를 실제 프로젝트에 맞게 확인/수정 필요)
+import FriendDaoSvg from '@/assets/images/history/friendChat/friendDao.svg'; // dao.svg가
+import FriendDoriSvg from '@/assets/images/history/friendChat/friendDori.svg'; // dori.svg 추가
+import FriendHanaSvg from '@/assets/images/history/friendChat/friendHana.svg';
+import FriendNemoSvg from '@/assets/images/history/friendChat/friendNemo.svg';
+import FriendSezziSvg from '@/assets/images/history/friendChat/friendSezzi.svg'; // sezzi.svg 추가
+import FriendYukdaengSvg from '@/assets/images/history/friendChat/friendYukdaeng.svg'; // yukdaeng.svg 추가
 
 // 토큰은 실제 환경에서는 Zustand, Context API, AsyncStorage 등에서 관리됩니다.
 const DUMMY_TOKEN = 'YOUR_DUMMY_ACCESS_TOKEN';
@@ -68,14 +77,33 @@ export interface HeartHistoryListResponse {
 // import { SvgProps } from 'react-native-svg';
 // interface UserProfileData { name: string; color?: string; profileSvg: React.FC<SvgProps> | any; }
 
-const userProfileMap: Record<string, { name: string; profileSvg: any }> = {
-  '1': { name: '한가로운 하나', profileSvg: HanaSvg },
-  '2': { name: '두 얼굴의 매력 두리', profileSvg: DoriSvg },
-  '3': { name: '세침한 세찌', profileSvg: SezziSvg },
-  '4': { name: '네모지만 부드러운 네몽', profileSvg: NemoSvg },
-  '5': { name: '단호하데 다정한 다오', profileSvg: DaoSvg },
-  '6': { name: '육감적인 직감파 육땡', profileSvg: YukdaengSvg },
-  // 필요에 따라 더 많은 사용자 추가
+// 사용자 기본 정보 (이름만)
+const userBaseInfo: Record<string, { name: string }> = {
+  '1': { name: '한가로운 하나' },
+  '2': { name: '두 얼굴의 매력 두리' },
+  '3': { name: '세침한 세찌' },
+  '4': { name: '네모지만 부드러운 네몽' },
+  '5': { name: '단호하데 다정한 다오' },
+  '6': { name: '육감적인 직감파 육땡' },
+};
+
+// roomType별 SVG 프로필 맵
+const loveChatProfileSvgMap: Record<string, any> = {
+  '1': LoveHanaSvg,
+  '2': LoveDoriSvg,
+  '3': LoveSezziSvg,
+  '4': LoveNemoSvg,
+  '5': LoveDaoSvg,
+  '6': LoveYukdaengSvg,
+};
+
+const friendChatProfileSvgMap: Record<string, any> = {
+  '1': FriendHanaSvg,
+  '2': FriendDoriSvg,
+  '3': FriendSezziSvg,
+  '4': FriendNemoSvg,
+  '5': FriendDaoSvg,
+  '6': FriendYukdaengSvg,
 };
 
 /**
@@ -116,18 +144,18 @@ export const getChatHistory = async (
   // 이 부분은 실제 API 연동 시 제거하거나, 목업 서버(msw 등)로 대체합니다.
   return new Promise((resolve) => {
     setTimeout(() => {
-      // opponentProfiles 배열 대신 userProfileMap 사용을 위해 ID 목록 생성
-      const opponentIds = ['1', '2', '3', '4', '5', '6']; // 예시 ID 목록
+      const opponentIds = ['1', '2', '3', '4', '5', '6'];
       const sampleChats = [
-        '여러븐 다들 즐거웠고 다음에 기회 되면 ...', 
-        '너무 즐거웠어요!! 오늘도 행복한 하루되세요^^', 
-        '감기 조심하세요 모두', 
-        'I wanna be your friend!',
-        '같이 술먹고싶어요'
+        '안녕하세요!', 
+        '오늘 날씨 좋네요.', 
+        '다음에 또 만나요!', 
+        '프로젝트 잘 되고 있나요?',
+        '점심 메뉴 추천해주세요.'
       ];
+      const roomTypes: Array<'COUPLE' | 'GROUP'> = ['COUPLE', 'GROUP'];
 
       const itemsPerPage = size;
-      const totalItems = 23; 
+      const totalItems = 23;
       const totalPages = Math.ceil(totalItems / itemsPerPage);
       const startIndex = (page - 1) * itemsPerPage;
       const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
@@ -135,21 +163,30 @@ export const getChatHistory = async (
       const data: ChatRoomItem[] = Array.from({ length: endIndex - startIndex }, (_, i) => {
         const itemIndex = startIndex + i;
         const opponentId = opponentIds[itemIndex % opponentIds.length];
-        const opponentProfile = userProfileMap[opponentId] || { name: '알 수 없는 상대', profileSvg: defaultProfilePng };
+        const roomType = roomTypes[itemIndex % roomTypes.length];
+        
+        const baseInfo = userBaseInfo[opponentId] || { name: '알 수 없는 상대' };
+        let profileSvg;
+        if (roomType === 'COUPLE') {
+          profileSvg = loveChatProfileSvgMap[opponentId] || defaultProfilePng;
+        } else { // GROUP
+          profileSvg = friendChatProfileSvgMap[opponentId] || defaultProfilePng;
+        }
+        
         const date = new Date();
         date.setDate(date.getDate() - itemIndex * 2);
         return {
           chatRoomId: itemIndex + 100,
-          roomType: 'COUPLE',
-          roomStatus: 'ROOM_ACTIVE',
+          roomType: roomType,
+          roomStatus: itemIndex % 3 === 0 ? 'ROOM_DEACTIVE' : 'ROOM_ACTIVE', // 예시로 상태 변경
           lastChat: sampleChats[itemIndex % sampleChats.length],
           createdAt: date.toISOString(),
           modifiedAt: date.toISOString(),
-          opponentName: opponentProfile.name,
-          opponentProfileSvg: opponentProfile.profileSvg,
+          opponentName: baseInfo.name,
+          opponentProfileSvg: profileSvg,
         };
       });
-
+      
       resolve({
         data,
         pageInfo: {
@@ -208,23 +245,25 @@ export const getHeartHistory = async (
       const data: HeartHistoryItem[] = Array.from({ length: 15 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - i * 3);
-        // senderId를 문자열로 가정하고 userProfileMap 사용 (API 명세의 senderId는 number이므로 주의)
-        // 실제 API에서는 senderId (number)를 어떻게 문자열 ID로 매핑할지 또는
-        // userProfileMap의 키를 숫자로 할지 결정 필요. 여기서는 (i % 6) + 1 로 생성된 숫자를 문자열로 변환.
-        const senderIdKey = ((i % 6) + 1).toString(); 
-        const senderProfile = userProfileMap[senderIdKey] || { name: '알 수 없는 사용자', profileSvg: defaultProfilePng };
+        const senderIdKey = ((i % 6) + 1).toString();
+        // 하트 히스토리에서는 roomType 정보가 없으므로, 어떤 SVG 세트를 쓸지 결정해야 합니다.
+        // 여기서는 임의로 loveChat SVG 세트를 사용하거나, 별도 로직/정보가 필요합니다.
+        // 혹은, sender의 기본 프로필 타입이 정해져 있다고 가정할 수 있습니다.
+        // 편의상 loveChatProfileSvgMap을 사용하겠습니다.
+        const senderBaseInfo = userBaseInfo[senderIdKey] || { name: '알 수 없는 사용자' };
+        const senderProfilePicture = loveChatProfileSvgMap[senderIdKey] || defaultProfilePng; 
         const receiverId = ((i + 2) % 6) + 1;
         return {
           roomEventId: i + 200,
           receiverId: receiverId,
-          senderId: parseInt(senderIdKey), // API 명세에 따라 숫자로 다시 변환
+          senderId: parseInt(senderIdKey),
           chatRoomId: i + 300,
           message: sampleMessages[i % sampleMessages.length],
           roomEventType: 'PICK_MESSAGE',
           createdAt: date.toISOString(),
           modifiedAt: date.toISOString(),
-          senderName: senderProfile.name,
-          senderProfileSvg: senderProfile.profileSvg,
+          senderName: senderBaseInfo.name,
+          senderProfileSvg: senderProfilePicture,
         };
       });
       resolve({ data }); // API 명세상 pageInfo가 없으므로 data만 반환

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Dimensions, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SvgProps } from 'react-native-svg'; // SvgProps 임포트
+import { SvgProps } from 'react-native-svg';
 
 // HistoryItemProps 타입 정의
 export interface HistoryItemProps {
@@ -60,42 +61,68 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
   };
 
   return (
-    <TouchableOpacity 
-      style={styles.container}
-      onPress={handlePress} 
-      disabled={!isClickable} // 클릭 불가능할 경우 비활성화
-      activeOpacity={isClickable ? 0.7 : 1} // 클릭 가능할 때만 activeOpacity 적용
-    >
-      {renderProfileImage()} {/* 프로필 이미지 렌더링 함수 호출 */}
+    <View style={styles.outerContainer}>
+      <LinearGradient
+        colors={['#B28EF8', '#F476E5']}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.gradientBorderTop}
+      />
+      <TouchableOpacity 
+        style={styles.container}
+        onPress={handlePress} 
+        disabled={!isClickable} // 클릭 불가능할 경우 비활성화
+        activeOpacity={isClickable ? 0.7 : 1} // 클릭 가능할 때만 activeOpacity 적용
+      >
+        {renderProfileImage()} {/* 프로필 이미지 렌더링 함수 호출 */}
 
-      {/* 텍스트 컨텐츠 영역 */}
-      <View style={styles.contentContainer}>
-        <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">{name}</Text>
-        <Text style={styles.contentText} numberOfLines={1} ellipsizeMode="tail">{content || (type === 'heart' ? '하트 메시지가 없습니다.' : '채팅 내용이 없습니다.')}</Text>
-      </View>
+        {/* 텍스트 컨텐츠 영역 */}
+        <View style={styles.contentContainer}>
+          <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">{name}</Text>
+          <Text style={styles.contentText} numberOfLines={1} ellipsizeMode="tail">{content || (type === 'heart' ? '하트 메시지가 없습니다.' : '채팅 내용이 없습니다.')}</Text>
+        </View>
 
-      {/* 날짜 및 아이콘 영역 */}
-      <View style={styles.metaContainer}>
-        <Text style={styles.dateText}>{formatDate(createdAt)}</Text>
-        {/* 채팅 타입일 경우에만 오른쪽 화살표 아이콘 표시 */}
-        {type === 'chat' && (
-          <Ionicons name="chevron-forward" size={20} color="#C5C5C5" style={styles.arrowIcon} />
-        )}
-      </View>
-    </TouchableOpacity>
+        {/* 날짜 및 아이콘 영역 */}
+        <View style={styles.metaContainer}>
+          <Text style={styles.dateText}>{formatDate(createdAt)}</Text>
+          {/* 채팅 타입일 경우에만 오른쪽 화살표 아이콘 표시 */}
+          {type === 'chat' && (
+            <Ionicons name="chevron-forward" size={20} color="#C5C5C5" style={styles.arrowIcon} />
+          )}
+        </View>
+      </TouchableOpacity>
+      <LinearGradient
+        colors={['#B28EF8', '#F476E5']}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.gradientBorderBottom}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    backgroundColor: '#FFFFFF', // 내부 컨테이너와 동일한 배경색 또는 투명
+    width: width, 
+  },
+  gradientBorderTop: {
+    height: 1, // 테두리 두께
+    width: '100%',
+  },
+  gradientBorderBottom: {
+    height: 1, // 테두리 두께
+    width: '100%',
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    width: width, // 화면 전체 너비 사용
+    // backgroundColor: '#FFFFFF', // outerContainer로 이동 또는 여기서 유지
+    // borderBottomWidth: 1, // LinearGradient로 대체
+    // borderBottomColor: '#F0F0F0', // LinearGradient로 대체
+    // width: width, // outerContainer에서 관리
   },
   profileImage: {
     width: 50, // 프로필 이미지 크기
@@ -113,6 +140,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1, // 가능한 많은 공간 차지
     justifyContent: 'center',
+    // marginLeft: 16, // profileImage의 marginRight으로 간격 조절됨
   },
   nameText: {
     fontSize: 15,
