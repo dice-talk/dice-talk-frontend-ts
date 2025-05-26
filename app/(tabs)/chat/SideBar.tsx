@@ -26,6 +26,7 @@ interface UserData {
 const { width } = Dimensions.get("window");
 
 const SideBar = ({ visible, onClose, onSirenPress, onProfilePress, themeId = 1 }: SideBarProps) => {
+  console.log('SideBar themeId:', themeId);
   const translateX = useRef(new Animated.Value(width)).current;
   const sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const bottomLineColor = themeId === 2 ? "#6DA0E1" : "#F3D4EE";

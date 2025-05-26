@@ -348,7 +348,7 @@ const ChatRoom = () => {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
         >
-          {showReadingTag && <ReadingTag />}
+          {showReadingTag && <ReadingTag themeId={themeId} />}
           
           {showMessageCheckReport ? (
             <>
