@@ -16,6 +16,7 @@ import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/heartSignal/ResultLoveArrow";
 import { BlurView } from 'expo-blur';
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
@@ -33,6 +34,8 @@ interface ChatMessage {
 }
 
 const ChatRoom = () => {
+  const params = useLocalSearchParams();
+  const themeId = parseInt(params.themeId as string) || 1;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotice, setShowNotice] = useState(true);
   const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
@@ -213,6 +216,7 @@ const ChatRoom = () => {
               isConsecutive={isConsecutive}
               showTime={showTime}
               onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
+              themeId={themeId}
           />
         );
       } else {
@@ -226,6 +230,7 @@ const ChatRoom = () => {
               isConsecutive={isConsecutive}
               showTime={showTime}
               onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
+              themeId={themeId}
           />
         );
       }
@@ -261,6 +266,7 @@ const ChatRoom = () => {
               isConsecutive={isConsecutive}
               showTime={showTime}
               onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
+              themeId={themeId}
           />
         );
       });
@@ -314,6 +320,7 @@ const ChatRoom = () => {
                 onHide={hideNotice}
                 onParticipate={handleSecretMessageParticipate}
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+                themeId={themeId}
               />
             )}
             {showNotice && !showMessageCheckReport && (
@@ -322,6 +329,7 @@ const ChatRoom = () => {
                 onHide={hideNotice}
                 onParticipate={handleLoveArrowParticipate}
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+                themeId={themeId}
               />
             )}
             {showNotice && !showMessageCheckReport && (
@@ -330,6 +338,7 @@ const ChatRoom = () => {
                 onHide={hideNotice}
                 onParticipate={handleLoveArrowResultCheck}
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+                themeId={themeId}
               />
             )}
         </View>

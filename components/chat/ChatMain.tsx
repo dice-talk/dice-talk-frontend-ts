@@ -1,9 +1,18 @@
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from "react-native";
+import { TouchableOpacity } from "react-native";
 import CountdownTimer from "../common/CountdownTimer";
 
 const ChatMain = () => {
+  const handleEnterChat = (themeId: number) => {
+    router.push({
+      pathname: "/chat/ChatRoom",
+      params: { themeId: themeId.toString() },
+    });
+  };
+
   const [fontsLoaded] = useFonts({
     digital: require('@/assets/fonts/digital-7.ttf'),
   });
@@ -27,6 +36,12 @@ const ChatMain = () => {
       <View style={styles.timerWrapper}>
         <CountdownTimer initialSeconds={48 * 60 * 60} fontFamily="digital" />
       </View>
+      <TouchableOpacity onPress={() => handleEnterChat(1)} style={styles.button}>
+        <Text style={styles.buttonText}>입장 (테마 1)</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleEnterChat(2)} style={styles.button}>
+        <Text style={styles.buttonText}>입장 (테마 2)</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -68,6 +83,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
+  },
+  button: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#B28EF8",
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });
 
