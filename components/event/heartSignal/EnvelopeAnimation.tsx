@@ -1,17 +1,17 @@
+import LetterForm from '@/assets/images/event/LetterForm.svg';
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import LetterForm from '../../assets/images/event/LetterForm.svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // 이미지 경로
 const LETTER_IMAGES = [
-  require('../../assets/images/event/love_letter_01.png'),
-  require('../../assets/images/event/love_letter_02.png'),
-  require('../../assets/images/event/love_letter_03.png'),
-  require('../../assets/images/event/love_letter_04.png'),
-  require('../../assets/images/event/love_letter_05.png'),
-  require('../../assets/images/event/love_letter_06.png'),
+  require('@/assets/images/event/love_letter_01.png'),
+  require('@/assets/images/event/love_letter_02.png'),
+  require('@/assets/images/event/love_letter_03.png'),
+  require('@/assets/images/event/love_letter_04.png'),
+  require('@/assets/images/event/love_letter_05.png'),
+  require('@/assets/images/event/love_letter_06.png'),
 ];
 
 interface EnvelopeAnimationProps {
@@ -214,7 +214,7 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
           >
             <View style={styles.mainLetterImageWrapper}>
               <Image
-                source={require('../../assets/images/event/love_event_write.png')}
+                source={require('@/assets/images/event/love_event_write.png')}
                 style={styles.mainLetterImage}
                 resizeMode="contain"
               />

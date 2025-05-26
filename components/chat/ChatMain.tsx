@@ -5,7 +5,7 @@ import CountdownTimer from "../common/CountdownTimer";
 
 const ChatMain = () => {
   const [fontsLoaded] = useFonts({
-    digital: require('../../assets/fonts/digital-7.ttf'), // 상대 경로로 수정
+    digital: require('@/assets/fonts/digital-7.ttf'),
   });
 
   if (!fontsLoaded) {
