@@ -21,9 +21,10 @@ const reportReasons = [
 interface ReportModalProps {
   visible: boolean;
   onClose: () => void;
+  themeId?: number;
 }
 
-const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose }) => {
+const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, themeId = 1 }) => {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
 
   const toggleReason = (reason: string) => {
@@ -39,14 +40,19 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose }) => {
 
   // 확인 버튼 활성화 여부
   const isConfirmEnabled = selectedReasons.length > 0;
+  
+  // 테마에 따른 색상 설정
+  const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#EF5A52";
+  const titleColor = themeId === 2 ? "#5C5279" : "#000000";
+  const subtitleColor = themeId === 2 ? "#5C5279" : "#000000";
 
   return (
     <Modal visible={visible} transparent animationType="fade">
       <BlurView intensity={90} tint="light" style={StyleSheet.absoluteFill} />
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          <Text style={styles.title}>신고하기</Text>
-          <Text style={styles.subtitle}>신고 사유를 선택해주세요</Text>
+          <Text style={[styles.title, { color: titleColor }]}>신고하기</Text>
+          <Text style={[styles.subtitle, { color: subtitleColor }]}>신고 사유를 선택해주세요</Text>
           <View style={styles.noticeBox}>
             <Text style={styles.noticeText}>
               신고 접수 시 신고자의 정보(휴대전화번호, 이메일)는 신고이력 관리,

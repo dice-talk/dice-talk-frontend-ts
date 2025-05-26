@@ -8,6 +8,9 @@ interface CustomCostModalProps {
   onConfirm: () => void;
   content?: string;
   diceCount?: number;
+  textColor?: string;
+  diceButtonColor?: string;
+  cancelButtonColor?: string;
 }
 
 const CustomCostModal: React.FC<CustomCostModalProps> = ({
@@ -15,7 +18,10 @@ const CustomCostModal: React.FC<CustomCostModalProps> = ({
   onClose,
   onConfirm,
   content = "하루에 2번 이상\n채팅방을 나가셨습니다.",
-  diceCount = 7
+  diceCount = 7,
+  textColor = "#8A5A7A",
+  diceButtonColor = "#D9B2D3",
+  cancelButtonColor = "#A8A3C8"
 }) => {
   // 모달 닫기 요청 처리
   const handleRequestClose = () => {
@@ -33,12 +39,12 @@ const CustomCostModal: React.FC<CustomCostModalProps> = ({
         <View style={styles.modalContainer}>
           <View style={styles.contentContainer}>
             <View style={styles.messageContainer}>
-              <Text style={styles.messageText}>{content}</Text>
-              <Text style={styles.subMessageText}>아이템을 사용하시겠습니까?</Text>
+              <Text style={[styles.messageText, { color: textColor }]}>{content}</Text>
+              <Text style={[styles.subMessageText, { color: textColor }]}>아이템을 사용하시겠습니까?</Text>
             </View>
             <View style={styles.spacer} />
             <Pressable
-              style={styles.diceButton}
+              style={[styles.diceButton, { backgroundColor: diceButtonColor }]}
               onPress={onConfirm}
             >
               <View style={styles.diceButtonContent}>
@@ -47,7 +53,7 @@ const CustomCostModal: React.FC<CustomCostModalProps> = ({
               </View>
             </Pressable>
             <Pressable
-              style={styles.cancelButton}
+              style={[styles.cancelButton, { backgroundColor: cancelButtonColor }]}
               onPress={onClose}
             >
               <Text style={styles.cancelButtonText}>취소</Text>

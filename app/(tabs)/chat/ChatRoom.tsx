@@ -416,7 +416,8 @@ const ChatRoom = () => {
         {/* 신고 모달 */}
         <ReportModal 
           visible={showReportModal} 
-          onClose={handleReportModalClose} 
+          onClose={handleReportModalClose}
+          themeId={themeId}
         />
         
         {/* 러브레터 선택 모달 */}
