@@ -1,6 +1,6 @@
 import DaoSvg from "@/assets/images/chat/dao.svg";
 import React from "react";
-import { Dimensions, Image, StyleSheet, View } from "react-native";
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
 import DoriSvg from "@/assets/images/chat/dori.svg";
@@ -29,6 +29,8 @@ interface ResultLoveArrowProps {
   leftUsers?: any[];
   rightUsers?: any[];
   selections?: { from: number; to: number }[];
+  onClose?: () => void;
+  onMatchPress?: () => void;  // 매칭 결과 버튼 클릭 핸들러
 }
 
 interface Position {
@@ -37,12 +39,13 @@ interface Position {
 }
 
 const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
-
   selections = [
-    { from: 1, to: 2 }, // 왼쪽 Hana → 오른쪽 Nemo (파란색)
-    { from: 1, to: 4 }, // 오른쪽 Dao → 왼쪽 Sezzi (빨간색)
-    { from: 1, to: 6 }  // 왼쪽 Dori → 오른쪽 Yukdaeng (파란색)
-  ]
+    { from: 1, to: 2 },
+    { from: 1, to: 4 },
+    { from: 1, to: 6 }
+  ],
+  onClose,
+  onMatchPress
 }) => {
   return (
     <View style={styles.container}>
@@ -52,13 +55,11 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
         resizeMode="contain"
       />
       
-      {/* 모든 화살표 애니메이션을 동시에 표시 */}
       {selections.map((selection, index) => (
         <DiceArrowAnimation
           key={`arrow-${index}`}
           fromId={selection.from}
           toId={selection.to}
-          // 색상은 화살표 방향에 따라 자동 결정됨
         />
       ))}
       
@@ -72,6 +73,14 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
         <View style={styles.diceContainer}><SezziSvg width={25} height={25} /></View>
         <View style={styles.diceContainer}><DaoSvg width={25} height={25} /></View>
       </DiceIconContainer>
+
+      {/* 매칭 결과 버튼 */}
+      <TouchableOpacity 
+        style={styles.matchButton}
+        onPress={onMatchPress}
+      >
+        <Text style={styles.matchButtonText}>매칭 결과 보기</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -121,5 +130,30 @@ const styles = StyleSheet.create({
     height: height * 0.9,
     alignSelf: "center",
     marginTop: height * 0.01,
+  },
+  matchButton: {
+    position: 'absolute',
+    bottom: height * 0.25,
+    alignSelf: 'center',
+    backgroundColor: '#FFB6C1',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#FFD6DD',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 10,
+  },
+  matchButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

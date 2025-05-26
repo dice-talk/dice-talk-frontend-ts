@@ -12,6 +12,7 @@ import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
 import EnvelopeAnimation from "@/components/event/EnvelopeAnimation";
 import LoveArrow from "@/components/event/LoveArrow";
+import LoveArrowMatch from "@/components/event/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/ResultLoveArrow";
 import { BlurView } from 'expo-blur';
@@ -44,6 +45,8 @@ const ChatRoom = () => {
   const [showLoveLetterSelect, setShowLoveLetterSelect] = useState(false);
   const [showLoveArrow, setShowLoveArrow] = useState(false);
   const [showResultLoveArrow, setShowResultLoveArrow] = useState(false);
+  const [showResultAlertModal, setShowResultAlertModal] = useState(false);
+  const [showLoveArrowMatch, setShowLoveArrowMatch] = useState(false);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -119,10 +122,9 @@ const ChatRoom = () => {
     setShowLoveArrow(true);
   };
   
-  // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러
+  // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러 수정
   const handleLoveArrowResultCheck = () => {
-    console.log('사랑의 짝대기 결과 확인!');
-    setShowResultLoveArrow(true);
+    setShowResultAlertModal(true); // ResultAlertModal을 먼저 표시
   };
   
   const handleLoveLetterSelectClose = () => {
@@ -142,9 +144,10 @@ const ChatRoom = () => {
     setShowLoveArrow(false);
   };
   
-  // 사랑의 짝대기 결과 모달 닫기 핸들러
-  const handleResultLoveArrowClose = () => {
-    setShowResultLoveArrow(false);
+  // ResultAlertModal의 확인 버튼 클릭 핸들러
+  const handleResultAlertConfirm = () => {
+    setShowResultAlertModal(false); // ResultAlertModal 닫기
+    setShowResultLoveArrow(true); // ResultLoveArrow 모달 표시
   };
   
   const handleSirenPress = () => {
@@ -274,6 +277,12 @@ const ChatRoom = () => {
   const handleEnvelopeAnimationComplete = () => {
     console.log('편지 애니메이션 완료!');
     setShowEnvelope(false);
+  };
+  
+  // 매칭 결과 보기 버튼 클릭 핸들러
+  const handleMatchPress = () => {
+    setShowResultLoveArrow(false); // ResultLoveArrow 모달 닫기
+    setShowLoveArrowMatch(true); // LoveArrowMatch 모달 열기
   };
   
   return (
@@ -412,20 +421,54 @@ const ChatRoom = () => {
           remainingCount={1}
         />
         
-        {/* 사랑의 짝대기 결과 모달 */}
+        {/* ResultAlertModal */}
+        <Modal
+          visible={showResultAlertModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowResultAlertModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.alertModalContent}>
+              <Text style={styles.alertModalTitle}>매칭 결과 확인</Text>
+              <Text style={styles.alertModalText}>매칭 결과를 확인하시겠습니까?</Text>
+              <View style={styles.alertModalButtons}>
+                <TouchableOpacity 
+                  style={[styles.alertModalButton, styles.alertModalCancelButton]}
+                  onPress={() => setShowResultAlertModal(false)}
+                >
+                  <Text style={styles.alertModalButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.alertModalButton, styles.alertModalConfirmButton]}
+                  onPress={handleResultAlertConfirm}
+                >
+                  <Text style={styles.alertModalButtonText}>확인</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+        
+        {/* ResultLoveArrow 모달 */}
         <Modal
           visible={showResultLoveArrow}
           transparent={true}
           animationType="fade"
-          onRequestClose={handleResultLoveArrowClose}
+          onRequestClose={() => setShowResultLoveArrow(false)}
         >
           <View style={styles.modalContainer}>
             <ResultLoveArrow 
               selections={[
-                { from: 1, to: 2 }, // 왼쪽 Hana → 오른쪽 Nemo (파란색)
-                { from: 2, to: 5 }, // 오른쪽 Dao → 왼쪽 Sezzi (빨간색)
-                { from: 3, to: 6 }  // 왼쪽 Dori → 오른쪽 Yukdaeng (파란색)
+                { from: 1, to: 2 },
+                { from: 3, to: 5 },
+                { from: 5, to: 2 },
+                { from: 2, to: 1 },
+                { from: 4, to: 1 },
+                { from: 6, to: 3 }
               ]}
+              onClose={() => setShowResultLoveArrow(false)}
+              onMatchPress={handleMatchPress}
             />
           </View>
         </Modal>
@@ -450,6 +493,12 @@ const ChatRoom = () => {
             />
           </View>
         )}
+
+        {/* LoveArrowMatch 모달 */}
+        <LoveArrowMatch 
+          isVisible={showLoveArrowMatch}
+          onClose={() => setShowLoveArrowMatch(false)}
+        />
     </View>
   );
 };
@@ -590,15 +639,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  closeButton: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#A45C73',
+  alertModalContent: {
+    backgroundColor: 'white',
     borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  closeButtonText: {
-    color: 'white',
+  alertModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#A45C73',
+    marginBottom: 15,
+  },
+  alertModalText: {
     fontSize: 16,
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  alertModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  alertModalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  alertModalCancelButton: {
+    backgroundColor: '#DDDDDD',
+    marginRight: 10,
+  },
+  alertModalConfirmButton: {
+    backgroundColor: '#FFB6C1',
+  },
+  alertModalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
