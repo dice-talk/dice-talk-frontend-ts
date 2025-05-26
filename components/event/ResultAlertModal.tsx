@@ -3,11 +3,11 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 const { width, height } = Dimensions.get("window");
 
-interface ResultLoveArrowProps {
+interface ResultAlertModalProps {
   onConfirm?: () => void;
 }
 
-const ResultLoveArrow = ({ onConfirm }: ResultLoveArrowProps) => {
+const ResultAlertModal = ({ onConfirm }: ResultAlertModalProps) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>선택의 결과를 확인해주세요</Text>
@@ -22,7 +22,7 @@ const ResultLoveArrow = ({ onConfirm }: ResultLoveArrowProps) => {
   );
 };
 
-export default ResultLoveArrow;
+export default ResultAlertModal;
 
 const styles = StyleSheet.create({
   container: {

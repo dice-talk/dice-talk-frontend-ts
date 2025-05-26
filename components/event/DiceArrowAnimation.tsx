@@ -19,21 +19,21 @@ export const arrowPositions: Record<string, {
     startX: width * 0.15 + 60,
     startY: height * 0.39,
     endX: width * 0.85 - 10,
-    endY: height * 0.40,
+    endY: height * 0.39,
     color: "#4DA1FF" // 파란색
   },
   "1-4": { // 1번(Hana)에서 4번(Nemo)으로
     startX: width * 0.15 + 60,
     startY: height * 0.39,
     endX: width * 0.85 - 10,
-    endY: height * 0.48,
+    endY: height * 0.49,
     color: "#4DA1FF"
   },
   "1-6": { // 1번(Hana)에서 6번(Yukdaeng)으로
     startX: width * 0.15 + 60,
-    startY: height * 0.395,
+    startY: height * 0.39,
     endX: width * 0.85 - 10,
-    endY: height * 0.58,
+    endY: height * 0.59,
     color: "#4DA1FF"
   },
   "3-2": { // 3번(Sezzi)에서 2번(Dori)으로
