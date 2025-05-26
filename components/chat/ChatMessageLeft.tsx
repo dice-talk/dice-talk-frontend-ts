@@ -32,6 +32,8 @@ const ChatMessageLeft = ({
   const nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
   const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
   const bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
+  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D4B6D4";
+  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   
   return (
     <View style={[
@@ -42,12 +44,12 @@ const ChatMessageLeft = ({
       {!isConsecutive && (
         <>
           {typeof profileImage === 'string' ? (
-            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            <Image source={{ uri: profileImage }} style={[styles.profileImage, { borderColor: profileBorderColor }]} />
           ) : (
             <TouchableOpacity onPress={onPressProfile}>
-              <View style={styles.profileImage}>
+              <View style={[styles.profileImage, { borderColor: profileBorderColor }]}>
                 <View style={styles.svgContainer}>
-                  <ProfileImage width="60%" height="60%" />
+                  <ProfileImage width="60%" height="60%" color={profileIconColor} />
                 </View>
               </View>
             </TouchableOpacity>

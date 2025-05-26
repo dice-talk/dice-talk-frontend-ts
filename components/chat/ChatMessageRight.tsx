@@ -31,6 +31,7 @@ const ChatMessageRight = ({
   const profileBorderColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
   const nicknameColor = themeId === 2 ? "#5C5279" : "#F9BCC1";
   const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
+  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   
   return (
     <View style={[
@@ -56,7 +57,7 @@ const ChatMessageRight = ({
             <TouchableOpacity onPress={onPressProfile}>
               <View style={[styles.profileImage, { borderColor: profileBorderColor }]}>
                 <View style={styles.svgContainer}>
-                  <ProfileImage width="60%" height="60%" />
+                  <ProfileImage width="60%" height="60%" color={profileIconColor} />
                 </View>
               </View>
             </TouchableOpacity>

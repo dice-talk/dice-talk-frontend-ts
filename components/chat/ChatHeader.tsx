@@ -10,6 +10,7 @@ interface ChatHeaderProps {
   onToggleSidebar?: () => void;
   fontColor?: string;
   backgroundColor?: string;
+  themeId?: number;
 }
 
 export default function ChatHeader({
@@ -17,16 +18,23 @@ export default function ChatHeader({
   onToggleSidebar,
   fontColor = "#A45C73",             // 기본값
   backgroundColor = "#ffffff",      // 기본값
+  themeId = 1,
 }: ChatHeaderProps) {
   const router = useRouter();
+  const backIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  
+  // 테마에 따른 제목과 색상 설정
+  const displayTitle = themeId === 2 ? "다이스 프렌즈" : title;
+  const displayFontColor = themeId === 2 ? "#5C5279" : fontColor;
+  
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <Pressable onPress={() => router.back()}>
-        <BackIcon width={28} height={28} />
+        <BackIcon width={28} height={28} color={backIconColor} />
       </Pressable>
-      <Text style={[styles.title, { color: fontColor }]}>{title}</Text>
+      <Text style={[styles.title, { color: displayFontColor }]}>{displayTitle}</Text>
       <Pressable onPress={onToggleSidebar}>
-        <MenuIcon width={28} height={28} />
+        <MenuIcon width={28} height={28} color={backIconColor} />
       </Pressable>
     </View>
   );

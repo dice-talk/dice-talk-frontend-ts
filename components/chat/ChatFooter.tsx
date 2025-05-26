@@ -11,9 +11,11 @@ import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 interface ChatFooterProps {
   onClose?: () => void;
   onSirenPress?: () => void;
+  themeId?: number;
 }
 
-const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress }) => {
+const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress, themeId = 1 }) => {
+  const iconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const router = useRouter();
   const [isSilenced, setIsSilenced] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
@@ -67,20 +69,20 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress }) => {
           onPress={handleExitPress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-      <ChatExit />
+      <ChatExit color={iconColor} />
         </Pressable>
         <View style={styles.rightContainer}>
           <Pressable 
             onPress={toggleSilence}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            {isSilenced ? <Silence /> : <ChatNoticeOnOff />}
+            {isSilenced ? <Silence color={iconColor} /> : <ChatNoticeOnOff color={iconColor} />}
           </Pressable>
           <Pressable 
             onPress={handleSirenPress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Siren />
+            <Siren color={iconColor} />
           </Pressable>
         </View>
       </View>
