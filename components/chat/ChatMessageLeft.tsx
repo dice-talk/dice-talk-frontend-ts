@@ -14,6 +14,7 @@ interface ChatMessageProps {
   isConsecutive?: boolean; // 연속된 메시지인지 여부
   showTime?: boolean; // 시간을 표시할지 여부
   onPressProfile?: () => void;
+  themeId?: number; // 테마 아이디 추가
 }
 
 const ChatMessageLeft = ({ 
@@ -24,8 +25,13 @@ const ChatMessageLeft = ({
   isConsecutive = false,
   showTime = true,
   onPressProfile,
+  themeId = 1,
 }: ChatMessageProps) => {
   const ProfileImage = profileImage as ProfileImageType;
+  
+  const nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
+  const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
+  const bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
   
   return (
     <View style={[
@@ -47,14 +53,14 @@ const ChatMessageLeft = ({
             </TouchableOpacity>
           )}
           <View style={styles.messageWrapper}>
-            <Text style={styles.nickname}>{nickname}</Text>
+            <Text style={[styles.nickname, { color: nicknameColor }]}>{nickname}</Text>
 
             {/* 말풍선 박스와 시간 */}
             <View style={styles.bubbleContainer}>
-              <View style={styles.bubble}>
+              <View style={[styles.bubble, { backgroundColor: bubbleColor }]}>
                 <Text style={styles.message}>{message}</Text>
               </View>
-              {showTime && <Text style={styles.time}>{time}</Text>}
+              {showTime && <Text style={[styles.time, { color: timeColor }]}>{time}</Text>}
             </View>
           </View>
         </>
@@ -64,10 +70,10 @@ const ChatMessageLeft = ({
       {isConsecutive && (
         <View style={styles.consecutiveMessageWrapper}>
           <View style={styles.bubbleContainer}>
-            <View style={[styles.bubble, styles.consecutiveBubble]}>
+            <View style={[styles.bubble, styles.consecutiveBubble, { backgroundColor: bubbleColor }]}>
               <Text style={styles.message}>{message}</Text>
             </View>
-            {showTime && <Text style={styles.time}>{time}</Text>}
+            {showTime && <Text style={[styles.time, { color: timeColor }]}>{time}</Text>}
           </View>
         </View>
       )}
@@ -115,7 +121,6 @@ const styles = StyleSheet.create({
   },
   nickname: {
     fontSize: SCREEN_WIDTH * 0.034,
-    color: "#984A78",
     marginBottom: SCREEN_HEIGHT * 0.002,
   },
   bubbleContainer: {
@@ -140,7 +145,6 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: SCREEN_WIDTH * 0.026,
-    color: "#A88B9D",
     marginBottom: SCREEN_HEIGHT * 0.005,
   },
 });

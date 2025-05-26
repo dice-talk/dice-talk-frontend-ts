@@ -10,6 +10,7 @@ interface GptNoticeProps {
   onParticipate?: () => void;
   width?: number; // 너비 비율을 props로 받을 수 있도록 추가
   hideOnParticipate?: boolean; // 참여하기 클릭 시 컴포넌트 숨김 여부 (기본값: false)
+  themeId?: number; // ✅ 테마 ID 추가
 }
 
 const GptNotice = ({ 
@@ -17,7 +18,8 @@ const GptNotice = ({
   onHide = () => {},
   onParticipate = () => {},
   width = 0.9, // 기본값으로 화면 너비의 90%
-  hideOnParticipate = false // 기본값으로 참여하기 클릭 시 숨기지 않음
+  hideOnParticipate = false, // 기본값으로 참여하기 클릭 시 숨기지 않음
+  themeId = 1, // ✅ 기본값 설정
 }: GptNoticeProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -40,11 +42,13 @@ const GptNotice = ({
     // hideOnParticipate가 true인 경우 onHide가 호출되어 부모 컴포넌트에서 처리됨
   };
 
+  const containerBackgroundColor = themeId === 2 ? "#879FC0" : "#B19ADE";
+
   return (
     <View style={styles.containerWrapper}>
       <View style={[
         styles.container, 
-        { width: screenWidth * width },
+        { width: screenWidth * width, backgroundColor: containerBackgroundColor },
         isExpanded ? styles.containerExpanded : null
       ]}>
         <View style={styles.mainContent}>
