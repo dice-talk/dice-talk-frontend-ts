@@ -22,14 +22,26 @@ interface LoveLetterSelectProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (selectedIndex: number) => void;
+  themeId?: number;
 }
 
 const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
   visible,
   onClose,
   onConfirm,
+  themeId = 1,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  // 테마별 색상 설정
+  const containerBorderColor = themeId === 2 ? "#9FC9FF" : "#FAD4DC";
+  const dividerColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const confirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FEBFC8";
+  const confirmButtonBorderColor = themeId === 2 ? "#6DA0E1" : "#FFD9DF";
+  const svgColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  const textColor = themeId === 2 ? "#879FC0" : "#A45C73";
+  const radioColor = themeId === 2 ? "#879FC0" : "#D6A0B1";
+  const checkmarkColor = themeId === 2 ? "#879FC0" : "#E04C65";
 
   // 선택 토글 처리 함수
   const handleToggleSelection = (index: number) => {
@@ -59,9 +71,9 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-    <View style={styles.container}>
+    <View style={[styles.container, { borderColor: containerBorderColor }]}>
       <Text style={styles.title}>당신의 비밀 메세지를 받을{'\n'}사람을 선택해주세요</Text>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
       {OPTIONS.map((option, index) => (
         <SelectableOption
@@ -70,11 +82,15 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
               svgComponent={option.svgComponent}
           selected={selectedIndex === index}
               onPress={() => handleToggleSelection(index)}
+          svgColor={svgColor}
+          textColor={textColor}
+          radioColor={radioColor}
+          checkmarkColor={checkmarkColor}
         />
       ))}
         </View>
       <View style={styles.confirmButtonWrapper}>
-          <Pressable style={styles.confirmButton} onPress={handleConfirm}>
+          <Pressable style={[styles.confirmButton, { backgroundColor: confirmButtonColor, borderColor: confirmButtonBorderColor }]} onPress={handleConfirm}>
           <Text style={styles.confirmButtonText}>확인</Text>
           </Pressable>
         </View>

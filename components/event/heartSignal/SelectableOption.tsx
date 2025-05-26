@@ -8,18 +8,26 @@ interface Props {
   svgComponent?: React.FC<SvgProps>;
   selected: boolean;
   onPress: () => void;
+  svgColor?: string;
+  textColor?: string;
+  radioColor?: string;
+  checkmarkColor?: string;
 }
 
-const SelectableOption = ({ label, icon, svgComponent: SvgComponent, selected, onPress }: Props) => {
+const SelectableOption = ({ label, icon, svgComponent: SvgComponent, selected, onPress, svgColor, textColor, radioColor, checkmarkColor }: Props) => {
   return (
     <Pressable style={styles.optionRow} onPress={onPress}>
-      <View style={[styles.radioCircle, selected && styles.radioSelected]}>
-        {selected && <View style={styles.checkmark} />}
+      <View style={[
+        styles.radioCircle, 
+        { borderColor: radioColor || "#D6A0B1" },
+        selected && { borderColor: checkmarkColor || "#E04C65" }
+      ]}>
+        {selected && <View style={[styles.checkmark, { backgroundColor: checkmarkColor || "#E04C65" }]} />}
       </View>
       {SvgComponent ? (
-        <SvgComponent width={28} height={28} style={styles.svgIcon} />
+        <SvgComponent width={28} height={28} style={styles.svgIcon} color={svgColor} />
       ) : null}
-      <Text style={styles.optionLabel}>{label}</Text>
+      <Text style={[styles.optionLabel, { color: textColor || "#A45C73" }]}>{label}</Text>
     </Pressable>
   );
 };
@@ -37,20 +45,14 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#D6A0B1",
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 8,
   },
-  radioSelected: {
-    borderColor: "#E04C65",
-    backgroundColor: "#FFFFFF",
-  },
   checkmark: {
     width: 12,
     height: 12,
-    backgroundColor: "#E04C65",
     borderRadius: 6,
   },
   diceIcon: {
@@ -64,6 +66,5 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 14,
-    color: "#A45C73",
   },
 });
