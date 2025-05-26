@@ -20,6 +20,8 @@ interface ActiveUserProps {
 const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => {
   const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#DEC2DB";
+  const userNameColor = themeId === 2 ? "#5C5279" : "#7c4762";
+  
   // 개별 유저 렌더링 함수
   const renderUser = ({ item }: { item: User }) => (
     <View style={styles.userItem}>
@@ -29,7 +31,7 @@ const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => 
       >
         <item.profileSvg width={24} height={24} color={profileIconColor} />
       </TouchableOpacity>
-      <Text style={styles.userName}>{item.name}</Text>
+      <Text style={[styles.userName, { color: userNameColor }]}>{item.name}</Text>
     </View>
   );
 
