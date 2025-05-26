@@ -1,11 +1,12 @@
 import LetterForm from '@/assets/images/event/LetterForm.svg';
+import FriendLetterForm from '@/assets/images/event/friend_letterForm.svg';
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // 이미지 경로
-const LETTER_IMAGES = [
+const LOVE_LETTER_IMAGES = [
   require('@/assets/images/event/love_letter_01.png'),
   require('@/assets/images/event/love_letter_02.png'),
   require('@/assets/images/event/love_letter_03.png'),
@@ -14,22 +15,45 @@ const LETTER_IMAGES = [
   require('@/assets/images/event/love_letter_06.png'),
 ];
 
+const FRIEND_LETTER_IMAGES = [
+  require('@/assets/images/event/friend_letter_01.png'),
+  require('@/assets/images/event/friend_letter_02.png'),
+  require('@/assets/images/event/friend_letter_03.png'),
+  require('@/assets/images/event/friend_letter_04.png'),
+  require('@/assets/images/event/friend_letter_05.png'),
+  require('@/assets/images/event/friend_letter_06.png'),
+];
+
 interface EnvelopeAnimationProps {
   onAnimationComplete?: () => void;
   content?: React.ReactNode;
   autoPlay?: boolean;
+  themeId?: number;
 }
 
 const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
   onAnimationComplete,
   content,
   autoPlay = false,
+  themeId = 1,
 }) => {
   // 애니메이션 상태
   const [isOpen, setIsOpen] = useState(false);
   // 편지 내용 상태 추가
   const [letterText, setLetterText] = useState('');
   
+  // 테마에 따른 이미지 선택
+  const LETTER_IMAGES = themeId === 2 ? FRIEND_LETTER_IMAGES : LOVE_LETTER_IMAGES;
+  const mainLetterImage = themeId === 2 
+    ? require('@/assets/images/event/friend_letter_main.png')
+    : require('@/assets/images/event/love_event_write.png');
+
+  // 테마별 색상 설정
+  const placeholderColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  const textColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  const sendButtonColor = themeId === 2 ? "#6DA0E1" : "#FEBFC8";
+  const sendButtonBorderColor = themeId === 2 ? "#6DA0E1" : "#FFD9DF";
+
   // 메인 편지 애니메이션 값
   const letterOffset = useRef(new Animated.Value(0)).current;
   const letterScale = useRef(new Animated.Value(0.6)).current;
@@ -212,21 +236,28 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
               },
             ]}
           >
-            <View style={styles.mainLetterImageWrapper}>
+                        <View style={themeId === 2 ? styles.friendLetterImageWrapper : styles.mainLetterImageWrapper}>
               <Image
-                source={require('@/assets/images/event/love_event_write.png')}
-                style={styles.mainLetterImage}
+                source={mainLetterImage}
+                style={themeId === 2 ? styles.friendLetterImage : styles.mainLetterImage}
                 resizeMode="contain"
               />
             </View>
+            {themeId === 2 ? (
+              <Animated.View style={[styles.friendLetterSvgWrapper, { opacity: letterFormOpacity }]}>
+                <FriendLetterForm width="100%" height="100%" />
+              
+              </Animated.View>
+            ) : (
             <Animated.View style={[styles.mainLetterSvgWrapper, { opacity: letterFormOpacity }]}>
               <LetterForm width="100%" height="100%" />
             </Animated.View>
-            <Animated.View style={[styles.letterInputWrapper, { opacity: letterTextOpacity }]}>
+            )}
+            <Animated.View style={[themeId === 2 ? styles.friendLetterInputWrapper : styles.letterInputWrapper, { opacity: letterTextOpacity }]}>
               <TextInput
-                style={styles.letterInput}
-                placeholder="마음에 드는 상대에게 보낼 내용을 작성해주세요"
-                placeholderTextColor="#F9BCC1"
+                style={[themeId === 2 ? styles.friendLetterInput : styles.letterInput, { color: textColor }]}
+                placeholder="마음에 드는 상대에게 보낼 내용을 작성하세요"
+                placeholderTextColor={placeholderColor}
                 value={letterText}
                 onChangeText={setLetterText}
                 multiline
@@ -236,6 +267,7 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
               <TouchableOpacity
                 style={[
                   styles.sendButton,
+                  { backgroundColor: sendButtonColor, borderColor: sendButtonBorderColor },
                   !isLetterValid() && styles.sendButtonDisabled
                 ]}
                 onPress={handleSendPress}
@@ -278,6 +310,7 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH * 3,
     alignItems: 'center',
     justifyContent: 'center',
+    
   },
   letterImage: {
     width: '110%',
@@ -290,15 +323,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 100,
+    top: SCREEN_WIDTH * 0.45,
   },
   mainLetterImageWrapper: {
     position: 'absolute',
-    width: SCREEN_WIDTH * 0.9,
-    height: SCREEN_WIDTH * 0.9,
-    left: -SCREEN_WIDTH * 0.135,
+    width: SCREEN_WIDTH * 1,
+    height: SCREEN_WIDTH * 2,
+    left: -SCREEN_WIDTH * 0.19,
+    top: SCREEN_WIDTH * -0.8,
     zIndex: 0,
   },
   mainLetterImage: {
+    width: '100%',
+    height: '100%',
+  },
+  friendLetterImageWrapper: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * 1.2,
+    height: SCREEN_WIDTH * 2.2,
+    left: -SCREEN_WIDTH * 0.29,
+    top: SCREEN_WIDTH * -0.8,
+    zIndex: 0,
+  },
+  friendLetterImage: {
     width: '100%',
     height: '100%',
   },
@@ -307,13 +354,21 @@ const styles = StyleSheet.create({
     width: '80%',
     height: '80%',
     zIndex: 1,
-    top: SCREEN_WIDTH * 0.15,
+    top: SCREEN_WIDTH * -0.07,
+  },
+  friendLetterSvgWrapper: {
+    position: 'absolute',
+    width: '80%',
+    height: '80%',
+    zIndex: 1,
+    top: SCREEN_WIDTH * -0.06,
   },
   letterInputWrapper: {
     position: 'absolute',
     width: '90%',
-    top: SCREEN_WIDTH * 0.52,
+    top: SCREEN_WIDTH * 0.29,
     zIndex: 200,
+    // bottom: SCREEN_WIDTH * 0.2,
   },
   letterInput: {
     paddingVertical: 4,
@@ -321,6 +376,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#F9BCC1',
     height: SCREEN_HEIGHT * 0.1,
+    textAlignVertical: 'top',
+
+  },
+  friendLetterInputWrapper: {
+    position: 'absolute',
+    width: '95%',
+    top: SCREEN_WIDTH * 0.29,
+    zIndex: 200,
+  },
+  friendLetterInput: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    fontSize: 11,
+    height: SCREEN_HEIGHT * 0.12,
     textAlignVertical: 'top',
   },
   sendButtonWrapper: {

@@ -425,6 +425,7 @@ const ChatRoom = () => {
           visible={showLoveLetterSelect}
           onClose={handleLoveLetterSelectClose}
           onConfirm={handleLoveLetterSelectConfirm}
+          themeId={themeId}
         />
         
         {/* 사랑의 짝대기 모달 */}
@@ -493,6 +494,7 @@ const ChatRoom = () => {
             <EnvelopeAnimation 
               autoPlay={true}
               onAnimationComplete={handleEnvelopeAnimationComplete}
+              themeId={themeId}
               content={
                 <View style={styles.envelopeContent}>
                   <Text style={styles.envelopeTitle}>큐피트의 짝대기 이벤트</Text>
