@@ -312,6 +312,7 @@ const ChatRoom = () => {
                   fontColor="#A45C73"
                   backgroundColor="#ffffff"
                   onToggleSidebar={() => setSidebarOpen(true)}
+                  themeId={themeId}
               />
             )}
             {showNotice && !showMessageCheckReport && (
@@ -353,6 +354,7 @@ const ChatRoom = () => {
             <>
               <MessageCheckReport 
                 onCheckedChange={handleCheckedChange} 
+                themeId={themeId}
               />
               {/* 신고 모드에서는 내가 보낸 메시지(ChatMessageRight)만 표시 */}
               {renderMyMessages()}
@@ -368,6 +370,7 @@ const ChatRoom = () => {
             onClose={() => setSidebarOpen(false)}
             onSirenPress={handleSirenPress}
             onProfilePress={handleSidebarProfilePress}
+            themeId={themeId}
         />
         {/* 하단 영역: 신고 중이면 취소/확인 버튼, 아니면 ChatInput */}
         {showMessageCheckReport ? (
@@ -395,7 +398,7 @@ const ChatRoom = () => {
           </View>
         ) : (
           <View style={styles.inputContainer}>
-            <ChatInput />
+            <ChatInput themeId={themeId} />
           </View>
         )}
         {/* 프로필 팝업 - z-index를 높게 설정하여 최상위에 표시 */}
@@ -405,6 +408,7 @@ const ChatRoom = () => {
               profileImage={selectedProfile.SvgComponent}
               nickname={selectedProfile.nickname}
               onClose={() => setSelectedProfile(null)}
+              themeId={themeId}
             />
           </View>
         )}

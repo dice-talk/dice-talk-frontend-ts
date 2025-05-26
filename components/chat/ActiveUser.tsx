@@ -14,17 +14,20 @@ interface User {
 interface ActiveUserProps {
   users: User[];
   onProfilePress?: (user: User) => void;
+  themeId?: number;
 }
 
-const ActiveUser = ({ users, onProfilePress }: ActiveUserProps) => {
+const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => {
+  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#DEC2DB";
   // 개별 유저 렌더링 함수
   const renderUser = ({ item }: { item: User }) => (
     <View style={styles.userItem}>
       <TouchableOpacity 
-        style={[styles.profileCircle, { borderColor: "#DEC2DB" }]}
+        style={[styles.profileCircle, { borderColor: profileBorderColor }]}
         onPress={() => onProfilePress && onProfilePress(item)}
       >
-        <item.profileSvg width={24} height={24} />
+        <item.profileSvg width={24} height={24} color={profileIconColor} />
       </TouchableOpacity>
       <Text style={styles.userName}>{item.name}</Text>
     </View>
@@ -34,7 +37,7 @@ const ActiveUser = ({ users, onProfilePress }: ActiveUserProps) => {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>대화상대</Text>
-      </View>
+    </View>
       <FlatList
         data={users}
         renderItem={renderUser}

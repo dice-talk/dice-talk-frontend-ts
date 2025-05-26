@@ -13,6 +13,7 @@ interface SideBarProps {
   onClose: () => void;
   onSirenPress?: () => void;
   onProfilePress?: (nickname: string, SvgComponent: React.FC<SvgProps>) => void;
+  themeId?: number;
 }
 
 interface UserData {
@@ -24,8 +25,10 @@ interface UserData {
 
 const { width } = Dimensions.get("window");
 
-const SideBar = ({ visible, onClose, onSirenPress, onProfilePress }: SideBarProps) => {
+const SideBar = ({ visible, onClose, onSirenPress, onProfilePress, themeId = 1 }: SideBarProps) => {
   const translateX = useRef(new Animated.Value(width)).current;
+  const sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const bottomLineColor = themeId === 2 ? "#6DA0E1" : "#F3D4EE";
 
   // 유저 데이터 정의
   const [users] = useState<UserData[]>([
@@ -65,22 +68,22 @@ const SideBar = ({ visible, onClose, onSirenPress, onProfilePress }: SideBarProp
       >
         <View style={styles.sidebarHeader}>
           <Pressable onPress={onClose} style={styles.closeButton}>
-            <SidebarClose width={28} height={28} />
+            <SidebarClose width={28} height={28} color={sidebarCloseColor} />
           </Pressable>
         </View>
         <View style={styles.content}>
           <View style={styles.topSection}>
-            <ChatEventNotice />
+            <ChatEventNotice themeId={themeId} />
           </View>
           <View style={styles.bottomSection}>
             <View style={{ flex: 1, width: '100%' }}>
-              <ActiveUser users={users} onProfilePress={handleProfilePress} />
+              <ActiveUser users={users} onProfilePress={handleProfilePress} themeId={themeId} />
             </View>
             <View style={{height: height * 0.05, justifyContent: 'center', width: '100%'}}>
-            <View style={styles.bottomLine} />
+            <View style={[styles.bottomLine, { backgroundColor: bottomLineColor }]} />
             </View>
             <View style={{height: height * 0.05, justifyContent: 'center', width: '100%'}}>
-              <ChatFooter onClose={onClose} onSirenPress={onSirenPress} />
+              <ChatFooter onClose={onClose} onSirenPress={onSirenPress} themeId={themeId} />
             </View>
           </View>
         </View>
@@ -151,7 +154,6 @@ const styles = StyleSheet.create({
   bottomLine: {
     width: width * 0.7,
     height: height * 0.002,
-    backgroundColor: "#F3D4EE",
     alignSelf: "center",
   },
 });

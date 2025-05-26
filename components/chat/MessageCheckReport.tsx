@@ -2,12 +2,12 @@ import HanaSvg from '@/assets/images/chat/hana.svg';
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    Dimensions,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -31,9 +31,16 @@ interface MessageCheckReportProps {
   onConfirm?: () => void;
   onCancel?: () => void;
   onCheckedChange?: (hasChecked: boolean) => void; // 체크 상태 변경 콜백
+  themeId?: number;
 }
 
-const MessageCheckReport: React.FC<MessageCheckReportProps> = ({ onConfirm, onCancel, onCheckedChange }) => {
+const MessageCheckReport: React.FC<MessageCheckReportProps> = ({ onConfirm, onCancel, onCheckedChange, themeId = 1 }) => {
+  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D4B6D4";
+  const bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
+  const nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
+  const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
+  const titleColor = themeId === 2 ? "#5C5279" : "#984A78";
   // 샘플 신고 메시지 데이터
   const [messages, setMessages] = useState<ReportMessage[]>([
     {
@@ -104,21 +111,21 @@ const MessageCheckReport: React.FC<MessageCheckReportProps> = ({ onConfirm, onCa
             {typeof message.profileImage === 'string' ? (
               <Image source={{ uri: message.profileImage }} style={styles.profileImage} />
             ) : (
-              <View style={styles.profileImage}>
+              <View style={[styles.profileImage, { borderColor: profileBorderColor }]}>
                 <View style={styles.svgContainer}>
-                  <ProfileImage width="60%" height="60%" />
+                  <ProfileImage width="60%" height="60%" color={profileIconColor} />
                 </View>
               </View>
             )}
             <View style={styles.messageWrapper}>
-              <Text style={styles.nickname}>{message.nickname}</Text>
+              <Text style={[styles.nickname, { color: nicknameColor }]}>{message.nickname}</Text>
 
               {/* 말풍선 박스와 시간 */}
               <View style={styles.bubbleContainer}>
-                <View style={styles.bubble}>
+                <View style={[styles.bubble, { backgroundColor: bubbleColor }]}>
                   <Text style={styles.message}>{message.message}</Text>
                 </View>
-                {message.showTime && <Text style={styles.time}>{message.time}</Text>}
+                {message.showTime && <Text style={[styles.time, { color: timeColor }]}>{message.time}</Text>}
               </View>
             </View>
           </>
@@ -128,10 +135,10 @@ const MessageCheckReport: React.FC<MessageCheckReportProps> = ({ onConfirm, onCa
         {message.isConsecutive && (
           <View style={styles.consecutiveMessageWrapper}>
             <View style={styles.bubbleContainer}>
-              <View style={[styles.bubble, styles.consecutiveBubble]}>
+              <View style={[styles.bubble, styles.consecutiveBubble, { backgroundColor: bubbleColor }]}>
                 <Text style={styles.message}>{message.message}</Text>
               </View>
-              {message.showTime && <Text style={styles.time}>{message.time}</Text>}
+              {message.showTime && <Text style={[styles.time, { color: timeColor }]}>{message.time}</Text>}
             </View>
           </View>
         )}
@@ -143,7 +150,7 @@ const MessageCheckReport: React.FC<MessageCheckReportProps> = ({ onConfirm, onCa
     <View style={styles.mainContainer}>
       {/* 상단 타이틀과 메시지 목록 */}
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>신고할 메시지를 선택해주세요</Text>
+        <Text style={[styles.title, { color: titleColor }]}>신고할 메시지를 선택해주세요</Text>
         
         {/* 메시지 목록 */}
         <View style={styles.messagesContainer}>
@@ -168,7 +175,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#984A78",
     marginBottom: 15,
     textAlign: "center",
   },
@@ -200,7 +206,6 @@ const styles = StyleSheet.create({
     borderRadius: SCREEN_WIDTH * 0.045,
     marginRight: SCREEN_WIDTH * 0.01, // 이미지와 메시지 사이 간격 줄이기
     borderWidth: 1,
-    borderColor: "#D4B6D4",
     overflow: 'hidden',
     zIndex: 2,
   },
@@ -219,7 +224,6 @@ const styles = StyleSheet.create({
   },
   nickname: {
     fontSize: SCREEN_WIDTH * 0.034,
-    color: "#984A78",
     marginBottom: SCREEN_HEIGHT * 0.002,
   },
   bubbleContainer: {
@@ -228,7 +232,6 @@ const styles = StyleSheet.create({
     gap: SCREEN_WIDTH * 0.015,
   },
   bubble: {
-    backgroundColor: "#DEBBDF",
     paddingVertical: SCREEN_HEIGHT * 0.01,
     paddingHorizontal: SCREEN_WIDTH * 0.03,
     borderRadius: SCREEN_WIDTH * 0.03,
@@ -244,7 +247,6 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: SCREEN_WIDTH * 0.026,
-    color: "#A88B9D",
     marginBottom: SCREEN_HEIGHT * 0.005,
   },
 });
