@@ -1,27 +1,38 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SvgProps } from "react-native-svg";
 
 interface ChatProfileProps {
-  profileImage: React.FC<React.SVGProps<SVGSVGElement>>;
+  profileImage: React.FC<SvgProps>;
   nickname: string;
   onClose: () => void;
+  themeId?: number;
 }
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
-const ChatProfile: React.FC<ChatProfileProps> = ({ profileImage: ProfileImage, nickname, onClose }) => {
+const ChatProfile: React.FC<ChatProfileProps> = ({ profileImage: ProfileImage, nickname, onClose, themeId = 1 }) => {
+  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D9B9D9";
+  const iconColor = themeId === 2 ? "#9FC9FF" : "#A98BD4";
+  const underlineColor = themeId === 2 ? "#9FC9FF" : "#A98BD4";
+  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  
   return (
     <View style={styles.overlay}>
       <View style={styles.modal}>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Ionicons name="close" size={20} color="#A98BD4" />
+          <Ionicons name="close" size={20} color={iconColor} />
         </TouchableOpacity>
-        <View style={styles.circleBorder}>
-            <ProfileImage width={width * 0.15} height={width * 0.15} />
+        <View style={[styles.circleBorder, { borderColor: profileBorderColor }]}>
+            <ProfileImage 
+              width={width * 0.15} 
+              height={width * 0.15} 
+              color={profileIconColor}
+            />
         </View>
         <Text style={styles.nickname}>{nickname}</Text>
-        <View style={styles.underline} />
+        <View style={[styles.underline, { backgroundColor: underlineColor }]} />
       </View>
     </View>
   );

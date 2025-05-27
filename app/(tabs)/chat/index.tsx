@@ -1,13 +1,11 @@
-import EventBannerComponent from "@/components/common/EventBannerComponent";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
-import ChatMain from "@/components/chat/ChatMain";
 import ChatCustomButton from "@/components/chat/ChatCustomButton";
+import ChatMain from "@/components/chat/ChatMain";
+import EventBannerComponent from "@/components/common/EventBannerComponent";
 import { useRouter } from "expo-router";
+import { Dimensions, StyleSheet, View } from "react-native";
 export default function Chat() {
   const router = useRouter();
 
-
- 
   return (
     <View style={styles.container}>
       <View style={{ zIndex: 1, position: 'absolute', top: 0, left: 0, right: 0}}>

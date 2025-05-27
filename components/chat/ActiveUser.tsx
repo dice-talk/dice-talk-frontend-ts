@@ -1,4 +1,5 @@
-import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
+import React from "react";
+import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
 // 사용자 데이터 타입 정의
@@ -12,16 +13,25 @@ interface User {
 // ActiveUser 컴포넌트 props 타입 정의
 interface ActiveUserProps {
   users: User[];
+  onProfilePress?: (user: User) => void;
+  themeId?: number;
 }
 
-const ActiveUser = ({ users }: ActiveUserProps) => {
+const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => {
+  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#DEC2DB";
+  const userNameColor = themeId === 2 ? "#5C5279" : "#7c4762";
+  
   // 개별 유저 렌더링 함수
   const renderUser = ({ item }: { item: User }) => (
     <View style={styles.userItem}>
-      <View style={[styles.profileCircle, { borderColor: "#DEC2DB" }]}>
-        <item.profileSvg width={24} height={24} />
-      </View>
-      <Text style={styles.userName}>{item.name}</Text>
+      <TouchableOpacity 
+        style={[styles.profileCircle, { borderColor: profileBorderColor }]}
+        onPress={() => onProfilePress && onProfilePress(item)}
+      >
+        <item.profileSvg width={24} height={24} color={profileIconColor} />
+      </TouchableOpacity>
+      <Text style={[styles.userName, { color: userNameColor }]}>{item.name}</Text>
     </View>
   );
 
@@ -29,7 +39,7 @@ const ActiveUser = ({ users }: ActiveUserProps) => {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>대화상대</Text>
-      </View>
+    </View>
       <FlatList
         data={users}
         renderItem={renderUser}
@@ -106,5 +116,19 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: 5,
     marginBottom: 5,
+  },
+  profileOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999, // 매우 높은 z-index로 설정하여 맨 앞에 표시
+    width: "100%",
+    height: "100%",
+    elevation: 5, // Android에서 z-index와 유사한 역할
   },
 });

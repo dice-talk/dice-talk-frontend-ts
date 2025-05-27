@@ -2,9 +2,16 @@ import SendIcon from "@/assets/images/chat/send.svg";
 import { useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-const ChatInput = () => {
+interface ChatInputProps {
+  themeId?: number;
+}
+
+const ChatInput = ({ themeId = 1 }: ChatInputProps) => {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+
+  // 테마에 따른 색상 설정
+  const borderColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
 
   const handleSend = () => {
     if (message.trim()) {
@@ -17,7 +24,7 @@ const ChatInput = () => {
     <View style={styles.container}>
       <View style={styles.inputWrapper}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { borderColor }]}
           placeholder="메시지 입력"
           placeholderTextColor="#BBBBBB"
           value={message}
@@ -32,7 +39,7 @@ const ChatInput = () => {
             onPress={handleSend}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <SendIcon width={24} height={24} />
+            <SendIcon width={24} height={24} color={borderColor} />
           </Pressable>
         )}
       </View>

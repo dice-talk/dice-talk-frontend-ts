@@ -8,7 +8,16 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 
-const ChatFooter = () => {
+interface ChatFooterProps {
+  onClose?: () => void;
+  onSirenPress?: () => void;
+  themeId?: number;
+}
+
+const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress, themeId = 1 }) => {
+  const iconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#D9B2D3";
+  const textColor = themeId === 2 ? "#5C5279" : "#8A5A7A";
   const router = useRouter();
   const [isSilenced, setIsSilenced] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
@@ -45,6 +54,15 @@ const ChatFooter = () => {
     setIsSilenced(!isSilenced);
   };
 
+  const handleSirenPress = () => {
+    if (onClose) {
+      onClose(); // 사이드바 닫기
+    }
+    if (onSirenPress) {
+      onSirenPress(); // MessageCheckReport로 전환
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.subContainer}>
@@ -53,16 +71,21 @@ const ChatFooter = () => {
           onPress={handleExitPress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-      <ChatExit />
+      <ChatExit color={iconColor} />
         </Pressable>
         <View style={styles.rightContainer}>
           <Pressable 
             onPress={toggleSilence}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            {isSilenced ? <Silence /> : <ChatNoticeOnOff />}
+            {isSilenced ? <Silence color={iconColor} /> : <ChatNoticeOnOff color={iconColor} />}
           </Pressable>
-        <Siren />
+          <Pressable 
+            onPress={handleSirenPress}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Siren color={iconColor} />
+          </Pressable>
         </View>
       </View>
 
@@ -71,6 +94,8 @@ const ChatFooter = () => {
         visible={exitModalVisible}
         onClose={handleExitCancel}
         onConfirm={handleExitConfirm}
+        confirmButtonColor={confirmButtonColor}
+        textColor={textColor}
       />
 
       {/* 다이스 사용 모달 */}
@@ -80,6 +105,9 @@ const ChatFooter = () => {
         onConfirm={handleCostConfirm}
         // content="하루에 2번 이상 \n채팅방을 나가셨습니다."
         diceCount={7}
+        textColor={textColor}
+        diceButtonColor={confirmButtonColor}
+        cancelButtonColor={confirmButtonColor}
       />
     </View>
   );
@@ -93,7 +121,6 @@ const styles = StyleSheet.create({
     flexDirection: "column", // 명시적으로 세로 방향 설정
     alignItems: "center",    
     width: width * 0.8,
-    
   },
   subContainer: {
     flexDirection: "row",
