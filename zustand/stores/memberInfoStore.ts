@@ -1,50 +1,88 @@
 // src/zustand/stores/memberStore.ts
-import { MemberInfo } from "@/types/MemberInfo";
 import { create } from "zustand";
 
-type MemberStore = {
-  memberInfo: MemberInfo | null;
-  token: string | null;
+// 회원가입 과정에서 필요한 정보 타입을 명확히 정의
+export type UserRegistrationInfo = {
   email: string | null;
-  setMemberInfo: (info: MemberInfo) => void;
-  setToken: (token: string) => void;
-  setEmail: (email: string) => void;
-  updateMemberInfo: (updates: Partial<MemberInfo>) => void;
-  clearMember: () => void;
+  name: string | null;
+  phone: string | null;
+  gender: 'MALE' | 'FEMALE' | null; // Toss 인증 응답에 맞게
+  birth: string | null; // YYYY-MM-DD 또는 YYYYMMDD 형식
+};
+
+type MemberStore = {
+  // 로그인 시 사용
+  memberId: number | null;
+  token: string | null;
+  
+  // 회원가입 과정 및 이후 사용자 정보 참조에 사용될 수 있는 정보
+  registrationInfo: UserRegistrationInfo;
+
+  // Setter 함수들
+  setMemberId: (id: number | null) => void;
+  setToken: (token: string | null) => void;
+  setEmail: (email: string | null) => void; // registrationInfo.email을 설정
+  setName: (name: string | null) => void;
+  setPhone: (phone: string | null) => void;
+  setGender: (gender: 'MALE' | 'FEMALE' | null) => void;
+  setBirth: (birth: string | null) => void;
+  
+  // 회원가입 정보 한번에 업데이트 (선택적)
+  setRegistrationInfo: (info: Partial<UserRegistrationInfo>) => void;
+
+  clearMember: () => void; // 로그인 정보 및 회원가입 정보 초기화
+  clearRegistrationInfo: () => void; // 회원가입 정보만 초기화
+};
+
+const initialRegistrationInfo: UserRegistrationInfo = {
+  email: null,
+  name: null,
+  phone: null,
+  gender: null,
+  birth: null,
 };
 
 export const useMemberInfoStore = create<MemberStore>((set) => ({
-    memberInfo: null,
+    memberId: null,
     token: null,
-    email: null,
+    registrationInfo: { ...initialRegistrationInfo },
 
-    setMemberInfo: (info: MemberInfo) =>
-        set({
-          memberInfo: info,
-        }),
+    setMemberId: (id: number | null) => set({ memberId: id }),
+    setToken: (token: string | null) => set({ token: token }),
+    
+    setEmail: (email: string | null) => 
+        set((state) => ({ 
+            registrationInfo: { ...state.registrationInfo, email } 
+        })),
+    setName: (name: string | null) =>
+        set((state) => ({
+            registrationInfo: { ...state.registrationInfo, name }
+        })),
+    setPhone: (phone: string | null) =>
+        set((state) => ({
+            registrationInfo: { ...state.registrationInfo, phone }
+        })),
+    setGender: (gender: 'MALE' | 'FEMALE' | null) =>
+        set((state) => ({
+            registrationInfo: { ...state.registrationInfo, gender }
+        })),
+    setBirth: (birth: string | null) =>
+        set((state) => ({
+            registrationInfo: { ...state.registrationInfo, birth }
+        })),
 
-    setToken: (token: string) =>
+    setRegistrationInfo: (info: Partial<UserRegistrationInfo>) =>
+        set((state) => ({
+            registrationInfo: { ...state.registrationInfo, ...info }
+        })),
+
+    clearMember: () =>
         set({
-          token: token,
+          memberId: null,
+          token: null,
+          registrationInfo: { ...initialRegistrationInfo }, // 모든 정보 초기화
         }),
     
-    setEmail: (email: string) =>
-        set({
-            email: email,
-        }),
-
-  updateMemberInfo: (updates) =>
-    set((state) => ({
-      memberInfo: {
-        ...((state.memberInfo ?? {}) as MemberInfo),
-        ...updates,
-      },
-    })),
-
-  clearMember: () =>
-    set({
-      memberInfo: null,
-      token: null,
-      email: null,
-    }),
+    clearRegistrationInfo: () => 
+        set({ registrationInfo: { ...initialRegistrationInfo } }), // 회원가입 정보만 초기화
 }));

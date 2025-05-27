@@ -49,15 +49,15 @@ import {
 export default function SignupInput() {
     const router = useRouter();
     // const params = useLocalSearchParams<UserInfoFromAuth & { /* 다른 파라미터 타입 */ }>(); // 스토어 사용으로 대체
-    const memberInfo = useMemberInfoStore((state) => state.memberInfo);
-    const storeEmail = useMemberInfoStore((state) => state.email);
+    const registrationInfo = useMemberInfoStore((state) => state.registrationInfo);
 
-    const emailToUse = storeEmail || memberInfo?.email || '';
-    const nameFromStore = memberInfo?.name || '';
-    // 스토어의 gender는 MALE/FEMALE 일 수 있으므로, 화면 표시는 '남성'/'여성'으로 변환 필요
-    const genderFromStore = memberInfo?.gender === 'MALE' ? '남성' : memberInfo?.gender === 'FEMALE' ? '여성' : '';
-    const birthFromStore = memberInfo?.birth || ''; // YYYY-MM-DD 형식으로 가정
-    const phoneFromStore = memberInfo?.phone || ''; // 010-xxxx-xxxx 형식으로 가정
+    // 스토어에서 가져온 값들을 사용합니다.
+    const emailFromStore = registrationInfo?.email || '';
+    const nameFromStore = registrationInfo?.name || '';
+    const phoneFromStore = registrationInfo?.phone || '';
+    const birthFromStore = registrationInfo?.birth || ''; // YYYY-MM-DD 또는 YYYYMMDD 형식
+    // 화면 표시용 성별 변환
+    const genderDisplay = registrationInfo?.gender === 'MALE' ? '남성' : registrationInfo?.gender === 'FEMALE' ? '여성' : '';
 
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
@@ -67,68 +67,70 @@ export default function SignupInput() {
     const [selectedCity, setSelectedCity] = useState<string | null>(null);
     const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
 
-    // 휴대폰 번호는 스토어에서 가져오므로, 여기서 phone state는 제거하고 phoneFromStore 직접 사용
-    // const [phone, setPhone] = useState<string>('');
-    // const phoneRegex = /^010-\d{4}-\d{4}$/;
-
     const [age, setAge] = useState<string>('');
 
     useEffect(() => {
         if (birthFromStore) {
-            const birthYear = parseInt(birthFromStore.substring(0, 4), 10);
+            const birthDateStr = birthFromStore.replace(/-/g, ''); // YYYYMMDD로 통일
+            const birthYear = parseInt(birthDateStr.substring(0, 4), 10);
             const currentYear = new Date().getFullYear();
+            // 정확한 만나이 계산은 월, 일을 고려해야 하지만, 여기서는 연도 기준으로 간단히 계산합니다.
             setAge((currentYear - birthYear).toString());
         }
     }, [birthFromStore]);
 
     const isPasswordMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
     const isPasswordValid = passwordRegex.test(password);
-    // 스토어의 phoneFromStore는 이미 인증된 값이므로, 추가적인 phoneRegex 유효성 검사는 불필요할 수 있음
-    // const isPhoneValid = phoneRegex.test(phoneFromStore);
-
-    const isFormValid = isPasswordMatch && isPasswordValid && selectedCity && selectedDistrict && emailToUse && nameFromStore && genderFromStore && birthFromStore && phoneFromStore;
+    const isFormValid = isPasswordMatch && isPasswordValid && selectedCity && selectedDistrict &&
+                        emailFromStore && nameFromStore && registrationInfo?.gender && birthFromStore && phoneFromStore;
 
     const handlePasswordChange = (text: string): void => {
         setPassword(text);
     };
 
-    // 휴대폰 번호 입력 로직은 스토어에서 가져오므로 validatePhone 함수 불필요
-    // const validatePhone = (value: string): void => { ... };
-
     const handleSignup = async (): Promise<void> => {
         if (!isFormValid) {
-            Alert.alert('입력 오류', '모든 필수 정보를 올바르게 입력해주세요.');
+            let alertMessage = '모든 필수 정보를 올바르게 입력해주세요.';
+            if (!emailFromStore) alertMessage = '이메일 정보가 없습니다. 처음부터 다시 시도해주세요.';
+            else if (!nameFromStore) alertMessage = '이름 정보가 없습니다. 본인인증을 다시 시도해주세요.';
+            // ... 다른 필수 값들에 대한 검사 ...
+            else if (!selectedCity || !selectedDistrict) alertMessage = '지역을 선택해주세요.';
+            else if (!isPasswordValid) alertMessage = '비밀번호 형식이 올바르지 않습니다.';
+            else if (!isPasswordMatch) alertMessage = '비밀번호가 일치하지 않습니다.';
+            
+            Alert.alert('입력 오류', alertMessage);
+            if (!emailFromStore || !nameFromStore || !registrationInfo?.gender || !birthFromStore || !phoneFromStore) {
+                router.replace('/(onBoard)/register'); // 중요 정보 누락 시 처음으로
+            }
             return;
         }
-        if (!emailToUse) {
-             Alert.alert('오류', '이메일 정보가 없습니다. 다시 시도해주세요.');
-             router.replace('/(onBoard)/register'); // 이메일 입력부터 다시
-             return;
-        }
 
-        const normalizedGender = memberInfo?.gender; // 스토어에 MALE/FEMALE로 저장되어 있다고 가정
-        if (!normalizedGender || (normalizedGender !== 'MALE' && normalizedGender !== 'FEMALE')) {
-            Alert.alert('오류', '성별 정보가 올바르지 않습니다.');
+        // 스토어의 gender 값 ('MALE' | 'FEMALE')을 직접 사용
+        const genderForApi = registrationInfo?.gender;
+        if (!genderForApi) { // null 또는 undefined 체크
+            Alert.alert('오류', '성별 정보가 올바르지 않습니다. 본인인증을 다시 시도해주세요.');
+            router.replace('/(onBoard)/register/Agreement');
             return;
         }
 
         const region = `${selectedCity} ${selectedDistrict}`;
-
         const payload = {
-            email: emailToUse,
+            email: emailFromStore,
             name: nameFromStore,
-            gender: normalizedGender,
-            birth: birthFromStore,
+            gender: genderForApi, // 스토어의 MALE/FEMALE 값
+            birth: birthFromStore.replace(/-/g, ''), // API가 YYYYMMDD 형식을 원한다면
             password,
-            phone: phoneFromStore, // 스토어에서 가져온 phone 사용
+            phone: phoneFromStore.replace(/-/g, ''), // API가 하이픈 없는 형식을 원한다면
             region,
         };
-        console.log('🔗 보낸 데이터:', payload);
+        console.log('🔗 회원가입 요청 데이터:', payload);
 
         try {
-            const response = await createMemberInfo(payload); // API 호출
+            const response = await createMemberInfo(payload);
             console.log('📡 회원가입 요청 성공:', response);
-            router.replace('/(onBoard)/register/Congratulate'); // 성공 페이지로 이동
+            // 회원가입 성공 후 스토어의 registrationInfo 초기화 (선택적)
+            // useMemberInfoStore.getState().clearRegistrationInfo();
+            router.replace('/(onBoard)/register/Congratulate');
         } catch (err: any) {
             console.error('회원가입 실패:', err);
             const errMsg = err.response?.data?.error || err.response?.data?.message || '회원가입 중 문제가 발생했습니다.';
@@ -163,7 +165,7 @@ export default function SignupInput() {
                 </View>
 
                 <Text style={styles.label}>이메일</Text>
-                <TextInput style={[styles.input, styles.disabledInput]} value={emailToUse} editable={false} />
+                <TextInput style={[styles.input, styles.disabledInput]} value={emailFromStore} editable={false} />
 
                 <Text style={styles.label}>비밀번호</Text>
                 <Text style={styles.condition}>비밀번호는 영어 대문자, 소문자, 숫자, 특수문자를 1개씩 포함하여 8~16자여야 합니다.</Text>
@@ -203,26 +205,18 @@ export default function SignupInput() {
 
                 <Text style={styles.label}>휴대폰 번호</Text>
                 <TextInput
-                    style={[styles.input, styles.disabledInput]} // disabledInput 스타일 추가
-                    value={phoneFromStore} // 스토어 값 사용
-                    editable={false} // 수정 불가
-                    // placeholder='010-1234-5678' // 불필요
-                    // onChangeText={validatePhone} // 불필요
-                    // keyboardType="numeric" // 불필요
-                    // maxLength={13} // 불필요
+                    style={[styles.input, styles.disabledInput]}
+                    value={phoneFromStore}
+                    editable={false}
                 />
-                 {/* 스토어 값은 유효하다고 가정하므로 에러 메시지 제거 */}
-                 {/* {phoneFromStore.length > 0 && !isPhoneValid && (
-                    <Text style={styles.errorText}>휴대폰 번호 형식이 올바르지 않습니다. (010-xxxx-xxxx)</Text>
-                )} */}
 
                 <Text style={styles.label}>성함</Text>
                 <TextInput style={[styles.input, styles.disabledInput]} value={nameFromStore} editable={false} />
 
                 <Text style={styles.label}>성별</Text>
-                <TextInput style={[styles.input, styles.disabledInput]} value={genderFromStore} editable={false} />
+                <TextInput style={[styles.input, styles.disabledInput]} value={genderDisplay} editable={false} />
 
-                <Text style={styles.label}>나이</Text>
+                <Text style={styles.label}>나이 (만)</Text>
                 <TextInput style={[styles.input, styles.disabledInput]} value={age} editable={false} />
 
                 <Text style={styles.label}>지역</Text>
@@ -241,7 +235,7 @@ export default function SignupInput() {
 }
 
 // 스타일 정의는 이전 답변과 동일하게 사용 가능 (styles 객체)
-const styles = StyleSheet.create({ /* ... 이전 스타일 복사 ... */
+const styles = StyleSheet.create({
     scrollContainer: {
         marginTop: 60,
         flexGrow: 1,

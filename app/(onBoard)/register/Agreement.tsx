@@ -3,7 +3,7 @@ import LogoIcon from '@/assets/images/login/logo_icon.svg'; // SVG 사용 시
 import TossAuth from '@/components/common/TossAuth';
 import UnderageRestrictionModal from '@/components/login/UnderageRestrictionModal'; // 미성년자 모달 임포트
 import MediumButton from '@/components/profile/myInfoPage/MediumButton'; // 경로 예시
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // memberInfoStore 임포트
+import { useMemberInfoStore, UserRegistrationInfo } from '@/zustand/stores/memberInfoStore'; // UserRegistrationInfo 타입 임포트
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router'; // useLocalSearchParams 임포트
 import { useEffect, useState } from "react"; // React 임포트
@@ -30,7 +30,7 @@ export default function Agreement() {
     const [checkedTerms, setCheckedTerms] = useState<boolean[]>(() => terms.map(() => false));
     const [showTossAuth, setShowTossAuth] = useState(false);
     const [showUnderageModal, setShowUnderageModal] = useState(false); // 미성년자 모달 상태
-    const updateMemberInfoInStore = useMemberInfoStore((state) => state.updateMemberInfo); // memberInfoStore 임포트
+    const setStoreRegistrationInfo = useMemberInfoStore((state) => state.setRegistrationInfo);
 
     // DetailAgreement에서 돌아올 때 상태 업데이트
     useEffect(() => {
@@ -74,21 +74,31 @@ export default function Agreement() {
         setShowTossAuth(true);
     };
 
-    const handleAuthSuccess = (userInfo: { name: string; phone: string; gender?: string; birthDate?: string; }) => { 
-        console.log("✅ 인증 성공:", userInfo);
+    // TossAuth로부터 받는 userInfo 타입 정의 (TossAuth 컴포넌트의 실제 반환 타입에 맞춰야 함)
+    interface TossUserInfo {
+        name: string;
+        phone: string;
+        gender?: string; // TossAuth에서 오는 실제 타입에 맞게 string으로 변경 또는 TossAuth 수정
+        birthDate?: string; // YYYYMMDD 또는 YYYY-MM-DD 형식 가정
+        // ci?: string; // 필요한 경우 추가
+    }
+
+    const handleAuthSuccess = (userInfo: TossUserInfo) => { 
+        console.log("✅ Toss 인증 성공:", userInfo);
         setShowTossAuth(false);
 
+        // 나이 계산 및 미성년자 확인
         if (userInfo.birthDate) {
-            const birthDateStr = userInfo.birthDate; // YYYYMMDD 또는 YYYY-MM-DD 형식 가정
+            const birthDateStr = userInfo.birthDate.replace(/-/g, ''); // 하이픈 제거 (YYYYMMDD)
             const year = parseInt(birthDateStr.substring(0, 4), 10);
-            const month = parseInt(birthDateStr.substring(birthDateStr.length === 8 ? 4 : 5, birthDateStr.length === 8 ? 6 : 7), 10) -1; // JS month is 0-indexed
-            const day = parseInt(birthDateStr.substring(birthDateStr.length === 8 ? 6 : 8, birthDateStr.length === 8 ? 8 : 10), 10);
+            const month = parseInt(birthDateStr.substring(4, 6), 10) -1; // JS month is 0-indexed
+            const day = parseInt(birthDateStr.substring(6, 8), 10);
 
             const today = new Date();
-            const birthDate = new Date(year, month, day);
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            const birthDateObj = new Date(year, month, day);
+            let age = today.getFullYear() - birthDateObj.getFullYear();
+            const m = today.getMonth() - birthDateObj.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
                 age--;
             }
 
@@ -98,18 +108,31 @@ export default function Agreement() {
             }
         }
 
-        updateMemberInfoInStore({
+        // gender 값을 스토어 형식에 맞게 변환
+        let storeGender: 'MALE' | 'FEMALE' | null = null;
+        if (userInfo.gender === '남성' || userInfo.gender?.toUpperCase() === 'MALE') {
+            storeGender = 'MALE';
+        } else if (userInfo.gender === '여성' || userInfo.gender?.toUpperCase() === 'FEMALE') {
+            storeGender = 'FEMALE';
+        }
+
+        // Zustand 스토어에 인증 정보 저장
+        const registrationUpdate: Partial<UserRegistrationInfo> = {
             name: userInfo.name,
             phone: userInfo.phone,
-            gender: userInfo.gender, 
-            birth: userInfo.birthDate, 
-        });
+            gender: storeGender, // 변환된 gender 값 사용
+            birth: userInfo.birthDate || null, // undefined일 경우 null 처리
+        };
+        setStoreRegistrationInfo(registrationUpdate);
+        console.log("스토어에 사용자 인증 정보 저장 완료", registrationUpdate);
+
         router.push('/(onBoard)/register/SignupInput');
     };
     
     const handleAuthFailure = () => {
         console.log("❌ Toss 인증 실패");
         setShowTossAuth(false);
+        Alert.alert("인증 실패", "본인 인증에 실패했습니다. 다시 시도해주세요.");
     };
 
     // DetailAgreement로 이동하는 함수
