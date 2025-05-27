@@ -7,9 +7,10 @@ const { width } = Dimensions.get("window");
 
 type GradientHeaderProps = {
   title: string;
+  showBackButton?: boolean;
 };
 
-export default function GradientHeader({ title }: GradientHeaderProps) {
+export default function GradientHeader({ title, showBackButton = true }: GradientHeaderProps) {
   const router = useRouter();
 
   const handleBack = () => {
@@ -23,16 +24,19 @@ export default function GradientHeader({ title }: GradientHeaderProps) {
         end={{ x: 1, y: 0 }}
         style={styles.header}
         >
-        <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-            <Ionicons name="chevron-back" size={28} color="#fff" />
-        </TouchableOpacity>
+        {showBackButton ? (
+          <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+              <Ionicons name="chevron-back" size={28} color="#fff" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
         <Text style={styles.title}>{title}</Text>
-        {/* 오른쪽에 공간 확보용 View (정렬용) */}
-        <View style={{ width: 28 }} />
+        <View style={{ width: 40 }} />
         </LinearGradient>
   );
 }
@@ -55,7 +59,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     textAlign: "center",
-    fontFamily: "Pretendard-Bold",
+    fontFamily: "Pretendard",
     fontSize: 20,
     color: "#fff",
     letterSpacing: 0.5,
