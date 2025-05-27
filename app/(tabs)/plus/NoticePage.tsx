@@ -5,7 +5,7 @@ import NoticeListItem from "@/components/plus/notice/NoticeListItem";
 import NoticeSearchBar, { NoticeTypeFilter } from "@/components/plus/notice/NoticeSearchBar";
 import { useFocusEffect, useRouter } from "expo-router"; // useRouter 추가
 import { useCallback, useState } from "react"; // useEffect 추가
-import { ActivityIndicator, Alert, Dimensions, FlatList, StyleSheet, Text, View } from "react-native"; // TouchableOpacity 주석처리 (더보기 버튼 임시 제거)
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, View } from "react-native"; // TouchableOpacity 주석처리 (더보기 버튼 임시 제거)
 
 const { width, height } = Dimensions.get('window');
 // const ITEMS_PER_PAGE = 10; // 더미데이터 사용 시 불필요
@@ -111,8 +111,7 @@ export default function NoticePage() {
 
   // 상세 페이지 이동 핸들러 (NoticeListItem에서 직접 호출 대신 여기서 props로 전달)
   const handleNavigateToDetail = (noticeId: number) => {
-    // router.push(`/plus/NoticeDetailPage?noticeId=${noticeId}`); // 실제 경로로 수정 필요
-    Alert.alert("상세 페이지 이동", `공지 ID: ${noticeId} (페이지 구현 후 연결)`);
+    router.push(`/(tabs)/plus/NoticeDetailPage?noticeId=${noticeId}`);
   };
   
   const combinedNotices = [...importantNotices, ...regularNotices];

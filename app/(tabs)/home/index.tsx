@@ -9,10 +9,16 @@ import MainBackground from '@/assets/images/home/mainBackground.svg';
 import { hasUnreadAlerts } from '@/components/Alerts/AlertBox';
 import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
+import AccountBannedModal from '@/components/home/AccountBannedModal';
 import ThemeCarousel from "@/components/home/ThemeCarousel";
 import { BlurView } from 'expo-blur';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Dimensions, Image, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+// 실제 앱에서는 API 응답이나 전역 상태(Zustand 등)를 통해 받아올 값입니다.
+//const MOCK_USER_STATUS = 'MEMBER_BANNED'; // 테스트를 위해 'MEMBER_BANNED' 또는 다른 값으로 변경
+const MOCK_USER_STATUS = 'ACTIVE'; 
 
 const HomeScreen = () => {
   const { width, height } = Dimensions.get("window");
@@ -37,6 +43,25 @@ const HomeScreen = () => {
     lineColor: '#ccc',
     description: '',
   });
+
+  const [isBannedModalVisible, setIsBannedModalVisible] = useState(false);
+
+  // 화면이 포커스될 때마다 memberStatus를 확인 (실제로는 로그인 시 또는 앱 시작 시 1회 확인)
+  useFocusEffect(
+    useCallback(() => {
+      // TODO: 실제 memberStatus 확인 로직 (예: API 호출 또는 전역 상태 조회)
+      // if (MOCK_USER_STATUS === 'MEMBER_BANNED') {
+      //   setIsBannedModalVisible(true);
+      // } else {
+      //   setIsBannedModalVisible(false); // 다른 상태일 경우 모달 숨김 (선택적)
+      // }
+      
+      // cleanup 함수 (선택적)
+      return () => {
+        // 예를 들어, 화면을 벗어날 때 특정 로직 수행이 필요하다면 여기에 작성
+      };
+    }, []) // 의존성 배열이 비어있으므로, 포커스될 때마다 실행
+  );
 
   const handleImageClick = (num: number) => {
     // 파라미터 숫자에 따라 바텀시트 설정
@@ -88,6 +113,11 @@ const HomeScreen = () => {
     setBottomSheetParams(params);
     // 바텀시트 표시
     setBottomSheetVisible(true);
+  };
+
+  const handleConfirmBannedModal = () => {
+    setIsBannedModalVisible(false);
+    router.replace('/(onBoard)'); // 마지막 슬래시 제거
   };
 
   return (
@@ -167,6 +197,11 @@ const HomeScreen = () => {
       <AlertModal 
         visible={isAlertModalVisible}
         onClose={() => setAlertModalVisible(false)}
+      />
+
+      <AccountBannedModal
+        isVisible={isBannedModalVisible}
+        onConfirm={handleConfirmBannedModal}
       />
     </View>
   );
