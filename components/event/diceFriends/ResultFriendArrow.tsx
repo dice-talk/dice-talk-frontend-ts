@@ -13,7 +13,7 @@ import SezziSvg from "@/assets/images/chat/sezzi.svg";
 
 import YukdaengSvg from "@/assets/images/chat/yukdaeng.svg";
 import DiceArrowAnimation from "../animation/DiceArrowAnimation";
-import DiceIconContainer from "./DiceIconContainer";
+import DiceIconContainer from "../heartSignal/DiceIconContainer";
 
 // 주사위 번호와 캐릭터 매핑
 const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
@@ -31,6 +31,7 @@ interface ResultLoveArrowProps {
   selections?: { from: number; to: number }[];
   onClose?: () => void;
   onMatchPress?: () => void;  // 매칭 결과 버튼 클릭 핸들러
+  themeId?: number;
 }
 
 interface Position {
@@ -45,8 +46,12 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
     { from: 1, to: 6 }
   ],
   onClose,
-  onMatchPress
+  onMatchPress,
+  themeId = 1
 }) => {
+  // 테마별 색상 설정
+  const matchButtonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
+  const matchButtonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
   return (
     <View style={styles.container}>
       <Image
@@ -76,7 +81,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
 
       {/* 매칭 결과 버튼 */}
       <TouchableOpacity 
-        style={styles.matchButton}
+        style={[styles.matchButton, { backgroundColor: matchButtonColor, borderColor: matchButtonBorderColor }]}
         onPress={onMatchPress}
       >
         <Text style={styles.matchButtonText}>매칭 결과 보기</Text>
@@ -135,20 +140,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: height * 0.25,
     alignSelf: 'center',
-    backgroundColor: '#FFB6C1',
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: '#FFD6DD',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
     zIndex: 10,
   },
   matchButtonText: {

@@ -10,7 +10,7 @@ import GptNotice from "@/components/chat/GptNotice";
 import MessageCheckReport from "@/components/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
-import EnvelopeAnimation from "@/components/event/heartSignal/EnvelopeAnimation";
+import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
 import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
@@ -489,7 +489,6 @@ const ChatRoom = () => {
               ]}
               onClose={() => setShowResultLoveArrow(false)}
               onMatchPress={handleMatchPress}
-              themeId={themeId}
             />
           </View>
         </Modal>
