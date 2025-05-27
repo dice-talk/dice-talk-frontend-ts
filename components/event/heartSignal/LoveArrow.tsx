@@ -106,7 +106,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
                   <SvgComponent 
                     width={35} 
                     height={35} 
-                    style={styles.characterIcon}
+                    style={styles.characterIcon} 
                     color={svgColor}
                   />
                   <Text style={styles.characterName}>{character.name}</Text>
