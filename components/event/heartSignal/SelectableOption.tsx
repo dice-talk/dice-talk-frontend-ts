@@ -9,12 +9,13 @@ interface Props {
   selected: boolean;
   onPress: () => void;
   svgColor?: string;
+  selectedSvgColor?: string;
   textColor?: string;
   radioColor?: string;
   checkmarkColor?: string;
 }
 
-const SelectableOption = ({ label, icon, svgComponent: SvgComponent, selected, onPress, svgColor, textColor, radioColor, checkmarkColor }: Props) => {
+const SelectableOption = ({ label, icon, svgComponent: SvgComponent, selected, onPress, svgColor, selectedSvgColor, textColor, radioColor, checkmarkColor }: Props) => {
   return (
     <Pressable style={styles.optionRow} onPress={onPress}>
       <View style={[
@@ -25,7 +26,12 @@ const SelectableOption = ({ label, icon, svgComponent: SvgComponent, selected, o
         {selected && <View style={[styles.checkmark, { backgroundColor: checkmarkColor || "#E04C65" }]} />}
       </View>
       {SvgComponent ? (
-        <SvgComponent width={28} height={28} style={styles.svgIcon} color={svgColor} />
+        <SvgComponent 
+          width={28} 
+          height={28} 
+          style={styles.svgIcon} 
+          color={selected ? (selectedSvgColor || "#F9BCC1") : (svgColor || "#FFFFFF")} 
+        />
       ) : null}
       <Text style={[styles.optionLabel, { color: textColor || "#A45C73" }]}>{label}</Text>
     </Pressable>

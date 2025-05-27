@@ -38,7 +38,8 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
   const dividerColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const confirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FEBFC8";
   const confirmButtonBorderColor = themeId === 2 ? "#6DA0E1" : "#FFD9DF";
-  const svgColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  const svgColor = "#FFFFFF"; // 기본 흰색
+  const selectedSvgColor = "#F9BCC1"; // 선택 시 색상
   const textColor = themeId === 2 ? "#879FC0" : "#A45C73";
   const radioColor = themeId === 2 ? "#879FC0" : "#D6A0B1";
   const checkmarkColor = themeId === 2 ? "#879FC0" : "#E04C65";
@@ -83,6 +84,7 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
           selected={selectedIndex === index}
               onPress={() => handleToggleSelection(index)}
           svgColor={svgColor}
+          selectedSvgColor={selectedSvgColor}
           textColor={textColor}
           radioColor={radioColor}
           checkmarkColor={checkmarkColor}

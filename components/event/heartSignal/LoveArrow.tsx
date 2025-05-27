@@ -1,16 +1,13 @@
+// 컬러 SVG import
 import DaoSvg from "@/assets/images/chat/dao.svg";
-import DaoWhiteSvg from "@/assets/images/chat/dao_white.svg";
 import DoriSvg from "@/assets/images/chat/dori.svg";
-import DoriWhiteSvg from "@/assets/images/chat/dori_white.svg";
 import HanaSvg from "@/assets/images/chat/hana.svg";
-import HanaWhiteSvg from "@/assets/images/chat/hana_white.svg";
 import NemoSvg from "@/assets/images/chat/nemo.svg";
-import NemoWhiteSvg from "@/assets/images/chat/nemo_white.svg";
 import SezziSvg from "@/assets/images/chat/sezzi.svg";
-import SezziWhiteSvg from "@/assets/images/chat/sezzi_white.svg";
 import YukdaengSvg from "@/assets/images/chat/yukdaeng.svg";
-import YukdaengWhiteSvg from "@/assets/images/chat/yukdaeng_white.svg";
 import CountPlusSvg from "@/assets/images/event/countPlus.svg";
+import FriendLetterForm from "@/assets/images/event/friend_letterForm.svg";
+import LetterForm from "@/assets/images/event/LetterForm.svg";
 import ToastMessage from "@/components/common/ToastMessage";
 import React, { useState } from "react";
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -21,6 +18,7 @@ interface LoveArrowProps {
   onClose: () => void;
   gender?: "MALE" | "FEMALE";
   remainingCount: number;
+  themeId?: number;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -28,10 +26,9 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 interface CharacterInfo {
   name: string;
   ColoredSvgComponent: React.FC<SvgProps>;
-  WhiteSvgComponent: React.FC<SvgProps>;
 }
 
-const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE", remainingCount }) => {
+const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE", remainingCount, themeId = 1 }) => {
   const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
 
@@ -39,16 +36,27 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
     // TODO: 필요 시 기능 구현
   };
 
+  // themeId와 gender에 따른 색상 설정
+  const selectedColor = themeId === 2 
+    ? "#9FC9FF" 
+    : (gender === "MALE" ? "#F9BCC1" : "#9FC9FF");
+  const unselectedColor = "#FFFFFF";
+  
+  // 테마별 UI 색상 설정
+  const titleColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const confirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FEBFC8";
+  const confirmButtonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD9DF";
+
   const characters: CharacterInfo[] = gender === "MALE" 
     ? [
-        { name: "두 얼굴의 매력 두리", ColoredSvgComponent: DoriSvg, WhiteSvgComponent: DoriWhiteSvg },
-        { name: "네모지만 부드러운 네몽", ColoredSvgComponent: NemoSvg, WhiteSvgComponent: NemoWhiteSvg },
-        { name: "육감적인 직감파 육댕", ColoredSvgComponent: YukdaengSvg, WhiteSvgComponent: YukdaengWhiteSvg },
+        { name: "두 얼굴의 매력 두리", ColoredSvgComponent: DoriSvg },
+        { name: "네모지만 부드러운 네몽", ColoredSvgComponent: NemoSvg },
+        { name: "육감적인 직감파 육댕", ColoredSvgComponent: YukdaengSvg },
       ] 
     : [
-        { name: "한가로운 하나", ColoredSvgComponent: HanaSvg, WhiteSvgComponent: HanaWhiteSvg },
-        { name: "세침한 세찌", ColoredSvgComponent: SezziSvg, WhiteSvgComponent: SezziWhiteSvg },
-        { name: "단호한데 다정한 다오", ColoredSvgComponent: DaoSvg, WhiteSvgComponent: DaoWhiteSvg },
+        { name: "한가로운 하나", ColoredSvgComponent: HanaSvg },
+        { name: "세침한 세찌", ColoredSvgComponent: SezziSvg },
+        { name: "단호한데 다정한 다오", ColoredSvgComponent: DaoSvg },
       ];
 
   const handleSelectCharacter = (index: number) => {
@@ -62,7 +70,8 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
       onClose();
     }, 1500);
   };
-
+  const width = SCREEN_WIDTH * 0.95;
+  const height = SCREEN_WIDTH * 0.95;
   return (
     <Modal
       animationType="fade"
@@ -72,28 +81,33 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
     >
       <View style={styles.modalOverlay}>
         <Image 
-          source={require('@/assets/images/event/heartBoard.png')} 
+          source={require('@/assets/images/event/heartBoardBase.png')} 
           resizeMode="contain"
           style={styles.heartboardImage}
         />
-        <Text style={styles.title}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
+                  <Text style={[styles.title, { color: titleColor }]}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
+          {themeId === 2 ? (
+            <FriendLetterForm width={width * 0.55} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.37, zIndex: 3}} />
+          ) : (
+            <LetterForm width={width * 0.55} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.37, zIndex: 3}} />
+          )}
         <View style={styles.charactersWrapper}>
           <View style={styles.charactersContainer}>
             {characters.map((character, index) => {
               const isSelected = selectedCharacterIndex === index;
-              const SvgComponentToRender = isSelected
-                ? character.ColoredSvgComponent
-                : character.WhiteSvgComponent;
+              const SvgComponent = character.ColoredSvgComponent;
+              const svgColor = isSelected ? selectedColor : unselectedColor;
               return (
                 <TouchableOpacity
                   key={index}
                   style={styles.characterItem}
                   onPress={() => handleSelectCharacter(index)}
                 >
-                  <SvgComponentToRender 
+                  <SvgComponent 
                     width={35} 
                     height={35} 
-                    style={styles.characterIcon} 
+                    style={styles.characterIcon}
+                    color={svgColor}
                   />
                   <Text style={styles.characterName}>{character.name}</Text>
                 </TouchableOpacity>
@@ -107,10 +121,10 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
             </TouchableOpacity>
           </View>
         </View>
-        
         <TouchableOpacity
           style={[
             styles.confirmButton,
+            { backgroundColor: confirmButtonColor, borderColor: confirmButtonBorderColor },
             selectedCharacterIndex === null && styles.confirmButtonDisabled
           ]}
           onPress={handleConfirm}
@@ -118,7 +132,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
         >
           <Text style={styles.confirmButtonText}>확인</Text>
         </TouchableOpacity>
-        <ToastMessage message="선택이 완료되었습니다" visible={showToast} />
+        <ToastMessage message="선택이 완료되었습니다" visible={showToast} themeId={themeId} />
       </View>
     </Modal>
   );
@@ -137,7 +151,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 12,
     fontWeight: "light",
-    color: "#F9BCC1",
     textAlign: "center",
     zIndex: 2,
     position: 'absolute',
@@ -180,12 +193,10 @@ const styles = StyleSheet.create({
     maxWidth: 80,
   },
   confirmButton: {
-    backgroundColor: "#FEBFC8",
     paddingVertical: 10,
     paddingHorizontal: 60,
     borderRadius: 30,
     borderWidth: 2,
-    borderColor: "#FFD9DF",
     zIndex: 3,
     position: 'absolute',
     bottom: SCREEN_HEIGHT * 0.25,
