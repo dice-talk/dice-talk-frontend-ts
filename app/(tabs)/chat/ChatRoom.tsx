@@ -491,6 +491,7 @@ const ChatRoom = () => {
                 ]}
                 onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
+                themeId={themeId}
               />
             ) : (
               <ResultLoveArrow 
@@ -535,6 +536,7 @@ const ChatRoom = () => {
         <LoveArrowMatch 
           isVisible={showLoveArrowMatch}
           onClose={() => setShowLoveArrowMatch(false)}
+          themeId={themeId}
         />
     </View>
   );
