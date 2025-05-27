@@ -36,6 +36,10 @@ interface ChatMessage {
 const ChatRoom = () => {
   const params = useLocalSearchParams();
   const themeId = parseInt(params.themeId as string) || 1;
+  
+  // 테마별 색상 설정
+  const alertModalTitleColor = themeId === 2 ? "#5C5279" : "#A45C73";
+  const alertModalConfirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotice, setShowNotice] = useState(true);
   const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
@@ -434,8 +438,9 @@ const ChatRoom = () => {
           onClose={handleLoveArrowClose}
           gender="MALE"
           remainingCount={1}
+          themeId={themeId}
         />
-        
+    
         {/* ResultAlertModal */}
         <Modal
           visible={showResultAlertModal}
@@ -445,8 +450,8 @@ const ChatRoom = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.alertModalContent}>
-              <Text style={styles.alertModalTitle}>매칭 결과 확인</Text>
-              <Text style={styles.alertModalText}>매칭 결과를 확인하시겠습니까?</Text>
+              <Text style={[styles.alertModalTitle, { color: alertModalTitleColor }]}>매칭 결과 확인</Text>
+              <Text style={[styles.alertModalText, { color: alertModalTitleColor }]}>매칭 결과를 확인하시겠습니까?</Text>
               <View style={styles.alertModalButtons}>
                 <TouchableOpacity 
                   style={[styles.alertModalButton, styles.alertModalCancelButton]}
@@ -455,7 +460,7 @@ const ChatRoom = () => {
                   <Text style={styles.alertModalButtonText}>취소</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.alertModalButton, styles.alertModalConfirmButton]}
+                  style={[styles.alertModalButton, styles.alertModalConfirmButton, { backgroundColor: alertModalConfirmButtonColor }]}
                   onPress={handleResultAlertConfirm}
                 >
                   <Text style={styles.alertModalButtonText}>확인</Text>
@@ -484,6 +489,7 @@ const ChatRoom = () => {
               ]}
               onClose={() => setShowResultLoveArrow(false)}
               onMatchPress={handleMatchPress}
+              themeId={themeId}
             />
           </View>
         </Modal>
@@ -673,12 +679,10 @@ const styles = StyleSheet.create({
   alertModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#A45C73',
     marginBottom: 15,
   },
   alertModalText: {
     fontSize: 16,
-    color: '#333',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -700,7 +704,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   alertModalConfirmButton: {
-    backgroundColor: '#FFB6C1',
+    // backgroundColor는 동적으로 적용됨
   },
   alertModalButtonText: {
     color: '#FFFFFF',

@@ -1,21 +1,25 @@
 // components/common/ToastMessage.tsx
 
 import React from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface ToastMessageProps {
   message: string;
   visible: boolean;
+  themeId?: number;
 }
 
-const ToastMessage: React.FC<ToastMessageProps> = ({ message, visible }) => {
+const ToastMessage: React.FC<ToastMessageProps> = ({ message, visible, themeId = 1 }) => {
   if (!visible) return null;
+
+  // 테마별 색상 설정
+  const textColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
 
   return (
     <View style={styles.toastContainer}>
-      <Text style={styles.toastText}>{message}</Text>
+      <Text style={[styles.toastText, { color: textColor }]}>{message}</Text>
     </View>
   );
 };
@@ -33,7 +37,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   toastText: {
-    color: '#F9BCC1',
     fontWeight: 'bold',
     fontSize: 13,
     textAlign: 'center',
