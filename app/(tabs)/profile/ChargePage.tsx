@@ -112,6 +112,7 @@ export default function ChargePage() {
   );
 }
 
+const { height } = Dimensions.get('window');
 const styles = StyleSheet.create({
   safeAreaContainer: { // SafeAreaView 대신 일반 View와 GradientHeader 조합
     flex: 1,
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 30, // 스크롤 영역 하단 여백
+    paddingBottom: height * 0.12, // 스크롤 영역 하단 여백
   },
   sectionContainer: {
     marginTop: 25,
