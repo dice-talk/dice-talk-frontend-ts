@@ -13,7 +13,7 @@ import SezziSvg from "@/assets/images/chat/sezzi.svg";
 
 import YukdaengSvg from "@/assets/images/chat/yukdaeng.svg";
 import DiceArrowAnimation from "../animation/DiceArrowAnimation";
-import DiceIconContainer from "../heartSignal/DiceIconContainer";
+import DiceIconContainer from "./DiceIconContainer";
 
 // 주사위 번호와 캐릭터 매핑
 const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
@@ -25,7 +25,7 @@ const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
   6: YukdaengSvg
 };
 
-interface ResultLoveArrowProps {
+interface ResultFriendArrowProps {
   leftUsers?: any[];
   rightUsers?: any[];
   selections?: { from: number; to: number }[];
@@ -39,11 +39,14 @@ interface Position {
   y: number;
 }
 
-const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
+const ResultFriendArrow: React.FC<ResultFriendArrowProps> = ({
   selections = [
     { from: 1, to: 2 },
+    { from: 1, to: 3 },
     { from: 1, to: 4 },
-    { from: 1, to: 6 }
+    { from: 1, to: 5 },
+    { from: 1, to: 6 },
+
   ],
   onClose,
   onMatchPress,
@@ -65,19 +68,17 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
           key={`arrow-${index}`}
           fromId={selection.from}
           toId={selection.to}
+          useHexagonLayout={true}
         />
       ))}
       
-      <DiceIconContainer position="right">
-        <View style={styles.diceContainer}><DoriSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><NemoSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><YukdaengSvg width={25} height={25} /></View>
-      </DiceIconContainer>
-      <DiceIconContainer position="left">
-        <View style={styles.diceContainer}><HanaSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><SezziSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><DaoSvg width={25} height={25} /></View>
-      </DiceIconContainer>
+      {/* 6각형 형태로 아이콘 배치 */}
+      <DiceIconContainer 
+        svgComponents={[HanaSvg, DoriSvg, SezziSvg, NemoSvg, DaoSvg, YukdaengSvg]}
+        svgColor="#9FC9FF"
+        borderColor="#9FC9FF"
+        size={45}
+      />
 
       {/* 매칭 결과 버튼 */}
       <TouchableOpacity 
@@ -90,7 +91,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
   );
 };
 
-export default ResultLoveArrow;
+export default ResultFriendArrow;
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
@@ -99,36 +100,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: "relative",
-  },
-  leftColumn: {
-    position: "absolute",
-    left: width * 0.1,
-    top: height * 0.2,
-    height: height * 0.6,
-    justifyContent: "space-around",
-    zIndex: 10,
-  },
-  rightColumn: {
-    position: "absolute",
-    right: width * 0.1,
-    top: height * 0.2,
-    height: height * 0.6,
-    justifyContent: "space-around",
-    zIndex: 10,
-  },
-  iconWrapper: {
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  diceContainer: {
-    width: 45,
-    height: 45,
-    backgroundColor: "white",
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#eee',
   },
   backgroundImage: {
     width: width * 0.9,
