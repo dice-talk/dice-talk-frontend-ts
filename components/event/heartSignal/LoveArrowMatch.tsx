@@ -1,7 +1,9 @@
 import Dori from '@/assets/images/dice/dori.svg';
 import Hana from '@/assets/images/dice/hana.svg';
+import FriendLetterForm from '@/assets/images/event/friend_letterForm.svg';
 import Signal from '@/assets/images/event/signal.svg';
 import TextForm from '@/assets/images/event/textForm.svg';
+import CircleProfile from '@/components/common/CircleProfile';
 import { BlurView } from 'expo-blur';
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -10,9 +12,18 @@ const { width, height } = Dimensions.get("window");
 type LoveArrowMatchProps = {
   isVisible: boolean;
   onClose: () => void;
+  themeId?: number;
 };
 
-const LoveArrowMatch = ({ isVisible, onClose }: LoveArrowMatchProps) => {
+const LoveArrowMatch = ({ isVisible, onClose, themeId = 1 }: LoveArrowMatchProps) => {
+  // 테마별 색상 설정
+  const textColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const buttonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
+  const buttonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
+  
+  // 테마별 프로필 색상 설정
+  const profileColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
+  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
   return (
     <Modal
       visible={isVisible}
@@ -23,22 +34,40 @@ const LoveArrowMatch = ({ isVisible, onClose }: LoveArrowMatchProps) => {
       <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
         <View style={styles.container}>
           <Image source={require('@/assets/images/event/heartBoardBase.png')} style={styles.image} />
-          <TextForm style={styles.textForm} />
+          {themeId === 2 ? (
+            <FriendLetterForm 
+              style={styles.friendTextForm}
+              width={width * 0.8}
+              height={height * 0.1}
+            />
+          ) : (
+            <TextForm 
+              style={styles.textForm}
+              width={width * 0.8}
+              height={height * 0.1}
+            />
+          )}
           <Signal style={styles.signal} />
-          <Text style={styles.text}>서로의 시그널이 통했습니다.{"\n"}이제 둘만의 채팅창으로 이동합니다.</Text>
-          <TouchableOpacity style={styles.moveButton} onPress={onClose}>
+          <Text style={[styles.text, { color: textColor }]}>서로의 시그널이 통했습니다.{"\n"}이제 둘만의 채팅창으로 이동합니다.</Text>
+          <TouchableOpacity style={[styles.moveButton, { backgroundColor: buttonColor, borderColor: buttonBorderColor }]} onPress={onClose}>
             <Text style={styles.moveButtonText}>이동하기</Text>
           </TouchableOpacity>
           <View style={styles.iconGroupLeft}>
-            <View style={styles.iconCircleLeft}>
-              <Hana width={width * 0.08} height={width * 0.08} />
-            </View>
+            <CircleProfile 
+              svgComponent={Hana}
+              svgColor={profileColor}
+              borderColor={profileBorderColor}
+              size={width * 0.13}
+            />
             <Text style={styles.iconLabel}>한가로운 하나</Text>
           </View>
           <View style={styles.iconGroupRight}>
-            <View style={styles.iconCircleRight}>
-              <Dori width={width * 0.08} height={width * 0.08} />
-            </View>
+            <CircleProfile 
+              svgComponent={Dori}
+              svgColor={profileColor}
+              borderColor={profileBorderColor}
+              size={width * 0.13}
+            />
             <Text style={styles.iconLabel}>두 얼굴의 매력 두리</Text>
           </View>
         </View>
@@ -65,6 +94,12 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: height * 0.1,
     top: height * 0.36,
+  },
+  friendTextForm: {
+    position: 'absolute',
+    width: width * 0.8,
+    height: height * 0.1,
+    top: height * 0.36,
   }, 
   signal: {
     position: 'absolute',
@@ -74,7 +109,6 @@ const styles = StyleSheet.create({
   },  
   text: {
     fontSize: 12,
-    color: '#F9BCC1',
     textAlign: 'center',
     fontWeight: '300',
     top: height * -0.04,
@@ -83,12 +117,10 @@ const styles = StyleSheet.create({
   moveButton: {
     position: 'absolute',
     top: height * 0.65,
-    backgroundColor: '#FFB6C1',
     paddingVertical: height * 0.015,
     paddingHorizontal: width * 0.08,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: '#FFD6DD',
   },
   moveButtonText: {
     color: '#FFFFFF',
@@ -96,22 +128,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  iconCircleLeft: {
-    width: width * 0.13,
-    height: width * 0.13,
-    borderRadius: width * 0.1,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconCircleRight: {
-    width: width * 0.13,
-    height: width * 0.13,
-    borderRadius: width * 0.1,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   iconGroupLeft: {
     position: 'absolute',
     left: width * 0.12,

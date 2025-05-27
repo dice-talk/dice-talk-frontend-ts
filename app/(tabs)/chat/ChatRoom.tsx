@@ -10,6 +10,8 @@ import GptNotice from "@/components/chat/GptNotice";
 import MessageCheckReport from "@/components/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
+import CustomCostModal from "@/components/common/CustomCostModal";
+import InsufficientItemModal from "@/components/common/DiceRechargeModal";
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
@@ -56,6 +58,8 @@ const ChatRoom = () => {
   const [showResultLoveArrow, setShowResultLoveArrow] = useState(false);
   const [showResultAlertModal, setShowResultAlertModal] = useState(false);
   const [showLoveArrowMatch, setShowLoveArrowMatch] = useState(false);
+  const [showCustomCostModal, setShowCustomCostModal] = useState(false);
+  const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -133,7 +137,7 @@ const ChatRoom = () => {
   
   // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러 수정
   const handleLoveArrowResultCheck = () => {
-    setShowResultAlertModal(true); // ResultAlertModal을 먼저 표시
+    setShowCustomCostModal(true); // CustomCostModal을 표시
   };
   
   const handleLoveLetterSelectClose = () => {
@@ -296,6 +300,29 @@ const ChatRoom = () => {
     setShowResultLoveArrow(false); // ResultLoveArrow 모달 닫기
     setShowLoveArrowMatch(true); // LoveArrowMatch 모달 열기
   };
+
+  // CustomCostModal 확인 버튼 클릭 핸들러
+  const handleCustomCostConfirm = () => {
+    setShowCustomCostModal(false); // CustomCostModal 닫기
+    setShowInsufficientItemModal(true); // InsufficientItemModal 표시 (아이템 부족)
+  };
+
+  // CustomCostModal 취소 버튼 클릭 핸들러
+  const handleCustomCostCancel = () => {
+    setShowCustomCostModal(false); // CustomCostModal 닫기
+  };
+
+  // InsufficientItemModal 상점으로 이동 버튼 클릭 핸들러
+  const handleGoToStore = () => {
+    setShowInsufficientItemModal(false); // InsufficientItemModal 닫기
+    // TODO: 상점 페이지로 이동하는 로직 추가
+    console.log('상점으로 이동');
+  };
+
+  // InsufficientItemModal 취소 버튼 클릭 핸들러
+  const handleInsufficientItemCancel = () => {
+    setShowInsufficientItemModal(false); // InsufficientItemModal 닫기
+  };
   
   return (
     <View style={styles.container}>
@@ -342,6 +369,15 @@ const ChatRoom = () => {
             {showNotice && !showMessageCheckReport && (
               <GptNotice 
                 text="[시스템] 사랑의 짝대기 결과를 확인해주세요!!"
+                onHide={hideNotice}
+                onParticipate={handleLoveArrowResultCheck}
+                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+                themeId={themeId}
+              />
+            )}
+            {showNotice && !showMessageCheckReport && (
+              <GptNotice 
+                text="[시스템] 이벤트 수정은 돈을 주세요!!"
                 onHide={hideNotice}
                 onParticipate={handleLoveArrowResultCheck}
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
@@ -491,6 +527,7 @@ const ChatRoom = () => {
                 ]}
                 onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
+                themeId={themeId}
               />
             ) : (
               <ResultLoveArrow 
@@ -535,6 +572,29 @@ const ChatRoom = () => {
         <LoveArrowMatch 
           isVisible={showLoveArrowMatch}
           onClose={() => setShowLoveArrowMatch(false)}
+          themeId={themeId}
+        />
+
+        {/* CustomCostModal */}
+        <CustomCostModal
+          visible={showCustomCostModal}
+          onClose={handleCustomCostCancel}
+          onConfirm={handleCustomCostConfirm}
+          content="이벤트 수정은 아이템이 필요합니다"
+          diceCount={5}
+          textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
+          diceButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
+          cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
+        />
+
+        {/* InsufficientItemModal */}
+        <InsufficientItemModal
+          visible={showInsufficientItemModal}
+          onClose={handleInsufficientItemCancel}
+          onGoToStore={handleGoToStore}
+          textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
+          storeButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
+          cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
         />
     </View>
   );
