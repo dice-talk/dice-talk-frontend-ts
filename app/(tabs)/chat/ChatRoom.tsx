@@ -11,7 +11,7 @@ import MessageCheckReport from "@/components/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
 import CustomCostModal from "@/components/common/CustomCostModal";
-import InsufficientItemModal from "@/components/common/InsufficientItemModal";
+import InsufficientItemModal from "@/components/common/DiceRechargeModal";
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
