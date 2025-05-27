@@ -25,12 +25,13 @@ const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
   6: YukdaengSvg
 };
 
-interface ResultLoveArrowProps {
+interface ResultFriendArrowProps {
   leftUsers?: any[];
   rightUsers?: any[];
   selections?: { from: number; to: number }[];
   onClose?: () => void;
   onMatchPress?: () => void;  // 매칭 결과 버튼 클릭 핸들러
+  themeId?: number;
 }
 
 interface Position {
@@ -38,15 +39,22 @@ interface Position {
   y: number;
 }
 
-const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
+const ResultFriendArrow: React.FC<ResultFriendArrowProps> = ({
   selections = [
     { from: 1, to: 2 },
+    { from: 1, to: 3 },
     { from: 1, to: 4 },
-    { from: 1, to: 6 }
+    { from: 1, to: 5 },
+    { from: 1, to: 6 },
+
   ],
   onClose,
-  onMatchPress
+  onMatchPress,
+  themeId = 1
 }) => {
+  // 테마별 색상 설정
+  const matchButtonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
+  const matchButtonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
   return (
     <View style={styles.container}>
       <Image
@@ -60,23 +68,21 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
           key={`arrow-${index}`}
           fromId={selection.from}
           toId={selection.to}
+          useHexagonLayout={true}
         />
       ))}
       
-      <DiceIconContainer position="right">
-        <View style={styles.diceContainer}><DoriSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><NemoSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><YukdaengSvg width={25} height={25} /></View>
-      </DiceIconContainer>
-      <DiceIconContainer position="left">
-        <View style={styles.diceContainer}><HanaSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><SezziSvg width={25} height={25} /></View>
-        <View style={styles.diceContainer}><DaoSvg width={25} height={25} /></View>
-      </DiceIconContainer>
+      {/* 6각형 형태로 아이콘 배치 */}
+      <DiceIconContainer 
+        svgComponents={[HanaSvg, DoriSvg, SezziSvg, NemoSvg, DaoSvg, YukdaengSvg]}
+        svgColor="#9FC9FF"
+        borderColor="#9FC9FF"
+        size={45}
+      />
 
       {/* 매칭 결과 버튼 */}
       <TouchableOpacity 
-        style={styles.matchButton}
+        style={[styles.matchButton, { backgroundColor: matchButtonColor, borderColor: matchButtonBorderColor }]}
         onPress={onMatchPress}
       >
         <Text style={styles.matchButtonText}>매칭 결과 보기</Text>
@@ -85,7 +91,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
   );
 };
 
-export default ResultLoveArrow;
+export default ResultFriendArrow;
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
@@ -94,36 +100,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: "relative",
-  },
-  leftColumn: {
-    position: "absolute",
-    left: width * 0.1,
-    top: height * 0.2,
-    height: height * 0.6,
-    justifyContent: "space-around",
-    zIndex: 10,
-  },
-  rightColumn: {
-    position: "absolute",
-    right: width * 0.1,
-    top: height * 0.2,
-    height: height * 0.6,
-    justifyContent: "space-around",
-    zIndex: 10,
-  },
-  iconWrapper: {
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  diceContainer: {
-    width: 45,
-    height: 45,
-    backgroundColor: "white",
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#eee',
   },
   backgroundImage: {
     width: width * 0.9,
@@ -135,20 +111,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: height * 0.25,
     alignSelf: 'center',
-    backgroundColor: '#FFB6C1',
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: '#FFD6DD',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
     zIndex: 10,
   },
   matchButtonText: {

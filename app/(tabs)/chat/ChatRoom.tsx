@@ -1,6 +1,6 @@
 import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
-import HanaSvg from '@/assets/images/chat/hana.svg';
-import Nemo from '@/assets/images/chat/nemo.svg';
+import HanaSvg from '@/assets/images/dice/hana.svg';
+import Nemo from '@/assets/images/dice/nemo.svg';
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
@@ -10,7 +10,8 @@ import GptNotice from "@/components/chat/GptNotice";
 import MessageCheckReport from "@/components/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
-import EnvelopeAnimation from "@/components/event/heartSignal/EnvelopeAnimation";
+import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
+import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
 import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
@@ -470,7 +471,7 @@ const ChatRoom = () => {
           </View>
         </Modal>
         
-        {/* ResultLoveArrow 모달 */}
+        {/* ResultLoveArrow/ResultFriendArrow 모달 */}
         <Modal
           visible={showResultLoveArrow}
           transparent={true}
@@ -478,19 +479,32 @@ const ChatRoom = () => {
           onRequestClose={() => setShowResultLoveArrow(false)}
         >
           <View style={styles.modalContainer}>
-            <ResultLoveArrow 
-              selections={[
-                { from: 1, to: 2 },
-                { from: 3, to: 5 },
-                { from: 5, to: 2 },
-                { from: 2, to: 1 },
-                { from: 4, to: 1 },
-                { from: 6, to: 3 }
-              ]}
-              onClose={() => setShowResultLoveArrow(false)}
-              onMatchPress={handleMatchPress}
-              themeId={themeId}
-            />
+            {themeId === 2 ? (
+              <ResultFriendArrow 
+                selections={[
+                  { from: 1, to: 4 },
+                  { from: 3, to: 1 },
+                  { from: 6, to: 3 },
+                  { from: 5, to: 4 },
+                  { from: 2, to: 5 }
+                ]}
+                onClose={() => setShowResultLoveArrow(false)}
+                onMatchPress={handleMatchPress}
+              />
+            ) : (
+              <ResultLoveArrow 
+                selections={[
+                  { from: 1, to: 2 },
+                  { from: 3, to: 5 },
+                  { from: 5, to: 2 },
+                  { from: 2, to: 1 },
+                  { from: 4, to: 1 },
+                  { from: 6, to: 3 }
+                ]}
+                onClose={() => setShowResultLoveArrow(false)}
+                onMatchPress={handleMatchPress}
+              />
+            )}
           </View>
         </Modal>
         

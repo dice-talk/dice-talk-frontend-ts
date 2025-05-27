@@ -1,5 +1,5 @@
-import HanaSvg from '@/assets/images/chat/hana.svg';
-import Nemo from '@/assets/images/chat/nemo.svg';
+import HanaSvg from '@/assets/images/dice/hana.svg';
+import Nemo from '@/assets/images/dice/nemo.svg';
 import SidebarClose from '@/assets/images/chat/sidebarClose.svg';
 import ActiveUser from '@/components/chat/ActiveUser';
 import ChatEventNotice from "@/components/chat/ChatEventNotice";
