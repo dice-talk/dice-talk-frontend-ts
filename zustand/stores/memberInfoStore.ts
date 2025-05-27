@@ -5,15 +5,18 @@ import { create } from "zustand";
 type MemberStore = {
   memberInfo: MemberInfo | null;
   token: string | null;
+  email: string | null;
   setMemberInfo: (info: MemberInfo) => void;
   setToken: (token: string) => void;
+  setEmail: (email: string) => void;
   updateMemberInfo: (updates: Partial<MemberInfo>) => void;
   clearMember: () => void;
 };
 
-export const useMemberInfoStore = create<MemberStore>((set) => ({ 
-    memberInfo: {}, // ✅ 초기값을 빈 객체로 지정 (null 아님)
-    token: "",
+export const useMemberInfoStore = create<MemberStore>((set) => ({
+    memberInfo: null,
+    token: null,
+    email: null,
 
     setMemberInfo: (info: MemberInfo) =>
         set({
@@ -25,6 +28,10 @@ export const useMemberInfoStore = create<MemberStore>((set) => ({
           token: token,
         }),
     
+    setEmail: (email: string) =>
+        set({
+            email: email,
+        }),
 
   updateMemberInfo: (updates) =>
     set((state) => ({
@@ -38,5 +45,6 @@ export const useMemberInfoStore = create<MemberStore>((set) => ({
     set({
       memberInfo: null,
       token: null,
+      email: null,
     }),
 }));

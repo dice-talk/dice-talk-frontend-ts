@@ -8,63 +8,59 @@ interface PaginationProps {
   onPageChange: (page: number) => void; // 페이지 변경 함수
 }
 
+// 활성 페이지 그라데이션 색상 (투명도 0.8 적용)
+const GRADIENT_COLORS_SELECTED = ['rgba(178, 142, 248, 0.8)', 'rgba(244, 118, 229, 0.8)'] as const;
+const ITEMS_PER_GROUP = 5; // 한 번에 표시할 페이지 번호 개수
+
 // ✅ Pagination 컴포넌트
 export default function Pagination({
   currentPage,
   totalPages,
   onPageChange,
 }: PaginationProps) {
-//   // ✅ 페이지가 1 미만일 경우 표시하지 않음
-//   if (!totalPages || totalPages < 1) return null;
-
   const safeTotalPages = Math.max(totalPages, 1); // 최소 1페이지 이상으로 보장
 
+  // ✅ 현재 페이지가 속한 그룹 계산
+  const currentGroup = Math.ceil(currentPage / ITEMS_PER_GROUP);
+  const totalGroups = Math.ceil(safeTotalPages / ITEMS_PER_GROUP);
+
   // ✅ 표시할 페이지 번호 목록 계산 함수
-  const getPageNumbers = (): (number | string)[] => {
-    const delta = 2; // 현재 페이지 앞뒤로 표시할 페이지 수
-    const range: number[] = [];
-    const rangeWithDots: (number | string)[] = [];
-    let l: number | undefined;
+  const getPageNumbers = (): number[] => {
+    const startPageOfGroup = (currentGroup - 1) * ITEMS_PER_GROUP + 1;
+    const endPageOfGroup = Math.min(startPageOfGroup + ITEMS_PER_GROUP - 1, safeTotalPages);
 
-    // ✅ 전체 페이지 범위에서 표시할 페이지 결정
-    for (let i = 1; i <= safeTotalPages; i++) {
-      if (
-        i === 1 || // 첫 페이지
-        i === safeTotalPages || // 마지막 페이지
-        (i >= currentPage - delta && i <= currentPage + delta) // 현재 페이지 주변
-      ) {
-        range.push(i);
-      }
+    const pages: number[] = [];
+    for (let i = startPageOfGroup; i <= endPageOfGroup; i++) {
+      pages.push(i);
     }
-
-    // ✅ ...을 추가하여 페이지 목록 압축
-    range.forEach((i) => {
-      if (l) {
-        if (i - l === 2) {
-          rangeWithDots.push(l + 1);
-        } else if (i - l !== 1) {
-          rangeWithDots.push("...");
-        }
-      }
-      rangeWithDots.push(i);
-      l = i;
-    });
-
-    return rangeWithDots;
+    return pages;
   };
+
+  const handlePrevGroup = () => {
+    const prevGroupFirstPage = (currentGroup - 2) * ITEMS_PER_GROUP + 1;
+    onPageChange(prevGroupFirstPage);
+  };
+
+  const handleNextGroup = () => {
+    const nextGroupFirstPage = currentGroup * ITEMS_PER_GROUP + 1;
+    onPageChange(nextGroupFirstPage);
+  };
+
+  const isPrevDisabled = currentGroup === 1;
+  const isNextDisabled = currentGroup === totalGroups;
 
   return (
     <View style={styles.paginationContainer}>
       {/* ✅ 이전 버튼 */}
       <TouchableOpacity
-        onPress={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1} // 첫 페이지에서는 비활성화
+        onPress={handlePrevGroup}
+        disabled={isPrevDisabled}
         style={[
           styles.pageButton,
-          currentPage === 1 && styles.disabledButton,
+          isPrevDisabled && styles.disabledButton,
         ]}
       >
-        <Text style={styles.pageText}>이전</Text>
+        <Text style={[styles.pageText, isPrevDisabled && styles.disabledPageText]}>이전</Text>
       </TouchableOpacity>
 
       {/* ✅ 페이지 번호 목록 */}
@@ -72,7 +68,6 @@ export default function Pagination({
         <TouchableOpacity
           key={idx}
           onPress={() => typeof pageNum === "number" && onPageChange(pageNum)}
-          disabled={pageNum === "..."} // ...은 클릭 불가
           style={[
             styles.pageButton,
             pageNum === currentPage && styles.selectedPageButton,
@@ -81,7 +76,7 @@ export default function Pagination({
           {pageNum === currentPage ? (
             // ✅ 선택된 페이지는 Gradient 적용
             <LinearGradient
-              colors={["#B28EF8", "#F476E5"]}
+              colors={GRADIENT_COLORS_SELECTED} // 수정된 그라데이션 색상 적용
               style={styles.gradientButton}
             >
               <Text style={styles.selectedPageText}>{pageNum}</Text>
@@ -94,14 +89,14 @@ export default function Pagination({
 
       {/* ✅ 다음 버튼 */}
       <TouchableOpacity
-        onPress={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === safeTotalPages} // 마지막 페이지에서는 비활성화
+        onPress={handleNextGroup}
+        disabled={isNextDisabled}
         style={[
           styles.pageButton,
-          currentPage === safeTotalPages && styles.disabledButton,
+          isNextDisabled && styles.disabledButton,
         ]}
       >
-        <Text style={styles.pageText}>다음</Text>
+        <Text style={[styles.pageText, isNextDisabled && styles.disabledPageText]}>다음</Text>
       </TouchableOpacity>
     </View>
   );
@@ -113,6 +108,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 10,
     marginTop: 16,
     gap: 8,
   },
@@ -128,22 +124,32 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: 'center', // 텍스트 중앙 정렬
   },
   selectedPageButton: {
     borderWidth: 0,
     overflow: "hidden",
+    paddingHorizontal: 0, // 내부 LinearGradient가 패딩을 가지므로 0으로 설정
+    paddingVertical: 0,   // 내부 LinearGradient가 패딩을 가지므로 0으로 설정
   },
   pageText: {
-    fontSize: 16,
+    fontSize: 15, // 폰트 크기 살짝 줄임 (선택)
     color: "#7d7d7d",
+    fontFamily: 'Pretendard-Regular',
   },
   selectedPageText: {
-    fontSize: 16,
+    fontSize: 15, // pageText와 동일하게 조정 (선택)
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontFamily: 'Pretendard-Bold',
   },
   disabledButton: {
     backgroundColor: "#F0F0F0",
-    color: "#BDBDBD",
   },
+  disabledPageText: { // 비활성화된 버튼의 텍스트 색상
+    color: "#BDBDBD", 
+  },
+  // dotsButton 스타일은 더 이상 필요 없으므로 주석 처리 또는 삭제 가능
+  // dotsButton: { 
+  //   backgroundColor: 'transparent',
+  // }
 });

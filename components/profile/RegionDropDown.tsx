@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 
 interface RegionDropDownProps {
-  city: string;
-  district: string;
+  city: string | null;
+  district: string | null;
   onChange: (city: string, district: string) => void;
 }
 
@@ -23,7 +23,7 @@ export default function RegionDropDown({ city, district, onChange }: RegionDropD
         if (selectedCity) {
             Alert.alert(
                 "지역 선택",
-                `${selectedCity} ${selectedDistrict}로 변경하시겠습니까?`,
+                `${selectedCity} ${selectedDistrict}로 등록하시겠습니까?`,
                 [
                     {
                         text: "취소",
