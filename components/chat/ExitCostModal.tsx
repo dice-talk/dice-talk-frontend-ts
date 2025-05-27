@@ -7,6 +7,8 @@ interface ExitCostModalProps {
   onConfirm: () => void;
   message?: string;
   subMessage?: string;
+  confirmButtonColor?: string;
+  textColor?: string;
 }
 
 const ExitCostModal: React.FC<ExitCostModalProps> = ({
@@ -14,7 +16,9 @@ const ExitCostModal: React.FC<ExitCostModalProps> = ({
   onClose,
   onConfirm,
   message = "하루에 최대 2번 채팅방을 \n 나갈 수 있습니다.",
-  subMessage = "나가시겠습니까?"
+  subMessage = "나가시겠습니까?",
+  confirmButtonColor = "#D9B2D3",
+  textColor = "#8A5A7A"
 }) => {
   // 모달 닫기 요청 처리
   const handleRequestClose = () => {
@@ -32,8 +36,12 @@ const ExitCostModal: React.FC<ExitCostModalProps> = ({
         <View style={styles.modalContainer}>
           <View style={styles.contentContainer}>
             <View style={styles.messageContainer}>
-              <Text style={styles.messageText}>{message}</Text>
-              <Text style={styles.subMessageText}>{subMessage}</Text>
+              <Text style={[styles.messageText, { color: textColor }]}>
+                {message}
+              </Text>
+              <Text style={[styles.subMessageText, { color: textColor }]}>
+                {subMessage}
+              </Text>
             </View>
             
             <View style={styles.spacer} />
@@ -46,7 +54,7 @@ const ExitCostModal: React.FC<ExitCostModalProps> = ({
                 <Text style={styles.cancelButtonText}>취소</Text>
               </Pressable>
               <Pressable
-                style={[styles.button, styles.confirmButton]}
+                style={[styles.button, styles.confirmButton, { backgroundColor: confirmButtonColor }]}
                 onPress={onConfirm}
               >
                 <Text style={styles.confirmButtonText}>확인</Text>

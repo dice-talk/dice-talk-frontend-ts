@@ -10,6 +10,7 @@ interface ChatEventNoticeProps {
   initialMinutes?: number;
   noticeText?: string;
   backgroundColor?: string;
+  themeId?: number;
 }
 
 const ChatEventNotice = ({
@@ -18,8 +19,10 @@ const ChatEventNotice = ({
   initialHours = 12,
   initialMinutes = 45,
   noticeText = "다음 이벤트까지",
-  backgroundColor = "#F3D4EE"
+  backgroundColor,
+  themeId = 1
 }: ChatEventNoticeProps) => {
+  const eventBackgroundColor = backgroundColor || (themeId === 2 ? "#9FC9FF" : "#F3D4EE");
   // 시간을 초로 변환 (초기값)
   const initialSeconds = initialHours * 60 * 60 + initialMinutes * 60;
   
@@ -77,12 +80,12 @@ const ChatEventNotice = ({
           />
         </View>
       </View>
-      <View style={[styles.noticeBox, { backgroundColor }]}>
+      <View style={[styles.noticeBox, { backgroundColor: eventBackgroundColor }]}>
         <Text style={styles.noticeText}>
           {noticeText}: {formatTime(hours)}:{formatTime(minutes)}:{formatTime(seconds)}
         </Text>
       </View>
-      <View style={[styles.bottomLine, { backgroundColor }]} />
+      <View style={[styles.bottomLine, { backgroundColor: eventBackgroundColor }]} />
     </View>
   );
 };
@@ -131,8 +134,8 @@ const styles = StyleSheet.create({
     width: width * 0.7,
     height: height * 0.05,
     paddingVertical: 10,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
     alignItems: "center",
   },
   noticeText: {

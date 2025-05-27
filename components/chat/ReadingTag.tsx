@@ -8,11 +8,17 @@ import {
 
 const { width } = Dimensions.get("window");
 
-const ReadingTag: React.FC = () => {
+interface ReadingTagProps {
+  themeId?: number;
+}
+
+const ReadingTag: React.FC<ReadingTagProps> = ({ themeId = 1 }) => {
+  const textColor = themeId === 2 ? '#5C5279' : '#FF8FAB';
+
   return (
     <View style={styles.container}>
-      <View style={styles.tag}>
-        <Text style={styles.text}>여기까지 읽으셨습니다</Text>
+      <View style={[styles.tag, { borderColor: themeId === 2 ? '#6DA0E1' : '#FFC0CB' }]}>
+        <Text style={[styles.text, { color: textColor }]}>여기까지 읽으셨습니다</Text>
       </View>
     </View>
   );
