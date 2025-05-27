@@ -145,16 +145,245 @@ export const arrowPositions: Record<string, {
   }
 };
 
+// 6각형 레이아웃용 포지션 (ResultFriendArrow용)
+export const hexagonArrowPositions: Record<string, { 
+  startX: number, 
+  startY: number,
+  endX: number,
+  endY: number,
+  color: string,
+  strokeWidth?: number,
+  arrowSize?: number
+}> = {
+  // 상단 행 (1번 Hana, 2번 Dori)
+  "1-2": { // Hana → Dori
+    startX: width * 0.42 - width * 0.08 + 22,
+    startY: height * 0.34 + height * 0.04,
+    endX: width * 0.56 + width * 0.08 - 22,
+    endY: height * 0.34 + height * 0.04,
+    color: "#9FC9FF"
+  },
+  "1-3": { // Hana → Sezzi
+    startX: width * 0.3 - width * 0.08 + 22,
+    startY: height * 0.34 + height * 0.04 + 22,
+    endX: width * 0.2 + width * 0.08 - 22,
+    endY: height * 0.15 + height * 0.32 - 22,
+    color: "#9FC9FF"
+  },
+  "1-4": { // Hana → Nemo
+    startX: width * 0.45 - width * 0.08,
+    startY: height * 0.33 + height * 0.04 + 22,
+    endX: width * 0.8 - 22,
+    endY: height * 0.35 + height * 0.16 - 22,
+    color: "#9FC9FF"
+  },
+  "1-5": { // Hana → Dao
+    startX: width * 0.4 - width * 0.08,
+    startY: height * 0.35 + height * 0.04 + 22,
+    endX: width * 0.4 - width * 0.08,
+    endY: height * 0.27 + height * 0.32 - 22,
+    color: "#9FC9FF"
+  },
+  "1-6": { // Hana → Yukdaeng
+    
+    startX: width * 0.44 - width * 0.08,
+    startY: height * 0.35 + height * 0.04 + 22,
+    endX: width * 0.6 + 22,
+    endY: height * 0.44 + height * 0.16 - 22,
+    color: "#9FC9FF"
+  },
+  "2-1": { // Dori → Hana
+    startX: width * 0.48 + width * 0.08 - 22,
+    startY: height * 0.34 + height * 0.04,
+    endX: width * 0.35 - width * 0.08 + 22,
+    endY: height * 0.34 + height * 0.04,
+    color: "#87c37b",
+  },
+  "2-3": { // Dori → Sezzi
+    startX: width * 0.5 + width * 0.08 - 22,
+    startY: height * 0.34 + height * 0.04 + 22,
+    endX: width * 0.18 - width * 0.08 + 22,
+    endY: height * 0.18 + height * 0.32 - 22,
+    color: "#87c37b",
+  },
+  "2-4": { // Dori → Nemo
+    startX: width * 0.54 + width * 0.08,
+    startY: height * 0.34 + height * 0.04 + 22,
+    endX: width * 0.6 + width * 0.08,
+    endY: height * 0.16 + height * 0.32 - 22,
+    color: "#87c37b",
+  },
+  "2-5": { // Dori → Dao
+    startX: width * 0.46 + width * 0.08,
+    startY: height * 0.35 + height * 0.04 + 22,
+    endX: width * 0.2 + 22,
+    endY: height * 0.45 + height * 0.16 - 22,
+    color: "#87c37b",
+  },
+  "2-6": { // Dori → Yukdaeng
+    startX: width * 0.5 + width * 0.08,
+    startY: height * 0.35 + height * 0.04 + 22,
+    endX: width * 0.64 - 22,
+    endY: height * 0.43 + height * 0.16 - 22,
+    color: "#87c37b",
+  },
+  "3-1": { // Sezzi → Hana
+    startX: width * 0.19 + 22,
+    startY: height * 0.29 + height * 0.16 - 22,
+    endX: width * 0.38 - width * 0.08,
+    endY: height * 0.32 + height * 0.04 + 22,
+    color: "#c5ec15"
+  },
+  "3-2": { // Sezzi → Dori
+    startX: width * 0.25 + 22,
+    startY: height * 0.31 + height * 0.16 - 22,
+    endX: width * 0.6 + width * 0.08,
+    endY: height * 0.3 + height * 0.04 + 22,
+    color: "#ece815"
+  },
+  // 중간 행 연결 (3번 Sezzi, 4번 Nemo)
+  "3-4": { // Sezzi → Nemo
+    startX: width * 0.25 + 22,
+    startY: height * 0.3 + height * 0.16,
+    endX: width * 0.85 - 22,
+    endY: height * 0.3 + height * 0.16,
+    color: "#ece815"
+  },
+  "3-5": { // Sezzi → Dao
+    startX: width * 0.25,
+    startY: height * 0.3 + height * 0.16 + 22,
+    endX: width * 0.44 - width * 0.08 - 22,
+    endY: height * 0.23 + height * 0.32 - 22,
+    color: "#ece815"
+  },
+  "3-6": { // Sezzi → Yukdaeng
+    startX: width * 0.29,
+    startY: height * 0.29 + height * 0.16 + 22,
+    endX: width * 0.55 + width * 0.08 + 22,
+    endY: height * 0.27 + height * 0.32 - 22,
+    color: "#ece815"
+  },
+  "4-1": { // Nemo → Hana
+    startX: width * 0.68 - 22,
+    startY: height * 0.29 + height * 0.16,
+    endX: width * 0.15 + 22,
+    endY: height * 0.2 + height * 0.16,
+    color: "#f36e3e"
+  },
+  "4-2": { // Nemo → Dori
+    startX: width * 0.7 - 22,
+    startY: height * 0.3 + height * 0.16 - 22,
+    endX: width * 0.5 + width * 0.08,
+    endY: height * 0.33 + height * 0.04 + 22,
+    color: "#f36e3e"
+  },
+  "4-3": { // Nemo → Sezzi
+    startX: width * 0.67 - 22,
+    startY: height * 0.325 + height * 0.16 - 22,
+    endX: width * 0.15 - width * 0.08,
+    endY: height * 0.4 + height * 0.04 + 22,
+    color: "#f36e3e"
+  },
+  
+  "4-5": { // Nemo → Dao
+    startX: width * 0.63,
+    startY: height * 0.29 + height * 0.16 + 22,
+    endX: width * 0.38 - width * 0.08 - 22,
+    endY: height * 0.26 + height * 0.32 - 22,
+    color: "#f36e3e"
+  },
+  "4-6": { // Nemo → Yukdaeng
+    startX: width * 0.67,
+    startY: height * 0.3 + height * 0.16 + 22,
+    endX: width * 0.45 + width * 0.08 + 22,
+    endY: height * 0.23 + height * 0.32 - 22,
+    color: "#f36e3e"
+  },
+  "5-1": { // Dao → Hana
+    startX: width * 0.45 - width * 0.08 - 22,
+    startY: height * 0.21 + height * 0.32 - 22,
+    endX: width * 0.31,
+    endY: height * 0.17 + height * 0.16 + 22,
+    color: "#ff59e1"
+  },
+  "5-2": { 
+    startX: width * 0.45 - width * 0.08,
+    startY: height * 0.22 + height * 0.32 - 22,
+    endX: width * 0.72 - width * 0.08,
+    endY: height * 0.27 + height * 0.04 + 22,
+    color: "#ff59e1"
+  },
+  "5-3": { // Dao → Sezzi
+    startX: width * 0.3 - width * 0.08 + 22,
+    startY: height * 0.22 + height * 0.32 - 22,
+    endX: width * 0.2 + width * 0.08 - 22,
+    endY: height * 0.4 + height * 0.04 + 22,
+    color: "#ff59e1"
+  },
+  "5-4": { // Dao → Nemo
+    startX: width * 0.53 - width * 0.08 - 22,
+    startY: height * 0.23 + height * 0.32 - 22,
+    endX: width * 0.77,
+    endY: height * 0.27 + height * 0.16 + 22,
+    color: "#ff59e1"
+  },
+  // 하단 행 연결 (5번 Dao, 6번 Yukdaeng)
+  "5-6": { // Dao → Yukdaeng
+    startX: width * 0.43 - width * 0.08 + 22,
+    startY: height * 0.22 + height * 0.32,
+    endX: width * 0.55 + width * 0.08 - 22,
+    endY: height * 0.22 + height * 0.32,
+    color: "#ff59e1"
+  },
+  "6-1": { // Yukdaeng → Hana
+    startX: width * 0.51 + width * 0.08 - 22,
+    startY: height * 0.21 + height * 0.32 - 22,
+    endX: width * 0.27 - width * 0.08 + 22,
+    endY: height * 0.29 + height * 0.04 + 22,
+    color: "#ce6bff"
+  },
+  "6-2": { // Yukdaeng → Dori
+    startX: width * 0.5 + width * 0.08,
+    startY: height * 0.2 + height * 0.32 - 22,
+    endX: width * 0.5 + width * 0.08,
+    endY: height * 0.3 + height * 0.04 + 22,
+    color: "#ce6bff"
+  },
+  "6-3": { // Yukdaeng → Sezzi
+    startX: width * 0.37 + width * 0.08 + 22,
+    startY: height * 0.23 + height * 0.32 - 22,
+    endX: width * 0.15,
+    endY: height * 0.26 + height * 0.16 + 22,
+    color: "#ce6bff"
+  },
+  "6-4": { // Yukdaeng → Nemo
+    startX: width * 0.5 + width * 0.08 + 22,
+    startY: height * 0.22 + height * 0.32 - 22,
+    endX: width * 0.69,
+    endY: height * 0.28 + height * 0.16 + 22,
+    color: "#ce6bff"
+  },
+  "6-5": { // Yukdaeng → Dao
+    startX: width * 0.48 + width * 0.08 - 22,
+    startY: height * 0.22 + height * 0.32,
+    endX: width * 0.35 - width * 0.08 + 22,
+    endY: height * 0.22 + height * 0.32,
+    color: "#ce6bff"
+  },
+};
+
 interface DiceArrowAnimationProps {
   fromId: number;  // 시작 위치의 주사위 ID (1~6)
   toId: number;    // 도착 위치의 주사위 ID (1~6)
   color?: string;  // 화살표 색상 (지정된 색상이 없으면 하드코딩된 색상 사용)
+  useHexagonLayout?: boolean; // 6각형 레이아웃 사용 여부 (기본값: false)
 }
 
 const DiceArrowAnimation: React.FC<DiceArrowAnimationProps> = ({
   fromId,
   toId,
   color,
+  useHexagonLayout = false,
 }) => {
   // 애니메이션 상태 값 - 모든 훅은 조건문 이전에 선언
   const progress = useRef(new Animated.Value(0)).current;
@@ -162,8 +391,10 @@ const DiceArrowAnimation: React.FC<DiceArrowAnimationProps> = ({
   // 화살표 키 생성 (fromId-toId)
   const arrowKey = `${fromId}-${toId}`;
   
-  // 하드코딩된 위치 정보 가져오기
-  const arrowPosition = arrowPositions[arrowKey];
+  // 레이아웃에 따라 위치 정보 가져오기
+  const arrowPosition = useHexagonLayout 
+    ? hexagonArrowPositions[arrowKey] 
+    : arrowPositions[arrowKey];
   
   // 모든 useEffect 훅은 컴포넌트 최상단에서 호출
   useEffect(() => {

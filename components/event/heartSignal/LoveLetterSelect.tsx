@@ -3,11 +3,11 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import SelectableOption from "./SelectableOption";
 
 // SVG 파일 import
-import DaoSvg from '@/assets/images/chat/dao.svg';
-import HanaSvg from '@/assets/images/chat/hana.svg';
-import NemoSvg from '@/assets/images/chat/nemo.svg';
-import SezziSvg from '@/assets/images/chat/sezzi.svg';
-import YukdaengSvg from '@/assets/images/chat/yukdaeng.svg';
+import DaoSvg from '@/assets/images/dice/dao.svg';
+import HanaSvg from '@/assets/images/dice/hana.svg';
+import NemoSvg from '@/assets/images/dice/nemo.svg';
+import SezziSvg from '@/assets/images/dice/sezzi.svg';
+import YukdaengSvg from '@/assets/images/dice/yukdaeng.svg';
 
 // SVG 컴포넌트를 사용하는 OPTIONS 배열
 const OPTIONS = [

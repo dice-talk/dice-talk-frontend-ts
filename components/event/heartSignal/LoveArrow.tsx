@@ -1,10 +1,10 @@
 // 컬러 SVG import
-import DaoSvg from "@/assets/images/chat/dao.svg";
-import DoriSvg from "@/assets/images/chat/dori.svg";
-import HanaSvg from "@/assets/images/chat/hana.svg";
-import NemoSvg from "@/assets/images/chat/nemo.svg";
-import SezziSvg from "@/assets/images/chat/sezzi.svg";
-import YukdaengSvg from "@/assets/images/chat/yukdaeng.svg";
+import DaoSvg from "@/assets/images/dice/dao.svg";
+import DoriSvg from "@/assets/images/dice/dori.svg";
+import HanaSvg from "@/assets/images/dice/hana.svg";
+import NemoSvg from "@/assets/images/dice/nemo.svg";
+import SezziSvg from "@/assets/images/dice/sezzi.svg";
+import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import CountPlusSvg from "@/assets/images/event/countPlus.svg";
 import FriendLetterForm from "@/assets/images/event/friend_letterForm.svg";
 import LetterForm from "@/assets/images/event/LetterForm.svg";
@@ -106,7 +106,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
                   <SvgComponent 
                     width={35} 
                     height={35} 
-                    style={styles.characterIcon}
+                    style={styles.characterIcon} 
                     color={svgColor}
                   />
                   <Text style={styles.characterName}>{character.name}</Text>

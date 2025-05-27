@@ -1,4 +1,4 @@
-import HanaSvg from '@/assets/images/chat/hana.svg';
+import HanaSvg from '@/assets/images/dice/hana.svg';
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
