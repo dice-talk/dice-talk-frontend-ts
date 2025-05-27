@@ -1,6 +1,6 @@
 import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
-import HanaSvg from '@/assets/images/chat/hana.svg';
-import Nemo from '@/assets/images/chat/nemo.svg';
+import HanaSvg from '@/assets/images/dice/hana.svg';
+import Nemo from '@/assets/images/dice/nemo.svg';
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";

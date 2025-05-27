@@ -1,5 +1,5 @@
-import Dori from '@/assets/images/chat/dori.svg';
-import Hana from '@/assets/images/chat/hana.svg';
+import Dori from '@/assets/images/dice/dori.svg';
+import Hana from '@/assets/images/dice/hana.svg';
 import Signal from '@/assets/images/event/signal.svg';
 import TextForm from '@/assets/images/event/textForm.svg';
 import { BlurView } from 'expo-blur';
@@ -26,11 +26,9 @@ const LoveArrowMatch = ({ isVisible, onClose }: LoveArrowMatchProps) => {
           <TextForm style={styles.textForm} />
           <Signal style={styles.signal} />
           <Text style={styles.text}>서로의 시그널이 통했습니다.{"\n"}이제 둘만의 채팅창으로 이동합니다.</Text>
-          
           <TouchableOpacity style={styles.moveButton} onPress={onClose}>
             <Text style={styles.moveButtonText}>이동하기</Text>
           </TouchableOpacity>
-          
           <View style={styles.iconGroupLeft}>
             <View style={styles.iconCircleLeft}>
               <Hana width={width * 0.08} height={width * 0.08} />

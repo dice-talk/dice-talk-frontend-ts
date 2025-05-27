@@ -1,17 +1,17 @@
-import DaoSvg from "@/assets/images/chat/dao.svg";
+import DaoSvg from "@/assets/images/dice/dao.svg";
 import React from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
-import DoriSvg from "@/assets/images/chat/dori.svg";
+import DoriSvg from "@/assets/images/dice/dori.svg";
 
-import HanaSvg from "@/assets/images/chat/hana.svg";
+import HanaSvg from "@/assets/images/dice/hana.svg";
 
-import NemoSvg from "@/assets/images/chat/nemo.svg";
+import NemoSvg from "@/assets/images/dice/nemo.svg";
 
-import SezziSvg from "@/assets/images/chat/sezzi.svg";
+import SezziSvg from "@/assets/images/dice/sezzi.svg";
 
-import YukdaengSvg from "@/assets/images/chat/yukdaeng.svg";
+import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import DiceArrowAnimation from "../animation/DiceArrowAnimation";
 import DiceIconContainer from "./DiceIconContainer";
 
