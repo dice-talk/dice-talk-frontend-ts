@@ -21,8 +21,8 @@ const LendingPage = ( ) => {
         </View>
         <View style={styles.bottomContainer}>
           <View style={styles.buttonGroup}>
-            <MediumButton title="로그인" onPress={() => router.push('/Login')} />
-            <MediumButton title="회원가입" onPress={() => router.push('/(onBoard)/register')} />
+            <MediumButton title="로그인" onPress={() => router.push('/Login')} size="max" />
+            <MediumButton title="회원가입" onPress={() => router.push('/(onBoard)/register')} size="max" />
           </View>
 
           <TouchableOpacity onPress={() => router.push('/(onBoard)/FindInfo')} style={styles.findInfoContainer}>

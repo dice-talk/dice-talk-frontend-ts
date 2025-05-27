@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 // ✅ Base URL을 상단에서 직접 지정
-export const BASE_URL = "https://dicetalke.co.kr"; // EC2 서버
+export const BASE_URL = "https://www.dicetalke.co.kr"; // EC2 서버
 //export const BASE_URL = "http://192.168.0.5:8080"; // 로컬 개발 서버
 // export const BASE_URL = "http://localhost:8080"; // 로컬호스트
 

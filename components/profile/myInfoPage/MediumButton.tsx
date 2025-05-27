@@ -8,41 +8,52 @@ import {
   ViewStyle,
 } from "react-native";
 
-// 🔹 GradientButton Props 타입 지정
-type GradientButtonProps = {
+// 🔹 GradientButton Props 타입 (height, width, fontSize, size를 optional로 변경)
+interface GradientButtonProps {
   title: string;
-  height : number,
-  width : number,
-  fontSize : number,
-  size: 'max' | 'custom',
   onPress?: () => void;
   customStyle?: StyleProp<ViewStyle>;
-};
+  height?: number;
+  width?: number;
+  fontSize?: number;
+  size?: 'max' | 'custom';
+}
 
-export default function MediumButton({
-  title,
-  height,
-  width,
-  fontSize,
-  size,
-  onPress,
-  customStyle,
-}: GradientButtonProps) {
-  // const screenWidth = Dimensions.get("window").width;
-  // const buttonWidth = screenWidth * 0.79; // ✅ 화면의 85% 너비
-  // const buttonHeight = 48; // ✅ 적당한 높이 (사용자가 깔끔하다고 느끼는 크기)
-
+export default function MediumButton(props: GradientButtonProps) {
+  const { title, onPress, customStyle, height, width, fontSize, size } = props;
   const screenWidth = Dimensions.get("window").width;
 
-  // size가 'max'일 경우 기본값 적용
-  const buttonWidth = size === 'max' ? screenWidth * 0.85 : width;
-  const buttonHeight = size === 'max' ? height * 0.06 : height;
-  const buttonFontSize = size === 'max' ? 16 : fontSize;
+  // 기본값 정의
+  const defaultHeight = 48;
+  const defaultWidth = screenWidth * 0.85;
+  const defaultFontSize = 16;
+
+  let finalHeight: number;
+  let finalWidth: number;
+  let finalFontSize: number;
+
+  if (size === 'max') {
+    // size가 'max'로 명시되면 항상 기본 크기 사용
+    finalHeight = defaultHeight;
+    finalWidth = defaultWidth;
+    finalFontSize = defaultFontSize;
+  } else if (size === 'custom') {
+    // size가 'custom'이면 제공된 값 우선, 없으면 기본값
+    finalHeight = height ?? defaultHeight;
+    finalWidth = width ?? defaultWidth;
+    finalFontSize = fontSize ?? defaultFontSize;
+  } else {
+    // size prop이 제공되지 않은 경우 (undefined)
+    // height, width, fontSize가 제공되면 해당 값 사용, 아니면 기본값 사용
+    finalHeight = height ?? defaultHeight;
+    finalWidth = width ?? defaultWidth;
+    finalFontSize = fontSize ?? defaultFontSize;
+  }
 
   return (
     <Pressable 
       onPress={onPress} 
-      style={[styles.buttonWrapper, { width: buttonWidth, height: buttonHeight }, customStyle]}
+      style={[styles.buttonWrapper, { width: finalWidth, height: finalHeight }, customStyle]}
     > 
       <LinearGradient
         colors={["#B28EF8", "#F476E5"]}
@@ -50,7 +61,7 @@ export default function MediumButton({
         end={{ x: 1, y: 0 }}
         style={[styles.button, { width: '100%', height: '100%' }]}
       >
-        <Text style={[styles.buttonText, { fontSize: buttonFontSize }]}>{title}</Text>
+        <Text style={[styles.buttonText, { fontSize: finalFontSize }]}>{title}</Text>
       </LinearGradient>
     </Pressable>
   );
@@ -58,11 +69,11 @@ export default function MediumButton({
 
 const styles = StyleSheet.create({
   buttonWrapper: {
-    alignSelf: "center", // ✅ 중앙 정렬
-    marginTop: 24, // ✅ 간격 조정
+    alignSelf: "center",
+    marginTop: 24, 
   },
   button: {
-    borderRadius: 24, // ✅ 둥근 모서리
+    borderRadius: 24, 
     justifyContent: "center",
     alignItems: "center",
   },
