@@ -6,6 +6,7 @@ export default function () {
         <Stack.Screen name="index" />
         <Stack.Screen name="Login" />
         <Stack.Screen name="FindInfo" />
+        <Stack.Screen name="NonMemberQuestion" />
         <Stack.Screen name="register/_layout" />
       </Stack>
     );

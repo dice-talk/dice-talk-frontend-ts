@@ -137,7 +137,7 @@ export default function Agreement() {
             />
             <View style={styles.container}>
                 <View style={styles.illustrationBox}>
-                    <LogoIcon width={250} height={250}/>
+                    <LogoIcon width={230} height={230}/>
                 </View>
                 <TouchableOpacity onPress={toggleAll} style={styles.checkAllBox}>
                     <Ionicons name={allAgreed ? 'checkbox' : 'square-outline'} size={24} color="#B28EF8" />
@@ -174,7 +174,7 @@ export default function Agreement() {
 const styles = StyleSheet.create({ /* ... 이전 스타일 복사 ... */
     container: {
         flex: 1,
-        paddingTop: 80,
+        paddingTop: 30,
         paddingHorizontal: 32,
         backgroundColor: '#F9F9F9',
     },
@@ -219,7 +219,6 @@ const styles = StyleSheet.create({ /* ... 이전 스타일 복사 ... */
     buttonWrapper: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 32,
         marginHorizontal: 20, // 원본 스타일에서 가져옴
     },
     focusAgreement: {
