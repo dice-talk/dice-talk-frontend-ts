@@ -18,11 +18,10 @@ const EventBannerComponent = () => {
   useEffect(() => {
     // 목 데이터로 테스트
     const imageMap: Record<string, any> = {
-        banner1: require('@/assets/images/EventBanner/eventBanner_01.png'),
-        banner2: require('@/assets/images/EventBanner/eventBanner_02.png'),
-        banner3: require('@/assets/images/EventBanner/eventBanner_03.png'),
+        banner1: require('@/assets/images/eventBanner/eventBanner_01.png'),
+        banner2: require('@/assets/images/eventBanner/eventBanner_02.png'),
+        banner3: require('@/assets/images/eventBanner/eventBanner_03.png'),
       };
-      
       const dummyData = [
         { id: 1, imageUrl: imageMap.banner1, title: '배너 1' },
         { id: 2, imageUrl: imageMap.banner2, title: '배너 2' },
