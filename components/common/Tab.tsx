@@ -63,7 +63,7 @@ const Tab: React.FC<TabProps> = ({ tabs, activeTab, onTabChange }) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 15,
   },
   tabBarContainer: {
     flexDirection: 'row',
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   tabItem: {
     justifyContent: 'center',
     alignItems: 'center',
-    height: 45,
+    height: 37,
     // backgroundColor: 'transparent', // 각 LinearGradient가 배경을 채움
   },
   tabBackground: {

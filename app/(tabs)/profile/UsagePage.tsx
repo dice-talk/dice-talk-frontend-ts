@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
         // backgroundColor: '#F5F5F5', // 배경색 테스트
     },
     flatListContentContainer: {
-        paddingBottom: width * 0.1, // 하단 여백 (요구사항)
+        paddingBottom: width * 0.2, // 하단 여백 (요구사항)
     },
     emptyListContainer: {
         flex: 1,
