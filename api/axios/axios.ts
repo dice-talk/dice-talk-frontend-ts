@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 // ✅ Base URL을 상단에서 직접 지정
@@ -18,8 +19,8 @@ export const axiosWithToken: AxiosInstance = axios.create({
 // ✅ 토큰이 필요한 요청에 대한 인터셉터 설정
 axiosWithToken.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    //const token = await AsyncStorage.getItem("accessToken");
-    const token = "eyJhbGciOiJIUzM4NCJ9.eyJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwidXNlcm5hbWUiOiJhZG1pbkBnbWFpbC5jb20iLCJtZW1iZXJJZCI6MSwic3ViIjoiYWRtaW5AZ21haWwuY29tIiwiaWF0IjoxNzQ3NjMyMzEzLCJleHAiOjE3NDc2NDY3MTN9.LFaGutnEVUfkloR_gZtxKm2Lk-uCkgpmPczjIj0NheZaamATm8h5wXsAPbE9aKEn";
+    const token = await AsyncStorage.getItem("accessToken");
+    //const token = "eyJhbGciOiJIUzM4NCJ9.eyJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwidXNlcm5hbWUiOiJhZG1pbkBnbWFpbC5jb20iLCJtZW1iZXJJZCI6MSwic3ViIjoiYWRtaW5AZ21haWwuY29tIiwiaWF0IjoxNzQ3NjMyMzEzLCJleHAiOjE3NDc2NDY3MTN9.LFaGutnEVUfkloR_gZtxKm2Lk-uCkgpmPczjIj0NheZaamATm8h5wXsAPbE9aKEn";
     console.log("📄 token:", token);
     console.log("📡 요청 URL:", config.baseURL + (config.url ?? ""));
     console.log("📄 Params:", config.params);
