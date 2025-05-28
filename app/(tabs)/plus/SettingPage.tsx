@@ -1,7 +1,8 @@
 import GradientHeader from "@/components/common/GradientHeader";
 import SettingItem from "@/components/setting/SettingItem";
+import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,13 +24,7 @@ export default function SettingPage() {
   const [snsConsent, setSnsConsent] = useState(true);
 
   const handleWithdrawal = () => {
-    console.log("Navigate to Withdrawal Page");
-    Alert.alert("회원탈퇴", "회원탈퇴 페이지로 이동합니다. (구현 필요)", [
-      {
-        text: "확인",
-        //onPress: () => router.push("/(tabs)/plus/WithdrawalPage"),
-      },
-    ]);
+    router.push("/plus/AccountExitPage");
   };
 
   return (
