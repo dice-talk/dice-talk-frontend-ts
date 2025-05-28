@@ -89,7 +89,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
           {themeId === 2 ? (
             <FriendLetterForm width={width * 0.55} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.37, zIndex: 3}} />
           ) : (
-            <LetterForm width={width * 0.55} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.37, zIndex: 3}} />
+            <LetterForm width={width * 0.45} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.375, zIndex: 3}} />
           )}
         <View style={styles.charactersWrapper}>
           <View style={styles.charactersContainer}>
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     zIndex: 2,
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.435,
+    top: SCREEN_HEIGHT * 0.44,
   },
   heartboardImage: {
     width: SCREEN_WIDTH * 0.95,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   charactersWrapper: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.46,
+    top: SCREEN_HEIGHT * 0.47,
     zIndex: 3,
     alignItems: 'center',
     width: '100%',
@@ -223,8 +223,8 @@ const styles = StyleSheet.create({
   },
   toastContainer: {
     position: 'absolute',
-    bottom: SCREEN_HEIGHT * 0.2,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    bottom: SCREEN_HEIGHT * 0.15,
+    backgroundColor: 'white',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,

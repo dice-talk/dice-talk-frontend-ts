@@ -133,13 +133,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 5, // 터치 영역 확장
-    // marginTop: -height * 0.03, // SVG를 위로 살짝 올림
+    marginTop: -height * 0.025, // SVG를 위로 살짝 올림
   },
   rightContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     gap: width * 0.05,
-    // marginTop: -height * 0.03, // 양쪽 다 올릴 경우
+    marginTop: -height * 0.025, // 양쪽 다 올릴 경우
   }
 });

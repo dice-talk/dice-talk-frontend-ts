@@ -365,23 +365,22 @@ const styles = StyleSheet.create({
   },
   letterInputWrapper: {
     position: 'absolute',
-    width: '90%',
+    width: '100%',
     top: SCREEN_WIDTH * 0.29,
     zIndex: 200,
     // bottom: SCREEN_WIDTH * 0.2,
   },
   letterInput: {
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    fontSize: 10,
-    color: '#F9BCC1',
-    height: SCREEN_HEIGHT * 0.1,
+    paddingHorizontal: 12,
+    fontSize: 11,
+    height: SCREEN_HEIGHT * 0.12,
     textAlignVertical: 'top',
 
   },
   friendLetterInputWrapper: {
     position: 'absolute',
-    width: '95%',
+    width: '100%',
     top: SCREEN_WIDTH * 0.29,
     zIndex: 200,
   },

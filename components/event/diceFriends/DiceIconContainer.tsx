@@ -96,7 +96,7 @@ const DiceIconContainer = ({
 const styles = StyleSheet.create({
   hexagonContainer: {
     position: "absolute",
-    top: height * 0.355,
+    top: height * 0.345,
     left: 0,
     right: 0,
     height: height * 0.7,

@@ -214,8 +214,8 @@ export const hexagonArrowPositions: Record<string, {
     color: "#87c37b",
   },
   "2-5": { // Dori → Dao
-    startX: width * 0.46 + width * 0.08,
-    startY: height * 0.35 + height * 0.04 + 22,
+    startX: width * 0.45 + width * 0.08,
+    startY: height * 0.34 + height * 0.04 + 22,
     endX: width * 0.2 + 22,
     endY: height * 0.45 + height * 0.16 - 22,
     color: "#87c37b",
