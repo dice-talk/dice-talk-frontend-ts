@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
@@ -34,15 +34,27 @@ const ReportIcon = () => (
   </Svg>
 );
 
+const DeleteIcon = () => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <Path d="M3 6h18" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <Path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <Path d="M10 11v6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <Path d="M14 11v6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+  </Svg>
+);
+
 export type AlertCategory = 'notice' | 'payment' | 'event' | 'report';
 
 interface AlertBoxProps {
   category: AlertCategory;
   text: string;
   read?: boolean;
+  onDelete?: () => void;
+  showDeleteButton?: boolean;
 }
 
-const AlertBox = ({ category, text, read = false }: AlertBoxProps) => {
+const AlertBox = ({ category, text, read = false, onDelete, showDeleteButton = true }: AlertBoxProps) => {
   const getSvgIcon = () => {
     const iconColor = read ? '#9E9E9E' : getCategoryColor();
     const fillColor = read ? '#F5F5F5' : getCategoryFillColor();
@@ -124,11 +136,11 @@ const AlertBox = ({ category, text, read = false }: AlertBoxProps) => {
 
   return (
     <View style={[
-      styles.container, 
-      { 
+      styles.container,
+      {
         borderLeftColor: borderColor,
-        backgroundColor: backgroundColor
-      }
+        backgroundColor: backgroundColor,
+      },
     ]}>
       <View style={styles.iconContainer}>
         {getSvgIcon()}
@@ -136,6 +148,15 @@ const AlertBox = ({ category, text, read = false }: AlertBoxProps) => {
       <View style={styles.textContainer}>
         <Text style={[styles.alertText, { color: textColor }]}>{text}</Text>
       </View>
+      {showDeleteButton && onDelete && (
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={onDelete}
+          activeOpacity={0.7}
+        >
+          <DeleteIcon />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -169,6 +190,11 @@ export const dummyAlerts = [
   }
 ];
 
+// 읽지 않은 알림이 있는지 체크하는 유틸리티 함수
+export const hasUnreadAlerts = () => {
+  return dummyAlerts.some(alert => !alert.read);
+};
+
 // 더미 데이터로 테스트용 컴포넌트
 export const AlertBoxDemo = () => {
   return (
@@ -180,6 +206,7 @@ export const AlertBoxDemo = () => {
           category={alert.category}
           text={alert.text}
           read={alert.read}
+          onDelete={() => console.log(`알림 ${index + 1} 삭제됨`)}
         />
       ))}
     </View>
@@ -192,17 +219,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 10,
+    padding: 12,
     marginVertical: 4,
+    marginHorizontal: 8,
     borderLeftWidth: 4,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
   iconContainer: {
     marginRight: 16,
@@ -218,6 +246,23 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#333333',
     fontWeight: '500',
+  },
+  deleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FF4757',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+    shadowColor: '#FF4757',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
   },
   // 데모용 스타일
   demoContainer: {
