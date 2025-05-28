@@ -17,7 +17,7 @@ const DiceIconContainer = ({ children, position = "left" }: DiceIconContainerPro
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    top: "38%",
+    top: "35.5%",
     height: "20%",
     justifyContent: "space-around",
     alignItems: "center",

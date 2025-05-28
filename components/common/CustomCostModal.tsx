@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   diceButton: {
     width: "100%",
-    paddingVertical: 15,
+    paddingVertical: 10,
     backgroundColor: "#D9B2D3",
     borderRadius: 30,
     marginBottom: 10,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     width: "100%",
-    paddingVertical: 15,
+    paddingVertical: 10,
     backgroundColor: "#A8A3C8",
     borderRadius: 30,
     alignItems: "center",

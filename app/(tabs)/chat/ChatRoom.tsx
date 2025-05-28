@@ -18,6 +18,7 @@ import LoveArrow from "@/components/event/heartSignal/LoveArrow";
 import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/heartSignal/ResultLoveArrow";
+import UnmatchedModal from "@/components/event/heartSignal/UnmatchedModal";
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -60,6 +61,7 @@ const ChatRoom = () => {
   const [showLoveArrowMatch, setShowLoveArrowMatch] = useState(false);
   const [showCustomCostModal, setShowCustomCostModal] = useState(false);
   const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
+  const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
   
   // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
   useEffect(() => {
@@ -135,8 +137,13 @@ const ChatRoom = () => {
     setShowLoveArrow(true);
   };
   
-  // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러 수정
+  // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러 (바로 결과 표시)
   const handleLoveArrowResultCheck = () => {
+    setShowResultLoveArrow(true); // 바로 ResultLoveArrow/ResultFriendArrow 모달 표시
+  };
+
+  // 이벤트 수정 버튼 클릭 핸들러 (아이템 필요)
+  const handleEventModify = () => {
     setShowCustomCostModal(true); // CustomCostModal을 표시
   };
   
@@ -324,6 +331,10 @@ const ChatRoom = () => {
     setShowInsufficientItemModal(false); // InsufficientItemModal 닫기
   };
   
+  const handleUnmatched = () => {
+    setShowUnmatchedModal(true);
+  };
+  
   return (
     <View style={styles.container}>
         {/* ChatHeader 블러 효과 */}
@@ -379,7 +390,16 @@ const ChatRoom = () => {
               <GptNotice 
                 text="[시스템] 이벤트 수정은 돈을 주세요!!"
                 onHide={hideNotice}
-                onParticipate={handleLoveArrowResultCheck}
+                onParticipate={handleEventModify}
+                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+                themeId={themeId}
+              />
+            )}
+             {showNotice && !showMessageCheckReport && (
+              <GptNotice 
+                text="[시스템] 매칭에 실패하였습니다!!"
+                onHide={hideNotice}
+                onParticipate={handleUnmatched}
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
                 themeId={themeId}
               />
@@ -507,7 +527,6 @@ const ChatRoom = () => {
             </View>
           </View>
         </Modal>
-        
         {/* ResultLoveArrow/ResultFriendArrow 모달 */}
         <Modal
           visible={showResultLoveArrow}
@@ -519,11 +538,11 @@ const ChatRoom = () => {
             {themeId === 2 ? (
               <ResultFriendArrow 
                 selections={[
-                  { from: 1, to: 4 },
+                  { from: 1, to: 2 },
                   { from: 3, to: 1 },
                   { from: 6, to: 3 },
                   { from: 5, to: 4 },
-                  { from: 2, to: 5 }
+                  { from: 2, to: 3 }
                 ]}
                 onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
@@ -535,7 +554,7 @@ const ChatRoom = () => {
                   { from: 1, to: 2 },
                   { from: 3, to: 5 },
                   { from: 5, to: 2 },
-                  { from: 2, to: 1 },
+                  { from: 2, to: 3 },
                   { from: 4, to: 1 },
                   { from: 6, to: 3 }
                 ]}
@@ -595,6 +614,13 @@ const ChatRoom = () => {
           textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
           storeButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
           cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
+        />
+
+        {/* UnmatchedModal */}
+        <UnmatchedModal
+          visible={showUnmatchedModal}
+          onClose={() => setShowUnmatchedModal(false)}
+          themeId={themeId}
         />
     </View>
   );

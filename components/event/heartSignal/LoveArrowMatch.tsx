@@ -93,13 +93,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: width * 0.8,
     height: height * 0.1,
-    top: height * 0.36,
+    top: height * 0.38,
   },
   friendTextForm: {
     position: 'absolute',
     width: width * 0.8,
     height: height * 0.1,
-    top: height * 0.36,
+    top: height * 0.38,
   }, 
   signal: {
     position: 'absolute',
@@ -108,10 +108,10 @@ const styles = StyleSheet.create({
     top: height * 0.27,
   },  
   text: {
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
     fontWeight: '300',
-    top: height * -0.04,
+    top: height * -0.047,
     // marginTop: height * 0.05,
   },
   moveButton: {
