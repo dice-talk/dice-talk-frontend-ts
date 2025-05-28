@@ -71,15 +71,13 @@ const ResultFriendArrow: React.FC<ResultFriendArrowProps> = ({
           useHexagonLayout={true}
         />
       ))}
-      
       {/* 6각형 형태로 아이콘 배치 */}
       <DiceIconContainer 
         svgComponents={[HanaSvg, DoriSvg, SezziSvg, NemoSvg, DaoSvg, YukdaengSvg]}
         svgColor="#9FC9FF"
         borderColor="#9FC9FF"
-        size={45}
+        size={40}
       />
-
       {/* 매칭 결과 버튼 */}
       <TouchableOpacity 
         style={[styles.matchButton, { backgroundColor: matchButtonColor, borderColor: matchButtonBorderColor }]}

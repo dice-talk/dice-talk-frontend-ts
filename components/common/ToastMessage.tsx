@@ -29,7 +29,7 @@ export default ToastMessage;
 const styles = StyleSheet.create({
   toastContainer: {
     position: 'absolute',
-    bottom: SCREEN_HEIGHT * 0.2,
+    bottom: SCREEN_HEIGHT * 0.15,
     backgroundColor: 'white',
     paddingVertical: 10,
     paddingHorizontal: 20,
