@@ -1,3 +1,4 @@
+import AlertIcon from '@/assets/images/chat/chatNoticeOnOff.svg';
 import DiceFriends from '@/assets/images/home/diceFriends.png';
 import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
 import ExLoveIcon from '@/assets/images/home/exLoveIcon.svg';
@@ -5,10 +6,10 @@ import ExLove from '@/assets/images/home/exLoveTheme.png';
 import HeartSignalIcon from '@/assets/images/home/heartSignalIcon.svg';
 import HartSignal from '@/assets/images/home/heartSignalTheme.png';
 import MainBackground from '@/assets/images/home/mainBackground.svg';
+import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
 import ThemeCarousel from "@/components/home/ThemeCarousel";
 import { BlurView } from 'expo-blur';
-
 import { useState } from 'react';
 import { Dimensions, Image, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 
@@ -16,6 +17,9 @@ const HomeScreen = () => {
   const { width, height } = Dimensions.get("window");
   // 바텀시트 표시 여부
   const [isBottomSheetVisible, setBottomSheetVisible] = useState(false);
+  // AlertModal 표시 여부
+  const [isAlertModalVisible, setAlertModalVisible] = useState(false);
+
   // 바텀시트 파라미터 설정
   const [bottomSheetParams, setBottomSheetParams] = useState<{
     backgroundColor: string;
@@ -98,6 +102,9 @@ const HomeScreen = () => {
           }}
         />
       </View>
+      <TouchableOpacity style={styles.alertIcon} onPress={() => setAlertModalVisible(true)}>
+        <AlertIcon color="#F9BCC1" />
+      </TouchableOpacity>
       <View style={{ flex: 1, marginTop: height * 0.2 }}>
          {/* 케러셀 */}
       <ThemeCarousel
@@ -148,13 +155,19 @@ const HomeScreen = () => {
             />
           </View>
         </View>
-      )}
+        )}
       </Modal>
+      
+      <AlertModal 
+        visible={isAlertModalVisible}
+        onClose={() => setAlertModalVisible(false)}
+      />
     </View>
   );
 };
 
 const height = Dimensions.get("window").height;
+const width = Dimensions.get("window").width;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -176,6 +189,15 @@ const styles = StyleSheet.create({
     zIndex: 100,
     elevation: 10,
     justifyContent: 'flex-end', // 바텀시트를 아래로 정렬
+  },
+  alertIcon: {
+    position: 'absolute',
+    width: width * 0.1,
+    height: width * 0.1,
+    top: height * 0.2,
+    right: width * 0.03,
+    zIndex: 100,
+    elevation: 10,
   },
 });
 

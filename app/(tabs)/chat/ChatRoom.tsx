@@ -334,7 +334,7 @@ const ChatRoom = () => {
   const handleUnmatched = () => {
     setShowUnmatchedModal(true);
   };
-  
+
   return (
     <View style={styles.container}>
         {/* ChatHeader 블러 효과 */}
@@ -351,10 +351,10 @@ const ChatRoom = () => {
         <View style={[styles.headerContainer, { zIndex: sidebarOpen ? 2 : 3 }]}>
             {/* showMessageCheckReport가 false일 때만 ChatHeader 표시 */}
             {!showMessageCheckReport && (
-              <ChatHeader
-                  title="하트시그널"
-                  fontColor="#A45C73"
-                  backgroundColor="#ffffff"
+        <ChatHeader
+            title="하트시그널"
+            fontColor="#A45C73"
+            backgroundColor="#ffffff"
                   onToggleSidebar={() => setSidebarOpen(true)}
                   themeId={themeId}
               />
