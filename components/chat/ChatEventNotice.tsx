@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   noticeBox: {
     width: width * 0.7,
     height: height * 0.05,
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
     alignItems: "center",

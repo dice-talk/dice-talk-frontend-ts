@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 10,
     backgroundColor: "#B19ADE",
-    padding: 7,
+    padding: 5,
     overflow: 'hidden',
   },
   containerExpanded: {
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    height: height * 0.02,
+    minHeight: height * 0.025,
   },
   leftIcon: {
     justifyContent: "center",
@@ -118,6 +118,7 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
     justifyContent: "center",
+    alignItems: 'center',
   },
   text: {
     fontSize: 14,
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     // justifyContent: "space-between",
     gap: screenWidth * 0.015,
-    paddingTop: height * 0.04,
+    paddingTop: height * 0.02,
     justifyContent: 'center',
   },
   button: {
