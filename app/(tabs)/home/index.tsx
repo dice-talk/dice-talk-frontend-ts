@@ -13,8 +13,8 @@ import AccountBannedModal from '@/components/home/AccountBannedModal';
 import ThemeCarousel from "@/components/home/ThemeCarousel";
 import { BlurView } from 'expo-blur';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Dimensions, Image, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // 실제 앱에서는 API 응답이나 전역 상태(Zustand 등)를 통해 받아올 값입니다.
 //const MOCK_USER_STATUS = 'MEMBER_BANNED'; // 테스트를 위해 'MEMBER_BANNED' 또는 다른 값으로 변경
@@ -36,16 +36,14 @@ const HomeScreen = () => {
   // 안읽은 알림 개수 조회 함수
   const fetchUnreadCount = async () => {
     try {
-      const response = await getUnreadNotificationCount();
-      console.log("안읽은 알림 개수:", response.data);
-      setUnreadCount(response.data || 0);
+      const count = await getUnreadNotificationCount();
+      setUnreadCount(count.data.data);
     } catch (error) {
-      console.error("안읽은 알림 개수 조회 실패:", error);
+      console.error("🔴 안 읽은 알림 수 조회 실패:", error);
       setUnreadCount(0);
     }
   };
 
-  // 컴포넌트 마운트 시 안읽은 알림 개수 조회
   useEffect(() => {
     fetchUnreadCount();
   }, []);
@@ -292,14 +290,15 @@ const styles = StyleSheet.create({
   },
   redDot: {
     position: 'absolute',
-    top: -4,
-    right: 12,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    top: -5,
+    right: 5,
+    width: 15,
+    height: 15,
+    borderRadius: 10,
     backgroundColor: '#FF4757',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 101,
   },
   redDotText: {
     color: 'white',
