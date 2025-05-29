@@ -64,20 +64,31 @@ export const getAnonymousInfo = async (memberId: number) => {
 // 로그아웃 (토큰 제거 및 상태 초기화)
 export const logoutMember = async () => {
     try {
-        // Optionally, call a backend logout endpoint if it exists
-        // await axiosWithToken.post("/auth/logout");
+        // 백엔드에 로그아웃 API가 있다면 호출 (선택 사항)
+        // 예: await axiosWithToken.post("/auth/logout");
 
+        console.log("로그아웃 시작: AsyncStorage에서 토큰 제거 중...");
         await AsyncStorage.removeItem("accessToken");
+        await AsyncStorage.removeItem("refreshToken"); // refreshToken도 제거
         await AsyncStorage.removeItem("memberId");
+        console.log("AsyncStorage 토큰 제거 완료.");
         
-        // Clear Zustand stores
-        useMemberInfoStore.getState().clearStore(); // Implement clearStore in your Zustand store
-        useAnonymousStore.getState().clearStore(); // Implement clearStore in your Zustand store
+        // Zustand 스토어 클리어
+        console.log("Zustand 스토어 클리어 중...");
+        useMemberInfoStore.getState().clearStore(); 
+        useAnonymousStore.getState().clearStore(); 
+        console.log("Zustand 스토어 클리어 완료.");
         
         console.log("✅ 로그아웃 성공");
-        // Navigate to login screen or perform other cleanup
+        return true; // 성공 여부 반환
     } catch (error) {
         console.error("🚨 로그아웃 실패:", error);
+        // 실패 시에도 로컬 데이터는 최대한 정리 시도
+        await AsyncStorage.removeItem("accessToken").catch(e => console.error("Failed to remove accessToken on error", e));
+        await AsyncStorage.removeItem("refreshToken").catch(e => console.error("Failed to remove refreshToken on error", e));
+        await AsyncStorage.removeItem("memberId").catch(e => console.error("Failed to remove memberId on error", e));
+        useMemberInfoStore.getState().clearStore(); 
+        useAnonymousStore.getState().clearStore(); 
         throw error;
     }
 };
