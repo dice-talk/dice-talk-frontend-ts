@@ -86,7 +86,8 @@ export const logoutMember = async () => {
 // 회원 탈퇴
 export const deleteMember = async (reason: string) => {
     try{
-        const memberId = useMemberInfoStore.getState().memberId;
+        // const memberId = useMemberInfoStore.getState().memberId;
+        const memberId = 4;
         const response = await axiosWithToken.delete(`/my-info/${memberId}`, {
             data: reason,
             headers: {
