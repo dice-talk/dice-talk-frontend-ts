@@ -1,4 +1,4 @@
-import { ChatRoomItem, HeartHistoryItem, PageInfo, defaultProfilePng, getChatHistory, getHeartHistory } from "@/api/historyApi";
+import { ChatRoomItem, HeartHistoryItem, PageInfo, getChatHistory, getHeartHistory } from "@/api/historyApi";
 import EventBannerComponent from "@/components/common/EventBannerComponent";
 import Tab from "@/components/common/Tab";
 import HistoryItem, { HistoryItemProps } from "@/components/history/HistoryItem";
@@ -57,7 +57,7 @@ export default function HistoryScreen() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [itemsPerPage, loadingMore]);
+  }, [itemsPerPage]);
 
   // 전체 하트 내역 한 번에 불러오기
   const loadFullHeartHistory = useCallback(async () => {
@@ -153,18 +153,19 @@ export default function HistoryScreen() {
     currentData = chatHistory.map(item => ({
       id: item.chatRoomId,
       type: 'chat',
-      profileImage: item.opponentProfileSvg || defaultProfilePng,
+      svgComponentName: item.opponentProfileSvg || 'HanaSvg',
       name: item.opponentName || '알 수 없는 상대',
       content: item.lastChat,
       createdAt: item.createdAt,
       onPress: handleChatItemPress,
+      roomType: item.roomType,
     }));
   } else { // heart 탭
     listTitle = "내가 받은 하트";
     currentData = displayedHeartHistory.map(item => ({
       id: item.roomEventId,
       type: 'heart',
-      profileImage: item.senderProfileSvg || defaultProfilePng,
+      svgComponentName: item.senderProfileSvg || 'HanaSvg',
       name: item.senderName || '알 수 없는 사용자',
       content: item.message,
       createdAt: item.createdAt,

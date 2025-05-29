@@ -1,26 +1,25 @@
+// // SVG 에셋 임포트 (SideBar.tsx와 유사하게, 실제 경로에 맞게 조정 필요)
+// // 기본 이미지도 그대로 사용 가능
+// // export const defaultProfilePng = require('@/assets/images/profile/profile_default.png');
 
-// SVG 에셋 임포트 (SideBar.tsx와 유사하게, 실제 경로에 맞게 조정 필요)
-// 기본 이미지도 그대로 사용 가능
-export const defaultProfilePng = require('@/assets/images/profile/profile_default.png');
+// // SVG 프로필 이미지 임포트 (경로를 실제 프로젝트에 맞게 확인/수정 필요)
+// import LoveDaoSvg from '@/assets/images/history/loveChat/loveDao.svg'; // dao.svg가
+// import LoveDoriSvg from '@/assets/images/history/loveChat/loveDori.svg'; // dori.svg 추가
+// import LoveHanaSvg from '@/assets/images/history/loveChat/loveHana.svg';
+// import LoveNemoSvg from '@/assets/images/history/loveChat/loveNemo.svg';
+// import LoveSezziSvg from '@/assets/images/history/loveChat/loveSezzi.svg'; // sezzi.svg 추가
+// import LoveYukdaengSvg from '@/assets/images/history/loveChat/loveYukdaeng.svg'; // yukdaeng.svg 추가
 
-// SVG 프로필 이미지 임포트 (경로를 실제 프로젝트에 맞게 확인/수정 필요)
-import LoveDaoSvg from '@/assets/images/history/loveChat/loveDao.svg'; // dao.svg가
-import LoveDoriSvg from '@/assets/images/history/loveChat/loveDori.svg'; // dori.svg 추가
-import LoveHanaSvg from '@/assets/images/history/loveChat/loveHana.svg';
-import LoveNemoSvg from '@/assets/images/history/loveChat/loveNemo.svg';
-import LoveSezziSvg from '@/assets/images/history/loveChat/loveSezzi.svg'; // sezzi.svg 추가
-import LoveYukdaengSvg from '@/assets/images/history/loveChat/loveYukdaeng.svg'; // yukdaeng.svg 추가
+// // SVG 프로필 이미지 임포트 (경로를 실제 프로젝트에 맞게 확인/수정 필요)
+// import FriendDaoSvg from '@/assets/images/history/friendChat/friendDao.svg'; // dao.svg가
+// import FriendDoriSvg from '@/assets/images/history/friendChat/friendDori.svg'; // dori.svg 추가
+// import FriendHanaSvg from '@/assets/images/history/friendChat/friendHana.svg';
+// import FriendNemoSvg from '@/assets/images/history/friendChat/friendNemo.svg';
+// import FriendSezziSvg from '@/assets/images/history/friendChat/friendSezzi.svg'; // sezzi.svg 추가
+// import FriendYukdaengSvg from '@/assets/images/history/friendChat/friendYukdaeng.svg'; // yukdaeng.svg 추가
 
-// SVG 프로필 이미지 임포트 (경로를 실제 프로젝트에 맞게 확인/수정 필요)
-import FriendDaoSvg from '@/assets/images/history/friendChat/friendDao.svg'; // dao.svg가
-import FriendDoriSvg from '@/assets/images/history/friendChat/friendDori.svg'; // dori.svg 추가
-import FriendHanaSvg from '@/assets/images/history/friendChat/friendHana.svg';
-import FriendNemoSvg from '@/assets/images/history/friendChat/friendNemo.svg';
-import FriendSezziSvg from '@/assets/images/history/friendChat/friendSezzi.svg'; // sezzi.svg 추가
-import FriendYukdaengSvg from '@/assets/images/history/friendChat/friendYukdaeng.svg'; // yukdaeng.svg 추가
-
-// 토큰은 실제 환경에서는 Zustand, Context API, AsyncStorage 등에서 관리됩니다.
-const DUMMY_TOKEN = 'YOUR_DUMMY_ACCESS_TOKEN';
+// // 토큰은 실제 환경에서는 Zustand, Context API, AsyncStorage 등에서 관리됩니다.
+// const DUMMY_TOKEN = 'YOUR_DUMMY_ACCESS_TOKEN';
 
 // 채팅방 목록 아이템 타입 (API 응답 기반)
 export interface ChatRoomItem {
@@ -87,24 +86,24 @@ const userBaseInfo: Record<string, { name: string }> = {
   '6': { name: '육감적인 직감파 육땡' },
 };
 
-// roomType별 SVG 프로필 맵
-const loveChatProfileSvgMap: Record<string, any> = {
-  '1': LoveHanaSvg,
-  '2': LoveDoriSvg,
-  '3': LoveSezziSvg,
-  '4': LoveNemoSvg,
-  '5': LoveDaoSvg,
-  '6': LoveYukdaengSvg,
-};
+// // roomType별 SVG 프로필 맵
+// const loveChatProfileSvgMap: Record<string, any> = {
+//   '1': LoveHanaSvg,
+//   '2': LoveDoriSvg,
+//   '3': LoveSezziSvg,
+//   '4': LoveNemoSvg,
+//   '5': LoveDaoSvg,
+//   '6': LoveYukdaengSvg,
+// };
 
-const friendChatProfileSvgMap: Record<string, any> = {
-  '1': FriendHanaSvg,
-  '2': FriendDoriSvg,
-  '3': FriendSezziSvg,
-  '4': FriendNemoSvg,
-  '5': FriendDaoSvg,
-  '6': FriendYukdaengSvg,
-};
+// const friendChatProfileSvgMap: Record<string, any> = {
+//   '1': FriendHanaSvg,
+//   '2': FriendDoriSvg,
+//   '3': FriendSezziSvg,
+//   '4': FriendNemoSvg,
+//   '5': FriendDaoSvg,
+//   '6': FriendYukdaengSvg,
+// };
 
 /**
  * 1:1 채팅 내역 (채팅방 목록) 조회 API
@@ -167,11 +166,11 @@ export const getChatHistory = async (
         
         const baseInfo = userBaseInfo[opponentId] || { name: '알 수 없는 상대' };
         let profileSvg;
-        if (roomType === 'COUPLE') {
-          profileSvg = loveChatProfileSvgMap[opponentId] || defaultProfilePng;
-        } else { // GROUP
-          profileSvg = friendChatProfileSvgMap[opponentId] || defaultProfilePng;
-        }
+        // if (roomType === 'COUPLE') {
+        //   profileSvg = loveChatProfileSvgMap[opponentId] || LoveHanaSvg;
+        // } else { // GROUP
+        //   profileSvg = friendChatProfileSvgMap[opponentId] || FriendHanaSvg;
+        // }
         
         const date = new Date();
         date.setDate(date.getDate() - itemIndex * 2);
@@ -251,7 +250,7 @@ export const getHeartHistory = async (
         // 혹은, sender의 기본 프로필 타입이 정해져 있다고 가정할 수 있습니다.
         // 편의상 loveChatProfileSvgMap을 사용하겠습니다.
         const senderBaseInfo = userBaseInfo[senderIdKey] || { name: '알 수 없는 사용자' };
-        const senderProfilePicture = loveChatProfileSvgMap[senderIdKey] || defaultProfilePng; 
+        //const senderProfilePicture = loveChatProfileSvgMap[senderIdKey] || LoveHanaSvg;
         const receiverId = ((i + 2) % 6) + 1;
         return {
           roomEventId: i + 200,
@@ -263,7 +262,7 @@ export const getHeartHistory = async (
           createdAt: date.toISOString(),
           modifiedAt: date.toISOString(),
           senderName: senderBaseInfo.name,
-          senderProfileSvg: senderProfilePicture,
+          //senderProfileSvg: senderProfilePicture,
         };
       });
       resolve({ data }); // API 명세상 pageInfo가 없으므로 data만 반환
