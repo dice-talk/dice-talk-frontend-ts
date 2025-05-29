@@ -26,7 +26,7 @@ export default function GradientBackground({ children }: { children?: ReactNode 
           justifyContent: 'center',
         }}
       >
-        {children}
+        <View>{children}</View>
       </LinearGradient>
     </View>
   );
