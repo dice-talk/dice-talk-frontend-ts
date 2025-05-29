@@ -57,3 +57,16 @@ export const readAllNotifications = async () => {
     throw error;
   }
 };
+
+// 안읽은 알림 개수 조회 요청
+export const getUnreadNotificationCount = async () => {
+  try {
+    const response = await axiosWithToken.get("/notifications/unread-count");
+    console.log(`🔍 안읽은 알림 개수 조회 응답:`, { status: response.status, data: response.data });
+    return response;
+
+  } catch (error) {
+    console.error("🚨 안읽은 알림 개수 조회 실패:", error);
+    throw error;
+  }
+};
