@@ -1,3 +1,4 @@
+import { getNotifications, getUnreadNotificationCount } from '@/api/AlertApi';
 import AlertIcon from '@/assets/images/chat/chatNoticeOnOff.svg';
 import DiceFriends from '@/assets/images/home/diceFriends.png';
 import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
@@ -6,7 +7,6 @@ import ExLove from '@/assets/images/home/exLoveTheme.png';
 import HeartSignalIcon from '@/assets/images/home/heartSignalIcon.svg';
 import HartSignal from '@/assets/images/home/heartSignalTheme.png';
 import MainBackground from '@/assets/images/home/mainBackground.svg';
-import { hasUnreadAlerts } from '@/components/Alerts/AlertBox';
 import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
 import AccountBannedModal from '@/components/home/AccountBannedModal';
@@ -28,6 +28,27 @@ const HomeScreen = () => {
   const [isBottomSheetVisible, setBottomSheetVisible] = useState(false);
   // AlertModal 표시 여부
   const [isAlertModalVisible, setAlertModalVisible] = useState(false);
+  // 알림 목록 상태 추가
+  const [fetchedNotifications, setFetchedNotifications] = useState([]);
+  // 안읽은 알림 개수 상태 추가
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // 안읽은 알림 개수 조회 함수
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await getUnreadNotificationCount();
+      console.log("안읽은 알림 개수:", response.data);
+      setUnreadCount(response.data || 0);
+    } catch (error) {
+      console.error("안읽은 알림 개수 조회 실패:", error);
+      setUnreadCount(0);
+    }
+  };
+
+  // 컴포넌트 마운트 시 안읽은 알림 개수 조회
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
 
   // 바텀시트 파라미터 설정
   const [bottomSheetParams, setBottomSheetParams] = useState<{
@@ -139,11 +160,26 @@ const HomeScreen = () => {
         />
       </View>
       <View style={styles.alertIconContainer}>
-        <TouchableOpacity onPress={() => setAlertModalVisible(true)}>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              const notifications = await getNotifications(1, 10);
+              console.log("알림 목록:", notifications);
+              setFetchedNotifications(notifications);
+              setAlertModalVisible(true);
+            } catch (error) {
+              console.error("알림 조회 실패:", error);
+              setFetchedNotifications([]);
+              setAlertModalVisible(true);
+            }
+          }}
+        >
           <AlertIcon color="#F9BCC1" />
         </TouchableOpacity>
-        {hasUnreadAlerts() && (
-          <View style={styles.redDot} />
+        {unreadCount > 0 && (
+          <View style={styles.redDot}>
+            <Text style={styles.redDotText}>{unreadCount}</Text>
+          </View>
         )}
       </View>
       <View style={{
@@ -158,7 +194,7 @@ const HomeScreen = () => {
       <ThemeCarousel
         pages={[
           { num: 1, icon: (
-            // 캐러셀 이미지 클릭 시 바텀시트 표시
+            // 캐러셀 이미지 클릭 시 바텀시트 표시 
             <TouchableOpacity onPress={() => handleImageClick(1)}>
               <Image source={DiceFriends} style={{ width: width * 0.7, height: width * 0.7 }} />
             </TouchableOpacity>
@@ -209,6 +245,8 @@ const HomeScreen = () => {
       <AlertModal 
         visible={isAlertModalVisible}
         onClose={() => setAlertModalVisible(false)}
+        notifications={fetchedNotifications}
+        onReadComplete={fetchUnreadCount}
       />
 
       <AccountBannedModal
@@ -256,11 +294,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -4,
     right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#FF4757',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  redDotText: {
+    color: 'white',
+    fontSize: 8,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+
 });
 
 export default HomeScreen;
