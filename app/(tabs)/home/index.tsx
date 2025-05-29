@@ -1,4 +1,4 @@
-import { getNotifications } from '@/api/AlertApi';
+import { getNotifications, getUnreadNotificationCount } from '@/api/AlertApi';
 import AlertIcon from '@/assets/images/chat/chatNoticeOnOff.svg';
 import DiceFriends from '@/assets/images/home/diceFriends.png';
 import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
@@ -11,8 +11,8 @@ import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
 import ThemeCarousel from "@/components/home/ThemeCarousel";
 import { BlurView } from 'expo-blur';
-import { useState } from 'react';
-import { Dimensions, Image, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const HomeScreen = () => {
   const { width, height } = Dimensions.get("window");
@@ -22,6 +22,23 @@ const HomeScreen = () => {
   const [isAlertModalVisible, setAlertModalVisible] = useState(false);
   // 알림 목록 상태 추가
   const [fetchedNotifications, setFetchedNotifications] = useState([]);
+  // 안읽은 알림 개수 상태 추가
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // 안읽은 알림 개수 조회 함수
+  const fetchUnreadCount = async () => {
+    try {
+      const count = await getUnreadNotificationCount();
+      setUnreadCount(count.data.data);
+    } catch (error) {
+      console.error("🔴 안 읽은 알림 수 조회 실패:", error);
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
 
   // 바텀시트 파라미터 설정
   const [bottomSheetParams, setBottomSheetParams] = useState<{
@@ -122,8 +139,10 @@ const HomeScreen = () => {
         >
           <AlertIcon color="#F9BCC1" />
         </TouchableOpacity>
-        {fetchedNotifications.length > 0 && (
-          <View style={styles.redDot} />
+        {unreadCount > 0 && (
+          <View style={styles.redDot}>
+            <Text style={styles.redDotText}>{unreadCount}</Text>
+          </View>
         )}
       </View>
       <View style={{ flex: 1, marginTop: height * 0.2 }}>
@@ -131,7 +150,7 @@ const HomeScreen = () => {
       <ThemeCarousel
         pages={[
           { num: 1, icon: (
-            // 캐러셀 이미지 클릭 시 바텀시트 표시
+            // 캐러셀 이미지 클릭 시 바텀시트 표시 
             <TouchableOpacity onPress={() => handleImageClick(1)}>
               <Image source={DiceFriends} style={{ width: width * 0.7, height: width * 0.7 }} />
             </TouchableOpacity>
@@ -182,7 +201,8 @@ const HomeScreen = () => {
       <AlertModal 
         visible={isAlertModalVisible}
         onClose={() => setAlertModalVisible(false)}
-        notifications={fetchedNotifications} // 추가
+        notifications={fetchedNotifications}
+        onReadComplete={fetchUnreadCount}
       />
     </View>
   );
@@ -225,11 +245,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -4,
     right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#FF4757',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  redDotText: {
+    color: 'white',
+    fontSize: 8,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+
 });
 
 export default HomeScreen;

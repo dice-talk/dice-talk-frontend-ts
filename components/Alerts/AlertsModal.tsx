@@ -31,6 +31,7 @@ interface AlertsModalProps {
   visible: boolean;
   onClose: () => void;
   notifications: AlertNotification[];
+  onReadComplete?: () => void;
 }
 
 interface AlertNotification {
@@ -42,7 +43,7 @@ interface AlertNotification {
   createdAt: string;
 }
 
-const AlertsModal = ({ visible, onClose, notifications }: AlertsModalProps) => {
+const AlertsModal = ({ visible, onClose, notifications, onReadComplete }: AlertsModalProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [localNotifications, setLocalNotifications] = useState<AlertNotification[]>([]);
 
@@ -118,8 +119,13 @@ const AlertsModal = ({ visible, onClose, notifications }: AlertsModalProps) => {
   const handleClose = async () => {
     try {
       console.log('📖 전체 알림 읽음 처리 시작');
-      await readAllNotifications();
+      const response = await readAllNotifications();
       console.log('✅ 전체 알림 읽음 처리 완료');
+      
+      // 읽음 처리 성공 시 부모 컴포넌트에 알림
+      if (onReadComplete) {
+        onReadComplete();
+      }
     } catch (error) {
       console.error('❌ 전체 알림 읽음 처리 실패:', error);
       // 읽음 처리 실패해도 모달은 닫기
