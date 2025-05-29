@@ -61,23 +61,6 @@ export const getAnonymousInfo = async (memberId: number) => {
     }
 };
 
-// (추가) 회원 탈퇴
-export const deleteMyAccount = async () => {
-    try {
-        const memberId = useMemberInfoStore.getState().memberId;
-        const response = await axiosWithToken.delete(`/my-info/${memberId}`);
-        // Clear local storage and Zustand state after successful deletion
-        await AsyncStorage.clear();
-        useMemberInfoStore.getState().clearStore(); // Add a clearStore method to your Zustand store
-        useAnonymousStore.getState().clearStore(); // Add a clearStore method to your Zustand store
-
-        return response.data;
-    } catch (error) {
-        console.error("🚨 계정 삭제 실패:", error);
-        throw error;
-    }
-};
-
 // 로그아웃 (토큰 제거 및 상태 초기화)
 export const logoutMember = async () => {
     try {
@@ -100,20 +83,20 @@ export const logoutMember = async () => {
 };
 
 
-// // (추가) 회원 정보 전체 수정 (본인)
-// export const updateMyProfile = async (profileData: Partial<MemberInfo>) => {
-//     try {
-//         const memberId = useMemberInfoStore.getState().memberId;
-//          if (!memberId) {
-//             console.error("🚨 프로필 업데이트 실패: memberId가 없습니다.");
-//             throw new Error("memberId is not available");
-//         }
-//         // Endpoint might be /my-info or /members/me
-//         const response = await axiosWithToken.put(`/my-info/${memberId}`, profileData);
-//         // Optionally update Zustand store here if needed
-//         return response.data;
-//     } catch (error) {
-//         console.error("🚨 프로필 업데이트 실패:", error);
-//         throw error;
-//     }
-// };
+// 회원 탈퇴
+export const deleteMember = async (reason: string) => {
+    try{
+        const memberId = useMemberInfoStore.getState().memberId;
+        const response = await axiosWithToken.delete(`/my-info/${memberId}`, {
+            data: reason,
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("🚨 회원 탈퇴 실패:", error);
+        throw error;
+    }
+};
+

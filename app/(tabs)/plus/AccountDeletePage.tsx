@@ -1,14 +1,15 @@
 import GradientHeader from '@/components/common/GradientHeader';
-import AccountExitModal from '@/components/plus/AccountExitModal';
+import AccountExitModal from '@/components/plus/AccountDeleteModal';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, height } = Dimensions.get('window');
 
-const AccountExitPage = () => {
+const AccountDeletePage = () => {
   const [showModal, setShowModal] = useState(false);
+  const { deleteReason } = useLocalSearchParams<{ deleteReason: string }>();
 
   const handleConfirmExit = () => {
     setShowModal(false);
@@ -94,6 +95,7 @@ const AccountExitPage = () => {
         visible={showModal}
         onCancel={handleCancelExit}
         onConfirm={handleConfirmExit}
+        deleteReason={deleteReason || ''}
       />
     </View>
   );
@@ -177,4 +179,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AccountExitPage;
+export default AccountDeletePage;
