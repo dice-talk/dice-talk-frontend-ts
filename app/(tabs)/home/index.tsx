@@ -28,14 +28,16 @@ const HomeScreen = () => {
   // 안읽은 알림 개수 조회 함수
   const fetchUnreadCount = async () => {
     try {
-      const count = await getUnreadNotificationCount();
-      setUnreadCount(count.data.data);
+      const response = await getUnreadNotificationCount();
+      console.log("안읽은 알림 개수:", response.data);
+      setUnreadCount(response.data || 0);
     } catch (error) {
-      console.error("🔴 안 읽은 알림 수 조회 실패:", error);
+      console.error("안읽은 알림 개수 조회 실패:", error);
       setUnreadCount(0);
     }
   };
 
+  // 컴포넌트 마운트 시 안읽은 알림 개수 조회
   useEffect(() => {
     fetchUnreadCount();
   }, []);

@@ -118,7 +118,6 @@ const AlertsModal = ({ visible, onClose, notifications, onReadComplete }: Alerts
 
   const handleClose = async () => {
     try {
-      console.log('📖 전체 알림 읽음 처리 시작');
       const response = await readAllNotifications();
       console.log('✅ 전체 알림 읽음 처리 완료');
       
