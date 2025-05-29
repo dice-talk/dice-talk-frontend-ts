@@ -1,31 +1,52 @@
 // src/components/Profile/LogoutButton.tsx
+import { logoutMember } from "@/api/memberApi";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text } from "react-native";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
     Alert.alert("로그아웃", "정말 로그아웃 하시겠습니까?", [
       {
         text: "취소",
         style: "cancel",
+        onPress: () => setIsLoading(false),
       },
       {
         text: "로그아웃",
+        style: "destructive",
         onPress: async () => {
-          await AsyncStorage.removeItem("accessToken");
-          //router.replace("/login");
+          setIsLoading(true);
+          try {
+            const loggedOut = await logoutMember();
+            if (loggedOut) {
+              console.log('LogoutButton: 로그아웃 처리 완료, (onBoard)로 이동합니다.');
+              router.replace('/(onBoard)');
+            } else {
+              Alert.alert("로그아웃 실패", "로그아웃 중 문제가 발생했습니다. 다시 시도해주세요.");
+            }
+          } catch (error) {
+            console.error("LogoutButton: 로그아웃 중 에러 발생", error);
+            Alert.alert("로그아웃 오류", "로그아웃 처리 중 오류가 발생했습니다.");
+          } finally {
+            setIsLoading(false);
+          }
         },
       },
     ]);
   };
 
   return (
-    <Pressable style={styles.container} onPress={handleLogout}>
-      <Ionicons name="log-out-outline" size={20} color="#7d7d7d" />
+    <Pressable style={styles.container} onPress={isLoading ? undefined : handleLogout} disabled={isLoading}>
+      {isLoading ? (
+        <ActivityIndicator size="small" color="#7d7d7d" style={styles.icon} />
+      ) : (
+        <Ionicons name="log-out-outline" size={20} color="#7d7d7d" style={styles.icon} />
+      )}
       <Text style={styles.text}>로그아웃</Text>
     </Pressable>
   );
@@ -38,9 +59,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     marginTop: 16,
   },
+  icon: {
+    marginRight: 8,
+  },
   text: {
     fontFamily: "Pretendard",
-    marginLeft: 8,
     fontSize: 16,
     color: "#7d7d7d",
   },
