@@ -24,7 +24,7 @@ export default function SettingPage() {
   const [snsConsent, setSnsConsent] = useState(true);
 
   const handleWithdrawal = () => {
-    router.push("/plus/AccountExitPage");
+    router.push("/plus/DeleteReasonPage");
   };
 
   return (
