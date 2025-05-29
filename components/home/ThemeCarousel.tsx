@@ -34,32 +34,34 @@ export default function Carousel({ pages, pageWidth, gap, offset }: ICarousel) {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        // 렌더링할 페이지 리스트
-        data={pages}
-        // 스크롤 속도 설정 (빠른 스크롤 시 감속을 빠르게 하여 여러 페이지 넘어가는 것 방지)
-        decelerationRate={0.79}
-        // 가로 스크롤
-        horizontal
-        // 고유키 생성
-        keyExtractor={(item: any, index: number) => `page__${index}`}
-        // 스크롤 이벤트 처리
-        onScroll={onScroll}
-        // 페이지 스크롤 활성화
-        pagingEnabled
-        // 스크롤 아이템 렌더링
-        renderItem={renderItem}
-        // 페이지 스크롤 간격 설정
-        snapToInterval={pageWidth + gap}
-        // 스크롤 정렬 방식
-        snapToAlignment="start"
-        // 수평 스크롤 인디케이터 숨김
-        automaticallyAdjustContentInsets={false}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: offset + gap / 2,
-        }}
-      />
+      <View style={styles.carouselContainer}>
+        <FlatList
+          // 렌더링할 페이지 리스트
+          data={pages}
+          // 스크롤 속도 설정 (빠른 스크롤 시 감속을 빠르게 하여 여러 페이지 넘어가는 것 방지)
+          decelerationRate={0.79}
+          // 가로 스크롤
+          horizontal
+          // 고유키 생성
+          keyExtractor={(item: any, index: number) => `page__${index}`}
+          // 스크롤 이벤트 처리
+          onScroll={onScroll}
+          // 페이지 스크롤 활성화
+          pagingEnabled
+          // 스크롤 아이템 렌더링
+          renderItem={renderItem}
+          // 페이지 스크롤 간격 설정
+          snapToInterval={pageWidth + gap}
+          // 스크롤 정렬 방식
+          snapToAlignment="start"
+          // 수평 스크롤 인디케이터 숨김
+          automaticallyAdjustContentInsets={false}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: offset + gap / 2,
+          }}
+        />
+      </View>
       <View style={styles.indicatorWrapper}>
         {Array.from({ length: pages.length }, (_, i) => i).map((i) => (
           <View
@@ -77,17 +79,21 @@ export default function Carousel({ pages, pageWidth, gap, offset }: ICarousel) {
 
 const styles = StyleSheet.create({
   container: {
-    height: '60%',
+    height: '100%',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  carouselContainer: {
+    height: '85%',
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    // backgroundColor: 'red',
   },
   indicatorWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
-    // backgroundColor: 'blue',
   },
   indicator: {
     marginHorizontal: 4,

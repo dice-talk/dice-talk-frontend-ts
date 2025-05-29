@@ -181,7 +181,7 @@ const styles = StyleSheet.create({ /* ... 이전 스타일 복사 ... */
     },
     illustrationBox: {
         alignItems: 'center',
-        marginTop: 50,
+        marginTop: 70,
         marginBottom: 50,
     },
     checkAllBox: {

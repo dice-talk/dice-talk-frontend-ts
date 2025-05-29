@@ -20,6 +20,8 @@ import { Dimensions, Image, Modal, StyleSheet, TouchableOpacity, View } from 're
 //const MOCK_USER_STATUS = 'MEMBER_BANNED'; // 테스트를 위해 'MEMBER_BANNED' 또는 다른 값으로 변경
 const MOCK_USER_STATUS = 'ACTIVE'; 
 
+// const TAB_BAR_HEIGHT_APPROX = Platform.OS === 'ios' ? 80 : 0; // 이 상수는 MainBackground 전체 화면 설정에는 직접 사용되지 않음
+
 const HomeScreen = () => {
   const { width, height } = Dimensions.get("window");
   // 바텀시트 표시 여부
@@ -122,15 +124,18 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
+      <View style={{
+        position: 'absolute',
+        top: 0, // 화면 상단부터
+        left: 0, // 화면 좌측부터
+        right: 0, // 화면 우측까지
+        bottom: 0, // 화면 하단까지
+        zIndex: -1 // 배경이므로 가장 뒤로
+      }}>
         <MainBackground 
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: [{ translateX: -width/2 }, { translateY: -height/2 }],
-            zIndex: -1
-          }}
+          width="100%"         // 부모 View의 너비에 맞춤
+          height="100%"        // 부모 View의 높이에 맞춤
+          preserveAspectRatio="xMidYMid slice" // 이미지가 비율을 유지하면서 영역을 덮도록 추가 (필요에 따라 조정)
         />
       </View>
       <View style={styles.alertIconContainer}>
@@ -141,7 +146,14 @@ const HomeScreen = () => {
           <View style={styles.redDot} />
         )}
       </View>
-      <View style={{ flex: 1, marginTop: height * 0.2 }}>
+      <View style={{
+        position: 'absolute',
+        top: height * 0.2,      // 상단 배너 높이(20%) 제외
+        left: 0,
+        right: 0,
+        bottom: height * 0.1,     // 하단 푸터 높이(10%) 제외
+        justifyContent: 'center', // 이 영역 내에서 ThemeCarousel을 수직 가운데 정렬
+      }}>
          {/* 케러셀 */}
       <ThemeCarousel
         pages={[

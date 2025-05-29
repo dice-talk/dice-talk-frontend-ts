@@ -102,7 +102,23 @@ export default function SignupInput() {
             router.replace('/(onBoard)/register/Congratulate');
         } catch (err: any) {
             console.error('회원가입 실패:', err);
-            const errMsg = err.response?.data?.error || err.response?.data?.message || '회원가입 중 문제가 발생했습니다.';
+            let errMsg = '회원가입 중 문제가 발생했습니다.'; // 기본 에러 메시지
+
+            if (err.response) {
+                const { status, data } = err.response;
+                const message = data?.message;
+                const error = data?.error; // 혹시 error 필드도 사용될 경우 대비
+
+                if (status === 409 && message === "Member exists") {
+                    errMsg = '이미 회원가입한 내역이 있습니다.';
+                } else if (message) {
+                    errMsg = message;
+                } else if (error) {
+                    errMsg = error;
+                }
+            }
+            // err.response가 없는 네트워크 오류 등의 경우 기본 errMsg 사용
+            
             Alert.alert('오류', errMsg);
         }
     };
