@@ -1,21 +1,21 @@
 // EmailInput 컴포넌트 (예: app/(onBoard)/register/components/EmailInputForm.tsx 또는 index.tsx에 통합)
-import MediumButton from '@/components/profile/myInfoPage/MediumButton'; // 경로 예시
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // memberInfoStore 임포트
+import MediumButton from '@/components/profile/myInfoPage/MediumButton';
+import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore';
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router'; // Expo Router의 useRouter 훅 사용
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
-//import { sendEmail } from '@/api/axios/emailApi'; // 경로 예시 (emailApi.ts로 가정)
-//import { useEmail } from '@/context/EmailContext'; // 경로 예시
+// import { sendEmail } from '@/api/axios/emailApi'; // 실제 API 연동 시 주석 해제
 
-export default function EmailInputForm() { // 컴포넌트 이름 변경 또는 index.tsx 내용으로 사용
+export default function EmailInputScreen() { // 컴포넌트 이름 변경
     const router = useRouter();
-    const setEmailInStore = useMemberInfoStore((state) => state.setEmail); // 스토어에서 setEmail 가져오기
-    //const { setEmail } = useEmail();
+    // Zustand 스토어의 setEmail 함수를 가져옵니다.
+    const setEmailInStore = useMemberInfoStore((state) => state.setEmail);
+    
     const [inputEmail, setInputEmail] = useState<string>('');
     const [isValid, setIsValid] = useState<boolean>(false);
-    const [isSending, setIsSending] = useState<boolean>(false);
+    const [isSending, setIsSending] = useState<boolean>(false); // API 호출 중복 방지용
 
     const validateEmail = (text: string): void => {
         setInputEmail(text);
@@ -28,25 +28,28 @@ export default function EmailInputForm() { // 컴포넌트 이름 변경 또는 
 
         setIsSending(true);
         try {
-            // setEmail(inputEmail);
-            // const result = await sendEmail(inputEmail); // API 요청 결과 타입 정의 필요
-            // console.log('서버 응답:', result);
-            // Alert.alert('성공', '이메일을 성공적으로 전송했어요!');
+            // TODO: 실제 이메일 인증 API (sendEmail) 호출 로직 구현
+            // const result = await sendEmail(inputEmail);
+            // console.log('이메일 발송 API 서버 응답:', result);
+            // Alert.alert('성공', '입력하신 이메일로 인증번호를 보냈습니다.');
 
-            // UserFlow: 이메일 인증 성공 시 다음 단계로 이동 (VerifyCode 페이지)
-            // Expo Router에서는 파일 시스템 경로로 이동합니다.
-            // 예: (onBoard)/register/verifyCode.tsx 파일이 있다면
-            setEmailInStore(inputEmail); // Zustand 스토어에 이메일 저장
-            router.push('/(onBoard)/register/VerifyCode'); // VerifyCode 스크린 경로로 수정
+            // API 호출 성공 후 또는 데모/테스트 목적으로 스토어에 이메일 저장
+            setEmailInStore(inputEmail);
+            console.log(`스토어에 이메일 저장: ${inputEmail}`);
+
+            // 인증번호 입력 페이지로 이동
+            router.push('/(onBoard)/register/VerifyCode');
         } catch (error: any) {
-            const errMsg = error.response?.data?.error || '알 수 없는 오류입니다.';
-            Alert.alert('오류', errMsg);
+            // const errMsg = error.response?.data?.error || '알 수 없는 오류로 이메일 발송에 실패했습니다.';
+            // Alert.alert('오류', errMsg);
 
-            if (errMsg === '이미 등록된 이메일입니다.') {
-                // UserFlow: 이미 등록된 이메일이면 LendingPage로 router.replace
-                router.replace('/(onBoard)/register/VerifyCode'); // LendingPage 경로로 수정
-            }
-            // UserFlow: 인증번호가 잘못되었습니다 Alert 후 LendingPage로 (이 부분은 VerifyCode 스크린에서 처리)
+            // 데모용 임시 에러 처리 및 화면 이동 (실제 API 연동 시 수정)
+            console.error("이메일 발송 처리 중 에러 (데모):", error);
+            Alert.alert('알림', '이메일 발송에 실패했습니다. (데모 메시지). 다음 단계로 이동합니다.'); 
+            setEmailInStore(inputEmail); // 실패 시에도 테스트를 위해 임시로 저장
+            router.push('/(onBoard)/register/VerifyCode');
+
+            // 이미 등록된 이메일 등의 분기 처리는 VerifyCode 또는 해당 API 응답에서 처리
         } finally {
             setIsSending(false);
         }
@@ -78,11 +81,10 @@ export default function EmailInputForm() { // 컴포넌트 이름 변경 또는 
                         onChangeText={validateEmail}
                         value={inputEmail}
                     />
-                    <View style={[!isValid && styles.disabledButton]} pointerEvents={!isValid ? "none" : "auto"}>
+                    <View style={[styles.buttonWrapper, (!isValid || isSending) && styles.disabledButton]} pointerEvents={(!isValid || isSending) ? "none" : "auto"}>
                         <MediumButton
-                            title='확인 메일 보내기'
+                            title={isSending ? '전송 중...' : '확인 메일 보내기'}
                             onPress={handleSendEmail}
-                            //disabled={!isValid || isSending}
                         />
                     </View>
                 </View>
@@ -123,6 +125,9 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         marginBottom: 40,
         color: '#000',
+    },
+    buttonWrapper: {
+        width: '100%',
     },
     text: {
         color: "white",

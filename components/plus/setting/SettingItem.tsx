@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     paddingVertical: 16, 
-    paddingHorizontal: width * 0.05, // 화면 좌우 여백
+    paddingHorizontal: width * 0.07, // 화면 좌우 여백
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },

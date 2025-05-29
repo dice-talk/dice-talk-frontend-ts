@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F0",
   },
   disabledPageText: { // 비활성화된 버튼의 텍스트 색상
-    color: "#BDBDBD", 
+    color: "#BDBDBD",
   },
   // dotsButton 스타일은 더 이상 필요 없으므로 주석 처리 또는 삭제 가능
   // dotsButton: { 

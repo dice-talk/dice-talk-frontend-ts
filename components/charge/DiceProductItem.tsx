@@ -25,8 +25,8 @@ const DiceProductItem: React.FC<DiceProductItemProps> = ({
     }
   };
 
-  // 가격 포맷팅 (예: 1100 -> "₩ 1,100")
-  const formattedPrice = `₩ ${price.toLocaleString()}`;
+  // formattedPrice는 더 이상 직접 사용하지 않음
+  // const formattedPrice = `₩ ${price.toLocaleString()}`;
 
   return (
     <TouchableOpacity 
@@ -39,7 +39,8 @@ const DiceProductItem: React.FC<DiceProductItemProps> = ({
         <Text style={styles.diceAmountText}>{diceAmount} 다이스</Text>
       </View>
       <View style={styles.rightSection}>
-        <Text style={styles.priceText}>{formattedPrice}</Text>
+        <Text style={styles.currencySymbol}>₩</Text>
+        <Text style={styles.priceValue}>{price.toLocaleString()}</Text>
       </View>
     </TouchableOpacity>
     // 각 아이템 하단 구분선은 ChargePage에서 FlatList의 ItemSeparatorComponent로 추가하거나,
@@ -82,11 +83,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Medium',
     color: '#333333',
   },
-  rightSection: {},
-  priceText: {
+  rightSection: {
+    flexDirection: 'row', // 원화 기호와 숫자를 가로로 배열
+    alignItems: 'center', // 세로 정렬 (선택적)
+    minWidth: width * 0.2, // rightSection 전체의 최소 너비를 설정할 수도 있음
+  },
+  currencySymbol: {
     fontSize: 17,
     fontFamily: 'Pretendard-SemiBold',
     color: '#4A4A4A',
+    marginRight: 8, // 원화 기호와 숫자 사이의 간격
+  },
+  priceValue: {
+    fontSize: 17,
+    fontFamily: 'Pretendard-SemiBold',
+    color: '#4A4A4A',
+    minWidth: width * 0.16, // 숫자 부분의 최소 너비 (조정 가능, 예: width * 0.2에서 기호 너비 제외)
+    marginLeft: 2,
   },
   // bottomBorder: { // 구분선 옵션 2 (각 아이템에 포함)
   //   height: 1,

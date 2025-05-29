@@ -2,7 +2,6 @@ import PasswordInput from '@/components/common/NewPassword'; // 비밀번호 입
 import Tab from '@/components/common/Tab'; // 생성한 탭 컴포넌트 임포트
 import TossAuth from '@/components/common/TossAuth';
 import MediumButton from '@/components/profile/myInfoPage/MediumButton';
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // 스토어 (이메일 저장 등에 활용 가능성)
 import { Ionicons } from '@expo/vector-icons'; // 뒤로가기 아이콘 사용
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -85,7 +84,7 @@ export default function FindInfoScreen() {
   const [timer, setTimer] = useState(180); // 3분 타이머
   const [isTimerActive, setIsTimerActive] = useState(false);
 
-  const setEmailInStore = useMemberInfoStore((state) => state.setEmail); // 스토어 액션
+  //const setEmailInStore = useMemberInfoStore((state) => state.setEmail); // 스토어 액션
 
   // 아이디 찾기 - Toss 인증 성공 콜백
   const handleFindIdAuthSuccess = async (tossAuthInfo: any) => {

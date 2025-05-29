@@ -9,33 +9,41 @@ interface RegionDropDownProps {
   onChange: (city: string, district: string) => void;
 }
 
-export default function RegionDropDown({ city, district, onChange }: RegionDropDownProps) {
-    const [selectedCity, setSelectedCity] = useState<keyof RegionType | "">("");
-    const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+export default function RegionDropDown({ city: initialCity, district: initialDistrict, onChange }: RegionDropDownProps) {
+    const [selectedCity, setSelectedCity] = useState<keyof RegionType | "">((initialCity as keyof RegionType | "") || "");
+    const [selectedDistrict, setSelectedDistrict] = useState<string>(initialDistrict || "");
     
-    const handleCityChange = (city: string) => {
-        setSelectedCity(city as keyof RegionType);
-        setSelectedDistrict(""); // 구/군 초기화
+    const handleCityChange = (newCityValue: string) => {
+        const newCity = newCityValue as keyof RegionType | "";
+        setSelectedCity(newCity);
+        setSelectedDistrict("");
       };
 
-    const handleDistrictChange = (district: string) => {
-        setSelectedDistrict(district);
-        if (selectedCity) {
+    const handleDistrictChange = (newDistrictValue: string) => {
+        if (newDistrictValue === "") {
+            setSelectedDistrict("");
+            return;
+        }
+        
+        setSelectedDistrict(newDistrictValue);
+        if (selectedCity && newDistrictValue) { 
             Alert.alert(
-                "지역 선택",
-                `${selectedCity} ${selectedDistrict}로 등록하시겠습니까?`,
+                "지역 선택 완료",
+                `${selectedCity} ${newDistrictValue}로 지역을 설정합니다.`,
                 [
                     {
                         text: "취소",
                         style: "cancel",
+                        onPress: () => {}
                     },
                     {
                         text: "확인",
                         onPress: () => {
-                            onChange (selectedCity, selectedDistrict);
+                            onChange(selectedCity, newDistrictValue);
                         },
                     },
-                ]
+                ],
+                { cancelable: false } 
             )
         }
       };
@@ -43,30 +51,31 @@ export default function RegionDropDown({ city, district, onChange }: RegionDropD
   return (
     <View style={styles.row}>
         <View style={styles.container}>
-        <Picker
+        <Picker<keyof RegionType | "">
             selectedValue={selectedCity}
-            onValueChange={(value) => handleCityChange(value as keyof RegionType)}
+            onValueChange={(itemValue) => handleCityChange(itemValue as string)}
             style={[styles.picker, styles.cityPicker]}
             dropdownIconColor="#B28EF8"
         >
-            <Picker.Item label="시/도" value={city} />
-                {Object.keys(Region).map((city) => (
-                <Picker.Item label={city} value={city} key={city} />
+            <Picker.Item label="시/도 선택" value="" />
+                {Object.keys(Region).map((cityName) => (
+                <Picker.Item label={cityName} value={cityName as keyof RegionType} key={cityName} />
                 ))}
             </Picker>
         </View>
 
         <View style={styles.container}>
-            <Picker selectedValue={selectedDistrict} 
-            onValueChange={handleDistrictChange} 
-            style={[styles.picker, styles.districtPicker]}
-            enabled={!!selectedCity}
-            dropdownIconColor="#B28EF8"
+            <Picker<string>
+                selectedValue={selectedDistrict}
+                onValueChange={(itemValue) => handleDistrictChange(itemValue as string)} 
+                style={[styles.picker, styles.districtPicker]}
+                enabled={!!selectedCity}
+                dropdownIconColor="#B28EF8"
             >
-            <Picker.Item label="구/군" value="" />
+            <Picker.Item label="구/군 선택" value="" />
             {selectedCity &&
-            Region[selectedCity]?.map((district) => (
-                <Picker.Item label={district} value={district} key={district} />
+            Region[selectedCity as keyof RegionType]?.map((districtName) => (
+                <Picker.Item label={districtName} value={districtName} key={districtName} />
             ))}
             </Picker>
         </View>
@@ -80,30 +89,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    gap: 24,
+    gap: 10,
     },
   container: {
-    width: "43%",
+    flex: 1,
     height: 54,
     borderWidth: 1,
     borderColor: "#B28EF8",
     borderRadius: 8,
     overflow: "hidden",
-    marginTop: 2,
-    marginBottom: 16,
+    justifyContent: 'center',
   },
   picker: {
-    fontFamily: "Pretendard",
-    color: "#B28EF8",
-    backgroundColor: "#F9F9FF",
-    height: 40,
-    width: "100%",
+    color: "#333",
+    backgroundColor: "#FFFFFF",
   },
   cityPicker: {
-    flex: 1,
-    marginRight: 8,
   },
   districtPicker: {
-    flex: 1,
   },
 }); 

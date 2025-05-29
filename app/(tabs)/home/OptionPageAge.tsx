@@ -1,16 +1,23 @@
-import TextBox from '@/components/common/TextBox';
-import SelectBox from '@/components/home/SelectBox';
-import { useState } from 'react';
-import { Dimensions, StyleSheet, View, Text } from 'react-native';
 import GradientLine from '@/components/common/GradientLine';
+import TextBox from '@/components/common/TextBox';
 import CustomButton from '@/components/home/CustomButton';
+import SelectBox from '@/components/home/SelectBox';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+
 const { width, height } = Dimensions.get('window');
 
 const OptionPageAge = () => {
+  const router = useRouter();
   const [selectedBox, setSelectedBox] = useState<string | null>(null);
 
   const handleSelect = (box: string) => {
     setSelectedBox(prev => (prev === box ? null : box));
+  };
+
+  const handleConfirm = () => {
+    router.replace('/Loading');
   };
 
   return (
@@ -56,7 +63,7 @@ const OptionPageAge = () => {
       <View style={styles.fixedButtonContainer}>
         <CustomButton
           label="확인"
-          onPress={() => {}}
+          onPress={handleConfirm}
         />
       </View>
     </View>

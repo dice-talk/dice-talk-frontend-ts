@@ -3,7 +3,7 @@ import LogoIcon from '@/assets/images/login/logo_icon.svg'; // SVG 사용 시
 import TossAuth from '@/components/common/TossAuth';
 import UnderageRestrictionModal from '@/components/login/UnderageRestrictionModal'; // 미성년자 모달 임포트
 import MediumButton from '@/components/profile/myInfoPage/MediumButton'; // 경로 예시
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // memberInfoStore 임포트
+import { useMemberInfoStore, UserRegistrationInfo } from '@/zustand/stores/memberInfoStore'; // UserRegistrationInfo 타입 임포트
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router'; // useLocalSearchParams 임포트
 import { useEffect, useState } from "react"; // React 임포트
@@ -30,7 +30,7 @@ export default function Agreement() {
     const [checkedTerms, setCheckedTerms] = useState<boolean[]>(() => terms.map(() => false));
     const [showTossAuth, setShowTossAuth] = useState(false);
     const [showUnderageModal, setShowUnderageModal] = useState(false); // 미성년자 모달 상태
-    const updateMemberInfoInStore = useMemberInfoStore((state) => state.updateMemberInfo); // memberInfoStore 임포트
+    const setStoreRegistrationInfo = useMemberInfoStore((state) => state.setRegistrationInfo);
 
     // DetailAgreement에서 돌아올 때 상태 업데이트
     useEffect(() => {
@@ -74,42 +74,47 @@ export default function Agreement() {
         setShowTossAuth(true);
     };
 
-    const handleAuthSuccess = (userInfo: { name: string; phone: string; gender?: string; birthDate?: string; }) => { 
-        console.log("✅ 인증 성공:", userInfo);
+    interface TossUserInfoFromAuth {
+        name: string;
+        phone?: string; // Toss 응답에 phone이 없을 수 있음을 명시
+        gender?: string;
+        birth?: string; // YYYYMMDD 형식 (로그 기준)
+        ageGroup?: string;
+    }
+
+    const handleAuthSuccess = (userInfo: TossUserInfoFromAuth) => { 
+        console.log("✅ Toss 인증 성공:", userInfo); // userInfo 전체 로그 확인
         setShowTossAuth(false);
 
-        if (userInfo.birthDate) {
-            const birthDateStr = userInfo.birthDate; // YYYYMMDD 또는 YYYY-MM-DD 형식 가정
-            const year = parseInt(birthDateStr.substring(0, 4), 10);
-            const month = parseInt(birthDateStr.substring(birthDateStr.length === 8 ? 4 : 5, birthDateStr.length === 8 ? 6 : 7), 10) -1; // JS month is 0-indexed
-            const day = parseInt(birthDateStr.substring(birthDateStr.length === 8 ? 6 : 8, birthDateStr.length === 8 ? 8 : 10), 10);
-
-            const today = new Date();
-            const birthDate = new Date(year, month, day);
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-
-            if (age < 18) {
-                setShowUnderageModal(true);
-                return;
-            }
+        if (userInfo.ageGroup !== 'ADULT') { // ageGroup도 함께 체크
+            setShowUnderageModal(true);
+            return;
+        }
+        
+        let storeGender: 'MALE' | 'FEMALE' | null = null;
+        if (userInfo.gender?.toUpperCase() === 'MALE' || userInfo.gender === '남성') {
+            storeGender = 'MALE';
+        } else if (userInfo.gender?.toUpperCase() === 'FEMALE' || userInfo.gender === '여성') {
+            storeGender = 'FEMALE';
         }
 
-        updateMemberInfoInStore({
+        const registrationUpdate: Partial<UserRegistrationInfo> = {
             name: userInfo.name,
-            phone: userInfo.phone,
-            gender: userInfo.gender, 
-            birth: userInfo.birthDate, 
-        });
+            phone: userInfo.phone, // phone이 없으면 null로 저장
+            gender: storeGender,
+            birth: userInfo.birth || null, // 로그에서 birth 필드 사용
+            ageGroup: userInfo.ageGroup || null, // ageGroup 추가
+        };
+        setStoreRegistrationInfo(registrationUpdate);
+        console.log("스토어에 사용자 인증 정보 저장 완료:", registrationUpdate);
+
         router.push('/(onBoard)/register/SignupInput');
     };
     
     const handleAuthFailure = () => {
         console.log("❌ Toss 인증 실패");
         setShowTossAuth(false);
+        Alert.alert("인증 실패", "본인 인증에 실패했습니다. 다시 시도해주세요.");
     };
 
     // DetailAgreement로 이동하는 함수
@@ -143,9 +148,6 @@ export default function Agreement() {
                     <Ionicons name={allAgreed ? 'checkbox' : 'square-outline'} size={24} color="#B28EF8" />
                     <Text style={styles.checkAllText}>아래 항목에 전부 동의합니다.</Text>
                 </TouchableOpacity>
-                {/* <TouchableOpacity onPress={() => setShowUnderageModal(true)} >
-                    <Text>테스트</Text>
-                </TouchableOpacity> */}
                 <View style={styles.contentBox}>
                     {terms.map((term, i) => (
                         <View key={term.id} style={styles.termRow}>
@@ -157,13 +159,12 @@ export default function Agreement() {
                     ))}
                 </View>
                 <View style={styles.focusAgreement}>
-                    {/* Link 컴포넌트 대신 TouchableOpacity와 핸들러 함수 사용 */}
                     <TouchableOpacity onPress={navigateToDetailAgreement}>
                         <Text style={styles.focusText}>이용약관 자세히 보기</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.buttonWrapper, { opacity: allRequiredChecked ? 1 : 0.4 }]}>
-                    <MediumButton title="다음" onPress={handleNext} /* disabled={!allRequiredChecked} */ />
+                    <MediumButton title="다음" onPress={handleNext} />
                 </View>
             </View>
         </>
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({ /* ... 이전 스타일 복사 ... */
     },
     illustrationBox: {
         alignItems: 'center',
-        marginTop: 50,
+        marginTop: 70,
         marginBottom: 50,
     },
     checkAllBox: {

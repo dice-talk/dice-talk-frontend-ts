@@ -1,5 +1,5 @@
 import GradientHeader from "@/components/common/GradientHeader";
-import SettingItem from "@/components/setting/SettingItem";
+import SettingItem from "@/components/plus/setting/SettingItem";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     paddingBottom: height * 0.1,
   },
   sectionTitleContainer: {
-    paddingHorizontal: width * 0.05,
+    paddingHorizontal: width * 0.07,
     paddingTop: 24,
     paddingBottom: 8,
     backgroundColor: '#F8F9FA',
