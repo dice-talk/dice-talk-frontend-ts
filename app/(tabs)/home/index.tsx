@@ -1,3 +1,4 @@
+import { getNotifications } from '@/api/AlertApi';
 import AlertIcon from '@/assets/images/chat/chatNoticeOnOff.svg';
 import DiceFriends from '@/assets/images/home/diceFriends.png';
 import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
@@ -6,7 +7,6 @@ import ExLove from '@/assets/images/home/exLoveTheme.png';
 import HeartSignalIcon from '@/assets/images/home/heartSignalIcon.svg';
 import HartSignal from '@/assets/images/home/heartSignalTheme.png';
 import MainBackground from '@/assets/images/home/mainBackground.svg';
-import { hasUnreadAlerts } from '@/components/Alerts/AlertBox';
 import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
 import ThemeCarousel from "@/components/home/ThemeCarousel";
@@ -20,6 +20,8 @@ const HomeScreen = () => {
   const [isBottomSheetVisible, setBottomSheetVisible] = useState(false);
   // AlertModal 표시 여부
   const [isAlertModalVisible, setAlertModalVisible] = useState(false);
+  // 알림 목록 상태 추가
+  const [fetchedNotifications, setFetchedNotifications] = useState([]);
 
   // 바텀시트 파라미터 설정
   const [bottomSheetParams, setBottomSheetParams] = useState<{
@@ -104,10 +106,23 @@ const HomeScreen = () => {
         />
       </View>
       <View style={styles.alertIconContainer}>
-        <TouchableOpacity onPress={() => setAlertModalVisible(true)}>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              const notifications = await getNotifications(1, 10);
+              console.log("알림 목록:", notifications);
+              setFetchedNotifications(notifications);
+              setAlertModalVisible(true);
+            } catch (error) {
+              console.error("알림 조회 실패:", error);
+              setFetchedNotifications([]);
+              setAlertModalVisible(true);
+            }
+          }}
+        >
           <AlertIcon color="#F9BCC1" />
         </TouchableOpacity>
-        {hasUnreadAlerts() && (
+        {fetchedNotifications.length > 0 && (
           <View style={styles.redDot} />
         )}
       </View>
@@ -167,6 +182,7 @@ const HomeScreen = () => {
       <AlertModal 
         visible={isAlertModalVisible}
         onClose={() => setAlertModalVisible(false)}
+        notifications={fetchedNotifications} // 추가
       />
     </View>
   );

@@ -4,33 +4,26 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 const { width, height } = Dimensions.get('window');
 
 // SVG 아이콘 컴포넌트들
-const NoticeIcon = () => (
+const NoticeIcon = ({ color = "#4A90E2", fillColor = "#E3F2FD" }: { color?: string; fillColor?: string }) => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" stroke="#4A90E2" strokeWidth="2" fill="#E3F2FD"/>
-    <Path d="M12 6v6l4 2" stroke="#4A90E2" strokeWidth="2" strokeLinecap="round"/>
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill={fillColor}/>
+    <Path d="M12 6v6l4 2" stroke={color} strokeWidth="2" strokeLinecap="round"/>
   </Svg>
 );
 
-const PaymentIcon = () => (
+const PaymentIcon = ({ color = "#4CAF50", fillColor = "#E8F5E8" }: { color?: string; fillColor?: string }) => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <Rect x="2" y="6" width="20" height="12" rx="2" stroke="#4CAF50" strokeWidth="2" fill="#E8F5E8"/>
-    <Path d="M2 10h20" stroke="#4CAF50" strokeWidth="2"/>
-    <Circle cx="6" cy="14" r="1" fill="#4CAF50"/>
+    <Rect x="2" y="6" width="20" height="12" rx="2" stroke={color} strokeWidth="2" fill={fillColor}/>
+    <Path d="M2 10h20" stroke={color} strokeWidth="2"/>
+    <Circle cx="6" cy="14" r="1" fill={color}/>
   </Svg>
 );
 
-const EventIcon = () => (
+const ReportIcon = ({ color = "#F44336", fillColor = "#FFEBEE" }: { color?: string; fillColor?: string }) => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-          stroke="#FF9800" strokeWidth="2" fill="#FFF3E0"/>
-  </Svg>
-);
-
-const ReportIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" stroke="#F44336" strokeWidth="2" fill="#FFEBEE"/>
-    <Path d="M12 8v4" stroke="#F44336" strokeWidth="2" strokeLinecap="round"/>
-    <Path d="M12 16h.01" stroke="#F44336" strokeWidth="2" strokeLinecap="round"/>
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill={fillColor}/>
+    <Path d="M12 8v4" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+    <Path d="M12 16h.01" stroke={color} strokeWidth="2" strokeLinecap="round"/>
   </Svg>
 );
 
@@ -44,7 +37,18 @@ const DeleteIcon = () => (
   </Svg>
 );
 
-export type AlertCategory = 'notice' | 'payment' | 'event' | 'report';
+// 채팅방 관련 아이콘들
+export const ChatIcon = ({ color = "#9C27B0", fillColor = "#F3E5F5" }: { color?: string; fillColor?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <Path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
+          stroke={color} strokeWidth="2" fill={fillColor}/>
+    <Circle cx="8" cy="10" r="1" fill={color}/>
+    <Circle cx="12" cy="10" r="1" fill={color}/>
+    <Circle cx="16" cy="10" r="1" fill={color}/>
+  </Svg>
+);
+
+export type AlertCategory = 'PAYMENT' | 'CHAT_ROOM' | 'NOTICE_EVENT' | 'REPORT';
 
 interface AlertBoxProps {
   category: AlertCategory;
@@ -55,60 +59,36 @@ interface AlertBoxProps {
 }
 
 const AlertBox = ({ category, text, read = false, onDelete, showDeleteButton = true }: AlertBoxProps) => {
+  // 디버깅용 로그 추가
+  console.log('🎯 AlertBox props:', { category, text, read, showDeleteButton });
+  
   const getSvgIcon = () => {
     const iconColor = read ? '#9E9E9E' : getCategoryColor();
     const fillColor = read ? '#F5F5F5' : getCategoryFillColor();
     
     switch (category) {
-      case 'notice':
-        return (
-          <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" fill={fillColor}/>
-            <Path d="M12 6v6l4 2" stroke={iconColor} strokeWidth="2" strokeLinecap="round"/>
-          </Svg>
-        );
-      case 'payment':
-        return (
-          <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <Rect x="2" y="6" width="20" height="12" rx="2" stroke={iconColor} strokeWidth="2" fill={fillColor}/>
-            <Path d="M2 10h20" stroke={iconColor} strokeWidth="2"/>
-            <Circle cx="6" cy="14" r="1" fill={iconColor}/>
-          </Svg>
-        );
-      case 'event':
-        return (
-          <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                  stroke={iconColor} strokeWidth="2" fill={fillColor}/>
-          </Svg>
-        );
-      case 'report':
-        return (
-          <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" fill={fillColor}/>
-            <Path d="M12 8v4" stroke={iconColor} strokeWidth="2" strokeLinecap="round"/>
-            <Path d="M12 16h.01" stroke={iconColor} strokeWidth="2" strokeLinecap="round"/>
-          </Svg>
-        );
+      case 'NOTICE_EVENT':
+        return <NoticeIcon color={iconColor} fillColor={fillColor} />;
+      case 'PAYMENT':
+        return <PaymentIcon color={iconColor} fillColor={fillColor} />;
+      case 'CHAT_ROOM':
+        return <ChatIcon color={iconColor} fillColor={fillColor} />;
+      case 'REPORT':
+        return <ReportIcon color={iconColor} fillColor={fillColor} />;
       default:
-        return (
-          <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" fill={fillColor}/>
-            <Path d="M12 6v6l4 2" stroke={iconColor} strokeWidth="2" strokeLinecap="round"/>
-          </Svg>
-        );
+        return <NoticeIcon color={iconColor} fillColor={fillColor} />;
     }
   };
 
   const getCategoryColor = () => {
     switch (category) {
-      case 'notice':
+      case 'NOTICE_EVENT':
         return '#4A90E2';
-      case 'payment':
+      case 'PAYMENT':
         return '#4CAF50';
-      case 'event':
+      case 'CHAT_ROOM':
         return '#FF9800';
-      case 'report':
+      case 'REPORT':
         return '#F44336';
       default:
         return '#4A90E2';
@@ -117,13 +97,13 @@ const AlertBox = ({ category, text, read = false, onDelete, showDeleteButton = t
 
   const getCategoryFillColor = () => {
     switch (category) {
-      case 'notice':
+      case 'NOTICE_EVENT':
         return '#E3F2FD';
-      case 'payment':
+      case 'PAYMENT':
         return '#E8F5E8';
-      case 'event':
+      case 'CHAT_ROOM':
         return '#FFF3E0';
-      case 'report':
+      case 'REPORT':
         return '#FFEBEE';
       default:
         return '#E3F2FD';
@@ -132,14 +112,13 @@ const AlertBox = ({ category, text, read = false, onDelete, showDeleteButton = t
 
   const borderColor = read ? '#E0E0E0' : getCategoryColor();
   const textColor = read ? '#9E9E9E' : '#333333';
-  const backgroundColor = read ? '#FAFAFA' : '#FFFFFF';
 
   return (
     <View style={[
       styles.container,
       {
         borderLeftColor: borderColor,
-        backgroundColor: backgroundColor,
+        backgroundColor: '#FFFFFF',
       },
     ]}>
       <View style={styles.iconContainer}>
@@ -157,58 +136,6 @@ const AlertBox = ({ category, text, read = false, onDelete, showDeleteButton = t
           <DeleteIcon />
         </TouchableOpacity>
       )}
-    </View>
-  );
-};
-
-// 더미 데이터 export
-export const dummyAlerts = [
-  {
-    category: 'notice' as AlertCategory,
-    text: '새로운 테마가 오픈되었습니다!! 지금 확인해보세요.',
-    read: false
-  },
-  {
-    category: 'payment' as AlertCategory,
-    text: '결제가 성공적으로 완료되었습니다. 결제내역을 확인하세요.',
-    read: true
-  },
-  {
-    category: 'event' as AlertCategory,
-    text: '사랑의 짝대기 이벤트가 시작되었습니다!!!',
-    read: false
-  },
-  {
-    category: 'report' as AlertCategory,
-    text: '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
-    read: false
-  },
-  {
-    category: 'notice' as AlertCategory,
-    text: '시스템 점검 완료 안내입니다.',
-    read: true
-  }
-];
-
-// 읽지 않은 알림이 있는지 체크하는 유틸리티 함수
-export const hasUnreadAlerts = () => {
-  return dummyAlerts.some(alert => !alert.read);
-};
-
-// 더미 데이터로 테스트용 컴포넌트
-export const AlertBoxDemo = () => {
-  return (
-    <View style={styles.demoContainer}>
-      <Text style={styles.demoTitle}>AlertBox 컴포넌트 테스트</Text>
-      {dummyAlerts.map((alert, index) => (
-        <AlertBox 
-          key={index}
-          category={alert.category}
-          text={alert.text}
-          read={alert.read}
-          onDelete={() => console.log(`알림 ${index + 1} 삭제됨`)}
-        />
-      ))}
     </View>
   );
 };
