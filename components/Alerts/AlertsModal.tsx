@@ -1,9 +1,10 @@
+import { deleteAllNotifications, deleteNotification, readAllNotifications } from "@/api/AlertApi";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import AlertBox, { AlertCategory, dummyAlerts } from "./AlertBox";
+import AlertBox, { AlertCategory } from "./AlertBox";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -29,29 +30,107 @@ const DeleteAllIcon = () => (
 interface AlertsModalProps {
   visible: boolean;
   onClose: () => void;
+  notifications: AlertNotification[];
+  onReadComplete?: () => void;
 }
 
-interface Alert {
-  category: AlertCategory;
-  text: string;
+interface AlertNotification {
+  notificationId: number;
   read: boolean;
+  content: string;
+  receiverId: number;
+  type: AlertCategory;
+  createdAt: string;
 }
 
-const AlertsModal = ({ visible, onClose }: AlertsModalProps) => {
-  const [alerts, setAlerts] = useState<Alert[]>(dummyAlerts);
+const AlertsModal = ({ visible, onClose, notifications, onReadComplete }: AlertsModalProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [localNotifications, setLocalNotifications] = useState<AlertNotification[]>([]);
 
-  const handleDeleteAlert = (index: number) => {
-    setAlerts(prevAlerts => prevAlerts.filter((_, i) => i !== index));
+  // props로 받은 notifications를 로컬 상태로 복사
+  useEffect(() => {
+    setLocalNotifications(notifications);
+  }, [notifications]);
+
+  // 디버깅용 로그 추가
+  console.log('🔍 AlertsModal - visible:', visible);
+  console.log('🔍 AlertsModal - localNotifications:', localNotifications);
+  console.log('🔍 AlertsModal - localNotifications.length:', localNotifications?.length || 0);
+
+  const showToast = (message: string) => {
+    Alert.alert("알림", message, [{ text: "확인" }]);
   };
 
-  const handleDeleteAll = () => {
-    setAlerts([]);
-    setIsEditMode(false);
+  const handleDeleteAlert = async (notificationId: number) => {
+    try {
+      console.log(`🗑️ 알림 삭제 시작: ${notificationId}`);
+      const response = await deleteNotification(notificationId);
+      console.log(`📡 삭제 응답 상태:`, response);
+      
+      // 상태코드 204일 때만 삭제 성공으로 간주
+      if (response.status === 204) {
+        console.log(`✅ 알림 삭제 성공 (204): ${notificationId}`);
+        
+        // 로컬 상태에서 삭제된 알림 제거
+        setLocalNotifications(prev => 
+          prev.filter(notification => notification.notificationId !== notificationId)
+        );
+        
+        // 성공 시 토스트 메시지 제거
+      } else {
+        console.log(`⚠️ 예상치 못한 응답 상태 (${response.status}): ${notificationId}`);
+        showToast("알림 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error(`❌ 알림 삭제 실패: ${notificationId}`, error);
+      showToast("알림 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      console.log('🗑️ 전체 알림 삭제 시작');
+      const response = await deleteAllNotifications();
+      console.log(`📡 전체 삭제 응답 상태:`, response);
+      
+      // 상태코드 204일 때만 삭제 성공으로 간주
+      if (response.status === 204) {
+        console.log('✅ 전체 알림 삭제 성공 (204)');
+        
+        // 로컬 상태 초기화
+        setLocalNotifications([]);
+        setIsEditMode(false);
+        
+        // 성공 시 토스트 메시지 제거
+      } else {
+        console.log(`⚠️ 예상치 못한 응답 상태 (${response.status})`);
+        showToast("전체 알림 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error('❌ 전체 알림 삭제 실패:', error);
+      showToast("전체 알림 삭제에 실패했습니다.");
+    }
   };
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
+  };
+
+  const handleClose = async () => {
+    try {
+      const response = await readAllNotifications();
+      console.log('✅ 전체 알림 읽음 처리 완료');
+      
+      // 읽음 처리 성공 시 부모 컴포넌트에 알림
+      if (onReadComplete) {
+        onReadComplete();
+      }
+    } catch (error) {
+      console.error('❌ 전체 알림 읽음 처리 실패:', error);
+      // 읽음 처리 실패해도 모달은 닫기
+    }
+    
+    onClose();
   };
 
   return (
@@ -68,7 +147,7 @@ const AlertsModal = ({ visible, onClose }: AlertsModalProps) => {
             {/* 헤더 */}
             <View style={styles.headerContainer}>
               <Text style={styles.modalTitle}>알림</Text>
-              {alerts.length > 0 && (
+              {localNotifications.length > 0 && (
                 <View style={styles.headerButtonsContainer}>
                   {isEditMode ? (
                     <>
@@ -102,27 +181,33 @@ const AlertsModal = ({ visible, onClose }: AlertsModalProps) => {
               )}
             </View>
 
-            {/* 편집 모드 컨트롤 */}
-            
             {/* 알림 목록 */}
             <ScrollView 
               style={styles.alertScrollView}
               showsVerticalScrollIndicator={false}
             >
-              {alerts.length > 0 ? (
-                alerts.map((alert, index) => (
-                  <View key={index} style={styles.alertItemContainer}>
-                    <View style={styles.alertBoxWrapper}>
-                      <AlertBox
-                        category={alert.category}
-                        text={alert.text}
-                        read={alert.read}
-                        onDelete={() => handleDeleteAlert(index)}
-                        showDeleteButton={isEditMode}
-                      />
+              {localNotifications.length > 0 ? (
+                localNotifications.map((alert, index) => {
+                  console.log(`🔍 Rendering AlertBox ${index}:`, {
+                    category: alert.type,
+                    text: alert.content,
+                    read: alert.read,
+                    notificationId: alert.notificationId
+                  });
+                  return (
+                    <View key={alert.notificationId || index} style={styles.alertItemContainer}>
+                      <View style={styles.alertBoxWrapper}>
+                        <AlertBox
+                          category={alert.type}
+                          text={alert.content}
+                          read={alert.read}
+                          onDelete={() => handleDeleteAlert(alert.notificationId)}
+                          showDeleteButton={isEditMode}
+                        />
+                      </View>
                     </View>
-                  </View>
-                ))
+                  );
+                })
               ) : (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>알림이 없습니다</Text>
@@ -135,7 +220,7 @@ const AlertsModal = ({ visible, onClose }: AlertsModalProps) => {
         
         {/* 확인 버튼을 모달 외부 하단에 배치 */}
         <View style={styles.externalButtonContainer}>
-          <Pressable onPress={onClose} style={styles.buttonWrapper}>
+          <Pressable onPress={handleClose} style={styles.buttonWrapper}>
             <LinearGradient
               colors={["#c2a7f7", "#f29ee8"]}
               start={{ x: 0, y: 0 }}
