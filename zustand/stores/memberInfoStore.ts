@@ -9,6 +9,7 @@ export type UserRegistrationInfo = {
   gender: 'MALE' | 'FEMALE' | null; // Toss 인증 응답에 맞게
   birth: string | null; // YYYY-MM-DD 또는 YYYYMMDD 형식
   ageGroup: string | null;
+  region?: string | null; // region 필드 추가
 };
 
 type MemberStore = {
@@ -28,11 +29,13 @@ type MemberStore = {
   setGender: (gender: 'MALE' | 'FEMALE' | null) => void;
   setBirth: (birth: string | null) => void;
   setAgeGroup: (ageGroup: string | null) => void;
+  setRegion: (region: string | null) => void; // setRegion 함수 정의 추가
   // 회원가입 정보 한번에 업데이트 (선택적)
   setRegistrationInfo: (info: Partial<UserRegistrationInfo>) => void;
 
   clearMember: () => void; // 로그인 정보 및 회원가입 정보 초기화
   clearRegistrationInfo: () => void; // 회원가입 정보만 초기화
+  clearStore: () => void; // 로그아웃 시 전체 스토어 초기화를 위한 함수 추가
 };
 
 const initialRegistrationInfo: UserRegistrationInfo = {
@@ -42,6 +45,7 @@ const initialRegistrationInfo: UserRegistrationInfo = {
   gender: null,
   birth: null,
   ageGroup: null,
+  region: null, // region 초기값 추가
 };
 
 export const useMemberInfoStore = create<MemberStore>((set) => ({
@@ -77,6 +81,11 @@ export const useMemberInfoStore = create<MemberStore>((set) => ({
             registrationInfo: { ...state.registrationInfo, ageGroup }
         })),
 
+    setRegion: (region: string | null) => // setRegion 함수 구현 추가
+        set((state) => ({
+            registrationInfo: { ...state.registrationInfo, region }
+        })),
+
     setRegistrationInfo: (info: Partial<UserRegistrationInfo>) =>
         set((state) => ({
             registrationInfo: { ...state.registrationInfo, ...info }
@@ -91,4 +100,12 @@ export const useMemberInfoStore = create<MemberStore>((set) => ({
     
     clearRegistrationInfo: () => 
         set({ registrationInfo: { ...initialRegistrationInfo } }), // 회원가입 정보만 초기화
+
+    // clearStore 구현 (clearMember와 동일한 기능)
+    clearStore: () =>
+        set({
+            memberId: null,
+            token: null,
+            registrationInfo: { ...initialRegistrationInfo },
+        }),
 }));

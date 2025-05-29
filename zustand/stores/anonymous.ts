@@ -13,10 +13,11 @@ type AnonymousStore = {
       isInChat: boolean
     ) => void;
     clearMemberInfo: () => void; // 회원 정보 초기화 함수
+    clearStore: () => void; // 로그아웃 시 전체 스토어 초기화를 위한 함수 추가
   };
 
 // ✅ Zustand 상태 관리 스토어 생성 (useMemberStore)
-  export const useAnonymousStore = create<AnonymousStore>((set) => ({
+  export const useAnonymousStore = create<AnonymousStore>((set, get) => ({
     // ✅ 초기 상태값 설정
     memberId: 0,
     nickname: "",
@@ -38,6 +39,14 @@ type AnonymousStore = {
         nickname: "",
         profileImage: "",
         diceCount: 0,
-        isInChat: false,
       }),
+
+    // clearStore 구현 (clearMemberInfo와 동일한 기능)
+    clearStore: () =>
+        set({
+            memberId: 0,
+            nickname: "",
+            profileImage: "",
+            diceCount: 0,
+        }),
   }));
