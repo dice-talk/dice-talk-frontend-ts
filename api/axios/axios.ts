@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore";
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 // ✅ Base URL을 상단에서 직접 지정
@@ -19,8 +19,8 @@ export const axiosWithToken: AxiosInstance = axios.create({
 // ✅ 토큰이 필요한 요청에 대한 인터셉터 설정
 axiosWithToken.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    // const token = await AsyncStorage.getItem("accessToken");
-    const token = "eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6WyJVU0VSIl0sInVzZXJuYW1lIjoibWVtYmVyMDFAZ21haWwuY29tIiwibWVtYmVySWQiOjQsInN1YiI6Im1lbWJlcjAxQGdtYWlsLmNvbSIsImlhdCI6MTc0ODUxNzQxMCwiZXhwIjoxNzQ4NTcxNDEwfQ.6Ywpg6V63GskNiqc4Pp5hZ-uPrkJ-oOOrLO_d7O8Ca85ndY1tstrQouc5iHg_8zi_bGwrEe-xMcFiZDDXlHU2w"
+    //const token = await AsyncStorage.getItem("accessToken");
+    const token = useMemberInfoStore.getState().token;
     console.log("📄 token:", token);
     console.log("📡 요청 URL:", config.baseURL + (config.url ?? ""));
     console.log("📄 Params:", config.params);

@@ -18,7 +18,6 @@ import {
 //import { useEmail } from '../context/EmailContext'; // 경로 확인 필요 (로그인 시 이메일 저장/사용 여부 재검토)
 //import { useMemberContext } from '../context/MemberContext'; // 경로 확인 필요
 import { loginMember } from '@/api/loginApi'; // EmailAPI를 loginAPI 등으로 변경 고려, 경로 확인 필요
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // 스토어 상태 확인을 위해 유지
 // AsyncStorage는 스토어 사용으로 대체 가능성 있음 (필요시 유지)
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView 사용
@@ -60,25 +59,22 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      // loginMember 함수는 성공 시 응답 객체를 반환하고,
-      // 내부적으로 memberId와 token을 Zustand 스토어에 저장합니다.
-      await loginMember(email, password); 
+      // loginMember 함수는 성공 시 true를 반환합니다.
+      const loginSuccess = await loginMember(email, password); 
       
-      // 스토어에 memberId와 token이 정상적으로 저장되었는지 확인 후 화면 전환
-      const storedMemberId = useMemberInfoStore.getState().memberId;
-      const storedToken = useMemberInfoStore.getState().token;
-
-      if (storedMemberId && storedToken) {
+      if (loginSuccess) {
+        // 스토어에 저장이 완료되었으므로, 여기서 스토어를 다시 읽을 필요 없이 바로 화면 전환
+        console.log('로그인 성공 및 스토어 저장 확인, 홈으로 이동');
         router.replace('/(tabs)/home');
       } else {
-        // 이 경우는 loginApi.ts 내부 로직 오류 또는 응답 문제로 스토어 저장이 실패한 경우입니다.
-        // loginApi.ts에서 이미 에러를 throw 하므로, 이 블록은 실행되지 않을 가능성이 높습니다.
-        console.error('로그인 후 스토어 확인 실패: memberId 또는 token이 저장되지 않았습니다.');
-        Alert.alert('로그인 실패', '로그인 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
+        // loginMember 내부에서 false를 반환하는 경우는 현재 없지만, 방어적으로 로직 추가
+        // (대부분의 실패는 에러를 throw하므로 catch 블록으로 감)
+        console.error('loginMember가 false를 반환 (예상치 못한 경우)');
+        Alert.alert('로그인 실패', '로그인에 실패했습니다. 다시 시도해주세요.');
       }
     } catch (error: any) {
-      // loginApi.ts에서 발생한 에러 또는 네트워크 에러 등을 여기서 처리합니다.
-      console.error('로그인 요청 실패:', error);
+      // loginMember 함수에서 throw된 에러를 여기서 처리합니다.
+      console.error('로그인 요청 실패 (LoginScreen catch):', error);
       const errMsg = error.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
       Alert.alert('로그인 실패', errMsg);
     } finally {
