@@ -74,57 +74,39 @@ export default function Agreement() {
         setShowTossAuth(true);
     };
 
-    // TossAuth로부터 받는 userInfo 타입 정의 (TossAuth 컴포넌트의 실제 반환 타입에 맞춰야 함)
-    interface TossUserInfo {
+    interface TossUserInfoFromAuth {
         name: string;
-        phone: string;
-        gender?: string; // TossAuth에서 오는 실제 타입에 맞게 string으로 변경 또는 TossAuth 수정
-        birthDate?: string; // YYYYMMDD 또는 YYYY-MM-DD 형식 가정
-        // ci?: string; // 필요한 경우 추가
+        phone?: string; // Toss 응답에 phone이 없을 수 있음을 명시
+        gender?: string;
+        birth?: string; // YYYYMMDD 형식 (로그 기준)
+        ageGroup?: string;
     }
 
-    const handleAuthSuccess = (userInfo: TossUserInfo) => { 
-        console.log("✅ Toss 인증 성공:", userInfo);
+    const handleAuthSuccess = (userInfo: TossUserInfoFromAuth) => { 
+        console.log("✅ Toss 인증 성공:", userInfo); // userInfo 전체 로그 확인
         setShowTossAuth(false);
 
-        // 나이 계산 및 미성년자 확인
-        if (userInfo.birthDate) {
-            const birthDateStr = userInfo.birthDate.replace(/-/g, ''); // 하이픈 제거 (YYYYMMDD)
-            const year = parseInt(birthDateStr.substring(0, 4), 10);
-            const month = parseInt(birthDateStr.substring(4, 6), 10) -1; // JS month is 0-indexed
-            const day = parseInt(birthDateStr.substring(6, 8), 10);
-
-            const today = new Date();
-            const birthDateObj = new Date(year, month, day);
-            let age = today.getFullYear() - birthDateObj.getFullYear();
-            const m = today.getMonth() - birthDateObj.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
-                age--;
-            }
-
-            if (age < 18) {
-                setShowUnderageModal(true);
-                return;
-            }
+        if (userInfo.ageGroup !== 'ADULT') { // ageGroup도 함께 체크
+            setShowUnderageModal(true);
+            return;
         }
-
-        // gender 값을 스토어 형식에 맞게 변환
+        
         let storeGender: 'MALE' | 'FEMALE' | null = null;
-        if (userInfo.gender === '남성' || userInfo.gender?.toUpperCase() === 'MALE') {
+        if (userInfo.gender?.toUpperCase() === 'MALE' || userInfo.gender === '남성') {
             storeGender = 'MALE';
-        } else if (userInfo.gender === '여성' || userInfo.gender?.toUpperCase() === 'FEMALE') {
+        } else if (userInfo.gender?.toUpperCase() === 'FEMALE' || userInfo.gender === '여성') {
             storeGender = 'FEMALE';
         }
 
-        // Zustand 스토어에 인증 정보 저장
         const registrationUpdate: Partial<UserRegistrationInfo> = {
             name: userInfo.name,
-            phone: userInfo.phone,
-            gender: storeGender, // 변환된 gender 값 사용
-            birth: userInfo.birthDate || null, // undefined일 경우 null 처리
+            phone: userInfo.phone, // phone이 없으면 null로 저장
+            gender: storeGender,
+            birth: userInfo.birth || null, // 로그에서 birth 필드 사용
+            ageGroup: userInfo.ageGroup || null, // ageGroup 추가
         };
         setStoreRegistrationInfo(registrationUpdate);
-        console.log("스토어에 사용자 인증 정보 저장 완료", registrationUpdate);
+        console.log("스토어에 사용자 인증 정보 저장 완료:", registrationUpdate);
 
         router.push('/(onBoard)/register/SignupInput');
     };
@@ -166,9 +148,6 @@ export default function Agreement() {
                     <Ionicons name={allAgreed ? 'checkbox' : 'square-outline'} size={24} color="#B28EF8" />
                     <Text style={styles.checkAllText}>아래 항목에 전부 동의합니다.</Text>
                 </TouchableOpacity>
-                {/* <TouchableOpacity onPress={() => setShowUnderageModal(true)} >
-                    <Text>테스트</Text>
-                </TouchableOpacity> */}
                 <View style={styles.contentBox}>
                     {terms.map((term, i) => (
                         <View key={term.id} style={styles.termRow}>
@@ -180,13 +159,12 @@ export default function Agreement() {
                     ))}
                 </View>
                 <View style={styles.focusAgreement}>
-                    {/* Link 컴포넌트 대신 TouchableOpacity와 핸들러 함수 사용 */}
                     <TouchableOpacity onPress={navigateToDetailAgreement}>
                         <Text style={styles.focusText}>이용약관 자세히 보기</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.buttonWrapper, { opacity: allRequiredChecked ? 1 : 0.4 }]}>
-                    <MediumButton title="다음" onPress={handleNext} /* disabled={!allRequiredChecked} */ />
+                    <MediumButton title="다음" onPress={handleNext} />
                 </View>
             </View>
         </>

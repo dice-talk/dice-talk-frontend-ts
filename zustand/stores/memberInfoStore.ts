@@ -8,6 +8,7 @@ export type UserRegistrationInfo = {
   phone: string | null;
   gender: 'MALE' | 'FEMALE' | null; // Toss 인증 응답에 맞게
   birth: string | null; // YYYY-MM-DD 또는 YYYYMMDD 형식
+  ageGroup: string | null;
 };
 
 type MemberStore = {
@@ -26,7 +27,7 @@ type MemberStore = {
   setPhone: (phone: string | null) => void;
   setGender: (gender: 'MALE' | 'FEMALE' | null) => void;
   setBirth: (birth: string | null) => void;
-  
+  setAgeGroup: (ageGroup: string | null) => void;
   // 회원가입 정보 한번에 업데이트 (선택적)
   setRegistrationInfo: (info: Partial<UserRegistrationInfo>) => void;
 
@@ -40,6 +41,7 @@ const initialRegistrationInfo: UserRegistrationInfo = {
   phone: null,
   gender: null,
   birth: null,
+  ageGroup: null,
 };
 
 export const useMemberInfoStore = create<MemberStore>((set) => ({
@@ -69,6 +71,10 @@ export const useMemberInfoStore = create<MemberStore>((set) => ({
     setBirth: (birth: string | null) =>
         set((state) => ({
             registrationInfo: { ...state.registrationInfo, birth }
+        })),
+    setAgeGroup: (ageGroup: string | null) =>
+        set((state) => ({
+            registrationInfo: { ...state.registrationInfo, ageGroup }
         })),
 
     setRegistrationInfo: (info: Partial<UserRegistrationInfo>) =>

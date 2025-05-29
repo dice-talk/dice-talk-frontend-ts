@@ -6,7 +6,7 @@ import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // member
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router'; // useLocalSearchParams 제거
-import { useEffect, useState } from 'react'; // useMemo 제거
+import { useState } from 'react'; // useEffect 제거 (age 계산 불필요)
 import {
     Alert,
     KeyboardAvoidingView,
@@ -18,34 +18,6 @@ import {
     View,
 } from 'react-native';
 
-// UserInfo 타입 정의는 스토어 사용으로 불필요해질 수 있음
-// type UserInfoFromAuth = {
-// name?: string;
-// gender?: '남성' | '여성'; // 또는 'MALE' | 'FEMALE'
-// birth?: string; // 'YYYY-MM-DD'
-// };
-
-// Helper 함수들 (별도 utils 파일로 분리 권장) - getRandom 함수들은 스토어 사용으로 불필요
-// function getRandomElement<T>(arr: T[]): T {
-// return arr[Math.floor(Math.random() * arr.length)];
-// }
-// function getRandomName(): string {
-// const lastNames = ['김', '이', '박', '최', '정', '윤', '장', '임', '한', '조'];
-// const firstNames = ['민', '서', '지', '우', '하', '윤', '준', '아', '유', '수'];
-// return getRandomElement(lastNames) + getRandomElement(firstNames) + getRandomElement(firstNames);
-// }
-// function getRandomGender(): '남성' | '여성' {
-// const genders: Array<'남성' | '여성'> = ['남성', '여성'];
-// return getRandomElement(genders);
-// }
-// function getRandomBirth(): string {
-// const year = Math.floor(Math.random() * (2005 - 1930 + 1)) + 1930;
-// const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
-// const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-// return `${year}-${month}-${day}`;
-// }
-
-
 export default function SignupInput() {
     const router = useRouter();
     // const params = useLocalSearchParams<UserInfoFromAuth & { /* 다른 파라미터 타입 */ }>(); // 스토어 사용으로 대체
@@ -54,73 +26,71 @@ export default function SignupInput() {
     // 스토어에서 가져온 값들을 사용합니다.
     const emailFromStore = registrationInfo?.email || '';
     const nameFromStore = registrationInfo?.name || '';
-    const phoneFromStore = registrationInfo?.phone || '';
-    const birthFromStore = registrationInfo?.birth || ''; // YYYY-MM-DD 또는 YYYYMMDD 형식
+    const phoneFromStore = registrationInfo?.phone || '010-1234-5670';
+    const birthFromStore = registrationInfo?.birth || ''; // YYYYMMDD 형식
+    const ageGroupFromStore = registrationInfo?.ageGroup || '';
     // 화면 표시용 성별 변환
     const genderDisplay = registrationInfo?.gender === 'MALE' ? '남성' : registrationInfo?.gender === 'FEMALE' ? '여성' : '';
+      // 화면 표시용 생년월일 (YYYY-MM-DD)
+      const birthDisplay = birthFromStore && birthFromStore.length === 8
+        ? `${birthFromStore.substring(0, 4)}-${birthFromStore.substring(4, 6)}-${birthFromStore.substring(6, 8)}`
+        : '';
 
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{}[\]|;:'",.<>/?]).{8,16}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{}[\]|;:'\",.<>/?]).{8,16}$/;
 
     const [selectedCity, setSelectedCity] = useState<string | null>(null);
     const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
 
-    const [age, setAge] = useState<string>('');
-
-    useEffect(() => {
-        if (birthFromStore) {
-            const birthDateStr = birthFromStore.replace(/-/g, ''); // YYYYMMDD로 통일
-            const birthYear = parseInt(birthDateStr.substring(0, 4), 10);
-            const currentYear = new Date().getFullYear();
-            // 정확한 만나이 계산은 월, 일을 고려해야 하지만, 여기서는 연도 기준으로 간단히 계산합니다.
-            setAge((currentYear - birthYear).toString());
-        }
-    }, [birthFromStore]);
-
     const isPasswordMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
     const isPasswordValid = passwordRegex.test(password);
-    const isFormValid = isPasswordMatch && isPasswordValid && selectedCity && selectedDistrict &&
-                        emailFromStore && nameFromStore && registrationInfo?.gender && birthFromStore && phoneFromStore;
 
-    const handlePasswordChange = (text: string): void => {
-        setPassword(text);
-    };
+    // 가입하기 버튼 활성화 조건
+    const isFormValid = 
+        !!emailFromStore &&       // 이메일 (스토어)
+        !!nameFromStore &&        // 이름 (스토어)
+        !!registrationInfo?.gender && // 성별 (스토어)
+        !!birthFromStore &&       // 생년월일 (스토어)
+        !!phoneFromStore &&       // 전화번호 (스토어, Toss에서 못 받으면 기본값이라도 있어야 함)
+        isPasswordValid &&        // 비밀번호 유효성
+        isPasswordMatch &&        // 비밀번호 일치
+        !!selectedCity &&         // 지역 (시/도 선택)
+        !!selectedDistrict;       // 지역 (구/군 선택)
 
     const handleSignup = async (): Promise<void> => {
         if (!isFormValid) {
             let alertMessage = '모든 필수 정보를 올바르게 입력해주세요.';
             if (!emailFromStore) alertMessage = '이메일 정보가 없습니다. 처음부터 다시 시도해주세요.';
             else if (!nameFromStore) alertMessage = '이름 정보가 없습니다. 본인인증을 다시 시도해주세요.';
-            // ... 다른 필수 값들에 대한 검사 ...
+            else if (!registrationInfo?.gender) alertMessage = '성별 정보가 없습니다. 본인인증을 다시 시도해주세요.';
+            else if (!birthFromStore) alertMessage = '생년월일 정보가 없습니다. 본인인증을 다시 시도해주세요.';
+            else if (!phoneFromStore || phoneFromStore === '010-1234-5670') alertMessage = '휴대폰 번호 인증이 필요합니다.'; // 기본값인 경우도 오류로 간주 (Toss에서 못 받았다는 의미)
             else if (!selectedCity || !selectedDistrict) alertMessage = '지역을 선택해주세요.';
             else if (!isPasswordValid) alertMessage = '비밀번호 형식이 올바르지 않습니다.';
             else if (!isPasswordMatch) alertMessage = '비밀번호가 일치하지 않습니다.';
             
             Alert.alert('입력 오류', alertMessage);
-            if (!emailFromStore || !nameFromStore || !registrationInfo?.gender || !birthFromStore || !phoneFromStore) {
-                router.replace('/(onBoard)/register'); // 중요 정보 누락 시 처음으로
+            // 필수 본인인증 정보 누락 시 Agreement 화면으로 돌려보내는 것이 더 적절할 수 있음
+            if (!emailFromStore || !nameFromStore || !registrationInfo?.gender || !birthFromStore || (!phoneFromStore || phoneFromStore === '010-1234-5670')) {
+                router.replace('/(onBoard)/register/Agreement'); 
             }
             return;
         }
 
-        // 스토어의 gender 값 ('MALE' | 'FEMALE')을 직접 사용
         const genderForApi = registrationInfo?.gender;
-        if (!genderForApi) { // null 또는 undefined 체크
-            Alert.alert('오류', '성별 정보가 올바르지 않습니다. 본인인증을 다시 시도해주세요.');
-            router.replace('/(onBoard)/register/Agreement');
-            return;
-        }
+        // genderForApi null 체크는 isFormValid에서 이미 수행됨
 
-        const region = `${selectedCity} ${selectedDistrict}`;
+        const region = `${selectedCity} ${selectedDistrict}`; 
+        // API 요청 시 phoneFromStore이 기본값이면 실제로는 인증되지 않은 번호일 수 있으므로 서버측 검증 필요
         const payload = {
             email: emailFromStore,
             name: nameFromStore,
-            gender: genderForApi, // 스토어의 MALE/FEMALE 값
-            birth: birthFromStore.replace(/-/g, ''), // API가 YYYYMMDD 형식을 원한다면
+            gender: genderForApi!,
+            birth: birthDisplay,
             password,
-            phone: phoneFromStore.replace(/-/g, ''), // API가 하이픈 없는 형식을 원한다면
+            phone: phoneFromStore,
             region,
         };
         console.log('🔗 회원가입 요청 데이터:', payload);
@@ -128,8 +98,7 @@ export default function SignupInput() {
         try {
             const response = await createMemberInfo(payload);
             console.log('📡 회원가입 요청 성공:', response);
-            // 회원가입 성공 후 스토어의 registrationInfo 초기화 (선택적)
-            // useMemberInfoStore.getState().clearRegistrationInfo();
+            useMemberInfoStore.getState().clearRegistrationInfo(); // 성공 시 스토어 정보 클리어
             router.replace('/(onBoard)/register/Congratulate');
         } catch (err: any) {
             console.error('회원가입 실패:', err);
@@ -141,6 +110,7 @@ export default function SignupInput() {
     const handleRegionChange = (city: string, district: string) => {
         setSelectedCity(city);
         setSelectedDistrict(district);
+        console.log('Region Changed:', city, district); // 선택 확인용 로그
       };
 
     return (
@@ -175,7 +145,7 @@ export default function SignupInput() {
                         placeholder='비밀번호를 입력해주세요'
                         secureTextEntry={!showPassword}
                         value={password}
-                        onChangeText={handlePasswordChange}
+                        onChangeText={setPassword}
                         autoCapitalize="none"
                     />
                 </View>
@@ -216,8 +186,8 @@ export default function SignupInput() {
                 <Text style={styles.label}>성별</Text>
                 <TextInput style={[styles.input, styles.disabledInput]} value={genderDisplay} editable={false} />
 
-                <Text style={styles.label}>나이 (만)</Text>
-                <TextInput style={[styles.input, styles.disabledInput]} value={age} editable={false} />
+                <Text style={styles.label}>생일</Text>
+                <TextInput style={[styles.input, styles.disabledInput]} value={birthDisplay} editable={false} />
 
                 <Text style={styles.label}>지역</Text>
                 <RegionDropDown 
@@ -226,8 +196,11 @@ export default function SignupInput() {
                 onChange={handleRegionChange} 
                 />
 
-                <View style={[styles.buttonContainer, { opacity: isFormValid ? 1 : 0.5, marginTop: 30 }]}>
-                    <MediumButton title="가입하기" onPress={handleSignup} /* disabled={!isFormValid} */ />
+                <View 
+                    style={[styles.buttonContainer, { marginTop: 30, opacity: isFormValid ? 1 : 0.5}]}
+                    pointerEvents={isFormValid ? 'auto' : 'none'}
+                >
+                    <MediumButton title="가입하기" onPress={handleSignup} />
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
