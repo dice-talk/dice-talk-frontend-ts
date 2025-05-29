@@ -20,6 +20,10 @@ type MemberStore = {
   // 회원가입 과정 및 이후 사용자 정보 참조에 사용될 수 있는 정보
   registrationInfo: UserRegistrationInfo;
 
+  // 앱 초기화 관련 상태 추가
+  isAutoLoginAttempted: boolean; // 자동 로그인 시도 여부
+  isAppInitialized: boolean;     // 앱 최종 준비 완료 여부
+
   // Setter 함수들
   setMemberId: (id: number | null) => void;
   setToken: (token: string | null) => void;
@@ -32,6 +36,10 @@ type MemberStore = {
   setRegion: (region: string | null) => void; // setRegion 함수 정의 추가
   // 회원가입 정보 한번에 업데이트 (선택적)
   setRegistrationInfo: (info: Partial<UserRegistrationInfo>) => void;
+
+  // 앱 초기화 상태 설정 함수 추가
+  setIsAutoLoginAttempted: (status: boolean) => void;
+  setIsAppInitialized: (status: boolean) => void;
 
   clearMember: () => void; // 로그인 정보 및 회원가입 정보 초기화
   clearRegistrationInfo: () => void; // 회원가입 정보만 초기화
@@ -48,10 +56,16 @@ const initialRegistrationInfo: UserRegistrationInfo = {
   region: null, // region 초기값 추가
 };
 
+const initialState = {
+  memberId: null,
+  token: null,
+  registrationInfo: { ...initialRegistrationInfo },
+  isAutoLoginAttempted: false, // 초기값 false
+  isAppInitialized: false,     // 초기값 false
+};
+
 export const useMemberInfoStore = create<MemberStore>((set) => ({
-    memberId: null,
-    token: null,
-    registrationInfo: { ...initialRegistrationInfo },
+    ...initialState, // 초기 상태 적용
 
     setMemberId: (id: number | null) => set({ memberId: id }),
     setToken: (token: string | null) => set({ token: token }),
@@ -90,22 +104,27 @@ export const useMemberInfoStore = create<MemberStore>((set) => ({
         set((state) => ({
             registrationInfo: { ...state.registrationInfo, ...info }
         })),
+    
+    // 앱 초기화 상태 설정 함수 구현
+    setIsAutoLoginAttempted: (status: boolean) => set({ isAutoLoginAttempted: status }),
+    setIsAppInitialized: (status: boolean) => set({ isAppInitialized: status }),
 
     clearMember: () =>
         set({
-          memberId: null,
-          token: null,
-          registrationInfo: { ...initialRegistrationInfo }, // 모든 정보 초기화
+          ...initialState, // 로그아웃 시 memberId, token, registrationInfo 뿐만 아니라 초기화 상태도 리셋
         }),
     
     clearRegistrationInfo: () => 
-        set({ registrationInfo: { ...initialRegistrationInfo } }), // 회원가입 정보만 초기화
+        set((state) => ({ 
+            registrationInfo: { ...initialRegistrationInfo },
+            // 회원가입 정보만 초기화할 때, 다른 로그인/앱초기화 상태는 유지해야 할 수 있음
+            // 이 부분은 앱의 구체적인 요구사항에 따라 조정 필요. 
+            // 여기서는 일단 registrationInfo만 초기화
+         })),
 
-    // clearStore 구현 (clearMember와 동일한 기능)
+    // clearStore 구현 (로그아웃 시 사용)
     clearStore: () =>
         set({
-            memberId: null,
-            token: null,
-            registrationInfo: { ...initialRegistrationInfo },
+            ...initialState, // 모든 상태를 초기값으로 리셋
         }),
 }));
