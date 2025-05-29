@@ -66,7 +66,7 @@ const UseageItem: React.FC<UseageItemProps> = (props) => {
         <View style={styles.rightDateContainer}>
           <Text style={styles.dateText}>{formatDate(createdAt)}</Text>
         </View>
-      </View>
+        </View>
       <LinearGradient
         colors={['#EAEAEA', '#EAEAEA']} // 이미지의 얇은 회색 선처럼 보이도록 단색 그라데이션
         start={{ x: 0, y: 0.5 }}
@@ -80,7 +80,7 @@ const UseageItem: React.FC<UseageItemProps> = (props) => {
 const styles = StyleSheet.create({
   outerContainer: {
     backgroundColor: '#FFFFFF',
-    width: width,
+    width: width, 
     // marginBottom: 10, // FlatList의 ItemSeparatorComponent로 간격 관리 가능
   },
   container: {

@@ -28,15 +28,15 @@ export default function ProfileHeader({
       <View style={[styles.profileImageContainer, { width: PROFILE_SIZE, height: PROFILE_SIZE, borderRadius: PROFILE_SIZE / 2 }]}> 
         <Image source={{ uri: profileImage || "/assets/icons/profile.svg" }} style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} />
       </View>
-      <Text style={styles.nickname}> 세침한 세찌 {/*{nickname} */} </Text>
-      {/*{isInChat ? ( */}
+      <Text style={styles.nickname}> {nickname} </Text>
+      {isInChat ? (
       <View style={styles.statusRow}>
         <Ionicons name="chatbubbles-outline" size={18} color="rgba(0, 0, 0, 0.5)" />
           <Text style={styles.statusText}>채팅 참여중</Text>
         </View>
-      {/*}) : (
+      ) : (
         <View style={styles.statusRow} />
-      )}*/}
+      )}
       <View style={{ width: width * 0.9, alignSelf: "center", marginTop: 0 }}>
         <GradientLine />
       </View>

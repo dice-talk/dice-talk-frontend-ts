@@ -18,7 +18,7 @@ import {
 //import { useEmail } from '../context/EmailContext'; // 경로 확인 필요 (로그인 시 이메일 저장/사용 여부 재검토)
 //import { useMemberContext } from '../context/MemberContext'; // 경로 확인 필요
 import { loginMember } from '@/api/loginApi'; // EmailAPI를 loginAPI 등으로 변경 고려, 경로 확인 필요
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // memberInfoStore 임포트
+import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // 스토어 상태 확인을 위해 유지
 // AsyncStorage는 스토어 사용으로 대체 가능성 있음 (필요시 유지)
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView 사용
@@ -28,33 +28,26 @@ import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView �
 
 export default function LoginScreen() {
   const router = useRouter();
-  const setMemberInfoInStore = useMemberInfoStore((state) => state.setMemberInfo);
-  const setTokenInStore = useMemberInfoStore((state) => state.setToken);
-  // const setEmailInStore = useMemberInfoStore((state) => state.setEmail); // 필요시 이메일도 스토어에 저장
+  // 스토어 set 함수들은 loginApi.ts에서 호출하므로 여기서는 직접 사용하지 않음
 
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
 
   const [isEmailValid, setIsEmailValid] = useState<boolean>(false);
-  const [isPasswordValid, setIsPasswordValid] = useState<boolean>(false); // 비밀번호 유효성도 체크 가능
+  const [isPasswordValid, setIsPasswordValid] = useState<boolean>(false);
 
-  const [isLoading, setIsLoading] = useState<boolean>(false); // 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 이메일 유효성 검사 (간단한 형식 체크)
   const validateEmail = (text: string): void => {
     setEmail(text);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsEmailValid(emailRegex.test(text));
   };
 
-  // 비밀번호 유효성 검사 (예: 최소 길이) - API 요구사항에 따라 조절
   const validatePassword = (text: string): void => {
     setPassword(text);
-    //setIsPasswordValid(text.length >= 8); // 예시: 8자 이상일 때 유효
-    // 로그인에서는 보통 길이 제한만 두거나, 서버에서 상세 유효성 검사를 합니다.
-    // 기존 코드의 정규식은 회원가입용으로 보이므로, 로그인에서는 단순 길이 체크나 비어있지 않음 정도만 해도 무방합니다.
-    setIsPasswordValid(text.length > 0); // 비어있지 않음으로 체크
+    setIsPasswordValid(text.length > 0); // 비밀번호는 비어있지 않은지만 체크
   };
 
   const canSubmit = isEmailValid && isPasswordValid && !isLoading;
@@ -65,36 +58,31 @@ export default function LoginScreen() {
       return;
     }
 
-    setIsLoading(true); // 로딩 시작
+    setIsLoading(true);
     try {
-      // API 요청 시 username으로 email을 전달
-      const result = await loginMember(email, password); // API 함수명 및 파라미터 확인
-      console.log('로그인 서버 응답:', result);
+      // loginMember 함수는 성공 시 응답 객체를 반환하고,
+      // 내부적으로 memberId와 token을 Zustand 스토어에 저장합니다.
+      await loginMember(email, password); 
+      
+      // 스토어에 memberId와 token이 정상적으로 저장되었는지 확인 후 화면 전환
+      const storedMemberId = useMemberInfoStore.getState().memberId;
+      const storedToken = useMemberInfoStore.getState().token;
 
-      // 사용자 정보 및 토큰 저장 (Zustand 스토어 사용)
-      if (result.body && result.body.memberInfo && result.body.token) { // API 응답 구조 확인 필요
-        setMemberInfoInStore(result.body.memberInfo);
-        setTokenInStore(result.body.token);
-        // setEmailInStore(email); // 로그인 성공 시 이메일도 스토어에 저장하려면 활성화
-
-        // AsyncStorage 사용은 주석 처리 (스토어가 주 저장소 역할)
-        // await AsyncStorage.setItem('accessToken', result.body.token);
-        // await AsyncStorage.setItem('memberId', result.body.memberInfo.memberId || ''); // memberInfo 구조에 따라 memberId 접근
-        // await AsyncStorage.setItem('username', result.body.memberInfo.email || email); 
-
-        // 로그인 성공 후 메인 화면 등으로 이동
-        router.replace('/(tabs)/home'); 
+      if (storedMemberId && storedToken) {
+        router.replace('/(tabs)/home');
       } else {
-        // API 응답 구조가 예상과 다를 경우 에러 처리
-        console.error('로그인 실패: 유효하지 않은 서버 응답 형식', result);
-        Alert.alert('로그인 실패', '서버로부터 올바른 사용자 정보를 받지 못했습니다.');
+        // 이 경우는 loginApi.ts 내부 로직 오류 또는 응답 문제로 스토어 저장이 실패한 경우입니다.
+        // loginApi.ts에서 이미 에러를 throw 하므로, 이 블록은 실행되지 않을 가능성이 높습니다.
+        console.error('로그인 후 스토어 확인 실패: memberId 또는 token이 저장되지 않았습니다.');
+        Alert.alert('로그인 실패', '로그인 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
       }
     } catch (error: any) {
-      console.error('로그인 실패:', error);
-      const errMsg = error.response?.data?.message || error.response?.data?.error || '이메일 또는 비밀번호가 일치하지 않습니다.';
+      // loginApi.ts에서 발생한 에러 또는 네트워크 에러 등을 여기서 처리합니다.
+      console.error('로그인 요청 실패:', error);
+      const errMsg = error.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
       Alert.alert('로그인 실패', errMsg);
     } finally {
-      setIsLoading(false); // 로딩 종료
+      setIsLoading(false);
     }
   };
 

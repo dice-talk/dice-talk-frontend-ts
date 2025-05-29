@@ -7,6 +7,7 @@ export default function PlusLayout() {
         <Stack.Screen name="NoticePage" options={{ headerShown: false }} />
         <Stack.Screen name="SettingPage" options={{ headerShown: false }} />
         <Stack.Screen name="AccountExitPage" options={{ headerShown: false }} />
+        <Stack.Screen name="NoticeDetailPage" options={{ headerShown: false }} />
       </Stack>
     );
 }

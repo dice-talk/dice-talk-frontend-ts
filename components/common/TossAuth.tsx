@@ -31,6 +31,10 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
   useEffect(() => {
     const requestToss = async () => {
       try {
+        // 테스트용 간단한 GET 요청
+      const testResponse = await axiosWithoutToken.get("/"); // 또는 서버의 간단한 GET 엔드포인트
+      console.log("✅ Simple GET Test Response:", testResponse.status, testResponse.data);
+      
         // ✅ axios를 사용하여 인증 요청
         const { data } = await axiosWithoutToken.post("/auth/request");
         console.log("✅ 인증 요청 응답:", data);
