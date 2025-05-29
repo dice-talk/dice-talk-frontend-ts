@@ -1,3 +1,5 @@
+import { deleteMember } from '@/api/memberApi';
+import { useAnonymousStore } from '@/zustand/stores/anonymous';
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -8,9 +10,26 @@ interface AccountExitModalProps {
   visible: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  deleteReason: string;
 }
 
-const AccountExitModal = ({ visible, onCancel, onConfirm }: AccountExitModalProps) => {
+const AccountExitModal = ({ visible, onCancel, onConfirm, deleteReason }: AccountExitModalProps) => {
+  // const { memberId } = useAnonymousStore();
+
+  const handleDeleteMember = async () => {
+    try {
+      if (true) {
+        await deleteMember(deleteReason);
+        console.log('✅ 회원 탈퇴 성공:', deleteReason);
+        onConfirm();
+      }
+    } catch (error) {
+      console.error('🚨 회원 탈퇴 실패:', error);
+      // 에러가 발생해도 onConfirm을 호출하여 모달을 닫고 다음 단계로 진행
+      onConfirm();
+    }
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <BlurView intensity={90} tint="light" style={StyleSheet.absoluteFill} />
@@ -43,7 +62,7 @@ const AccountExitModal = ({ visible, onCancel, onConfirm }: AccountExitModalProp
               </View>
             </Pressable>
             
-            <Pressable onPress={onConfirm} style={styles.confirmButtonWrapper}>
+            <Pressable onPress={handleDeleteMember} style={styles.confirmButtonWrapper}>
               <LinearGradient
                 colors={["#B28EF8", "#F476E5"]}
                 start={{ x: 0, y: 0 }}
