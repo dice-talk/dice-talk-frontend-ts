@@ -45,3 +45,15 @@ export const deleteAllNotifications = async () => {
   }
 };
 
+// 전체 알림 읽음 처리
+export const readAllNotifications = async () => {
+  try {
+    const response = await axiosWithToken.patch("/notifications/read-all");
+    console.log(`🔍 전체 읽음 처리 응답:`, { status: response.status, data: response.data });
+    return response;
+
+  } catch (error) {
+    console.error("🚨 전체 알림 읽음 처리 실패:", error);
+    throw error;
+  }
+};

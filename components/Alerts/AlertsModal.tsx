@@ -1,4 +1,4 @@
-import { deleteAllNotifications, deleteNotification } from "@/api/AlertApi";
+import { deleteAllNotifications, deleteNotification, readAllNotifications } from "@/api/AlertApi";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
@@ -115,6 +115,19 @@ const AlertsModal = ({ visible, onClose, notifications }: AlertsModalProps) => {
     setIsEditMode(!isEditMode);
   };
 
+  const handleClose = async () => {
+    try {
+      console.log('📖 전체 알림 읽음 처리 시작');
+      await readAllNotifications();
+      console.log('✅ 전체 알림 읽음 처리 완료');
+    } catch (error) {
+      console.error('❌ 전체 알림 읽음 처리 실패:', error);
+      // 읽음 처리 실패해도 모달은 닫기
+    }
+    
+    onClose();
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={90} tint="light" style={StyleSheet.absoluteFill} />
@@ -202,7 +215,7 @@ const AlertsModal = ({ visible, onClose, notifications }: AlertsModalProps) => {
         
         {/* 확인 버튼을 모달 외부 하단에 배치 */}
         <View style={styles.externalButtonContainer}>
-          <Pressable onPress={onClose} style={styles.buttonWrapper}>
+          <Pressable onPress={handleClose} style={styles.buttonWrapper}>
             <LinearGradient
               colors={["#c2a7f7", "#f29ee8"]}
               start={{ x: 0, y: 0 }}
