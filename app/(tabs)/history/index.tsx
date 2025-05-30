@@ -1,4 +1,4 @@
-import { ChatRoomItem, HeartHistoryItem, PageInfo, getChatHistory, getHeartHistory } from "@/api/historyApi";
+import { ChatRoomItem, HeartHistoryItem, PageInfo, getChatHistory, getMyHeartHistory } from "@/api/historyApi";
 import EventBannerComponent from "@/components/common/EventBannerComponent";
 import Tab from "@/components/common/Tab";
 import HistoryItem, { HistoryItemProps } from "@/components/history/HistoryItem";
@@ -45,7 +45,7 @@ export default function HistoryScreen() {
     if (!isInitialLoad) setLoadingMore(true);
 
     try {
-      const response = await getChatHistory(DUMMY_MEMBER_ID, page, itemsPerPage);
+      const response = await getChatHistory(DUMMY_MEMBER_ID, page, /*itemsPerPage*/);
       setChatHistory(prev => isInitialLoad ? response.data : [...prev, ...response.data]);
       setChatPageInfo(response.pageInfo);
       setCurrentChatPage(response.pageInfo.page);
@@ -63,7 +63,7 @@ export default function HistoryScreen() {
   const loadFullHeartHistory = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getHeartHistory(DUMMY_MEMBER_ID);
+      const response = await getMyHeartHistory();
       setFullHeartHistory(response.data);
       // 처음 itemsPerPage 만큼만 표시
       setDisplayedHeartHistory(response.data.slice(0, itemsPerPage));
