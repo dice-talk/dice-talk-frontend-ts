@@ -13,7 +13,9 @@ import ThemeCarousel from "@/components/home/ThemeCarousel";
 import { BlurView } from 'expo-blur';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
+import { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 
 // 실제 앱에서는 API 응답이나 전역 상태(Zustand 등)를 통해 받아올 값입니다.
 //const MOCK_USER_STATUS = 'MEMBER_BANNED'; // 테스트를 위해 'MEMBER_BANNED' 또는 다른 값으로 변경
@@ -34,6 +36,9 @@ const HomeScreen = () => {
 
   // HomeStore에서 테마 데이터 가져오기
   const themesFromStore = useHomeStore((state) => state.themes);
+
+  // ChatOptionStore에서 액션 가져오기
+  const { setThemeId: setChatThemeId } = useChatOptionActions();
 
   // 안읽은 알림 개수 조회 함수
   const fetchUnreadCount = async () => {
@@ -168,6 +173,9 @@ const HomeScreen = () => {
       description: clickedTheme.description, // HomeStore에서 직접 가져온 description 사용
     });
     setBottomSheetVisible(true);
+
+    // ChatOptionStore에 themeId 저장
+    setChatThemeId(clickedTheme.themeId);
   };
 
   // HomeStore에서 가져온 themes 데이터로 캐러셀 페이지 구성

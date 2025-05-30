@@ -5,7 +5,8 @@ import { Dimensions, StyleSheet, View, Text } from 'react-native';
 import GradientLine from '@/components/common/GradientLine';
 import CustomButton from '@/components/home/CustomButton';
 import { router } from 'expo-router';
-import useUserStore from '@/zustand/stores/UserStore'; // UserStore 임포트
+import useUserStore from '@/zustand/stores/UserStore';
+import { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
 
 const { width, height } = Dimensions.get('window');
 // dummyData에서 Region 데이터를 가져옵니다.
@@ -14,7 +15,7 @@ import { Region as regionsData } from '@/dummyData/Region';
 const OptionPageRegion = () => {
   const [selectedBox, setSelectedBox] = useState<string | null>(null);
   const userRegion = useUserStore((state) => state.region); // UserStore에서 region 가져오기
-  const { setUserInfo } = useUserStore((state) => state.actions); // UserStore의 setUserInfo 액션 가져오기
+  const { setRegion: setChatRegion } = useChatOptionActions(); // ChatOptionStore의 setRegion 액션 가져오기
 
   const generateRandomRegionString = (): string => {
     const regionKeys = Object.keys(regionsData);
@@ -41,16 +42,8 @@ const OptionPageRegion = () => {
   };
 
   const handleConfirm = () => {
-    if (selectedBox) {
-      setUserInfo({ region: selectedBox });
-      console.log('UserStore updated with region:', selectedBox);
-    } else {
-      // 선택된 값이 없을 경우 UserStore의 region을 업데이트하지 않거나,
-      // undefined로 설정하여 기존 값을 유지하도록 할 수 있습니다.
-      // UserStore의 setUserInfo는 undefined가 전달되면 기존 값을 유지합니다.
-      setUserInfo({ region: undefined });
-      console.log('No region selected, UserStore region might be unchanged or set to undefined.');
-    }
+    // 선택된 지역을 ChatOptionStore에 저장합니다.
+    setChatRegion(selectedBox); // selectedBox가 null일 수도 있음 (선택 안 한 경우)
     router.push('/home/OptionPageAge');
   };
 
