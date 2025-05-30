@@ -24,8 +24,10 @@ export const axiosWithToken: AxiosInstance = axios.create({
 // ✅ 토큰이 필요한 요청에 대한 인터셉터 설정
 axiosWithToken.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+
     const token = useAuthStore.getState().accessToken;
     console.log("📄 token:", token ? token.substring(0, 10) + "..." : "No token");
+
     console.log("📡 요청 URL:", config.baseURL + (config.url ?? ""));
 
     if (token) {
