@@ -1,11 +1,10 @@
 import { getNotifications, getUnreadNotificationCount } from '@/api/AlertApi';
+import { getHomeApi } from '@/api/HomeApi';
+import useHomeStore, { Theme } from '@/zustand/stores/HomeStore'; // HomeStore 및 Theme 타입 임포트
 import AlertIcon from '@/assets/images/chat/chatNoticeOnOff.svg';
-import DiceFriends from '@/assets/images/home/diceFriends.png';
 import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
 import ExLoveIcon from '@/assets/images/home/exLoveIcon.svg';
-import ExLove from '@/assets/images/home/exLoveTheme.png';
 import HeartSignalIcon from '@/assets/images/home/heartSignalIcon.svg';
-import HartSignal from '@/assets/images/home/heartSignalTheme.png';
 import MainBackground from '@/assets/images/home/mainBackground.svg';
 import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
@@ -33,6 +32,9 @@ const HomeScreen = () => {
   // 안읽은 알림 개수 상태 추가
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // HomeStore에서 테마 데이터 가져오기
+  const themesFromStore = useHomeStore((state) => state.themes);
+
   // 안읽은 알림 개수 조회 함수
   const fetchUnreadCount = async () => {
     try {
@@ -46,6 +48,41 @@ const HomeScreen = () => {
 
   useEffect(() => {
     fetchUnreadCount();
+
+    // Home API는 앱 실행 후 최초 한 번만 호출
+    const fetchHomeDataOnceOnAppLaunch = async () => {
+      // useHomeStore에서 상태와 액션을 가져옵니다.
+      // 컴포넌트 외부에서 getState를 사용하거나, 컴포넌트 내부에서 훅을 사용할 수 있습니다.
+      // useEffect 내에서는 getState가 더 간결할 수 있습니다.
+      const store = useHomeStore.getState();
+      const { initialHomeApiCalled } = store;
+      const { setInitialHomeApiCalled, setThemes, setNotices, setHasNewNotifications } = store.actions;
+
+      if (!initialHomeApiCalled) {
+        try {
+          console.log("🚀 Home API 최초 호출 시도 (앱 실행 시 한 번, home/index.tsx)...");
+          const homeDataResponse = await getHomeApi();
+          // console.log("🏠 Home API 전체 응답 (home/index.tsx - 최초 실행):", homeDataResponse); // 전체 응답 로깅은 필요시 활성화
+          console.log("📊 Home API 실제 데이터 (home/index.tsx - 최초 실행):", homeDataResponse.data);
+          
+          // HomeStore에 데이터 저장
+          setThemes(homeDataResponse.data.themes || []);
+          setNotices(homeDataResponse.data.notices || []);
+          setHasNewNotifications(homeDataResponse.data.hasNewNotifications || false);
+
+          setInitialHomeApiCalled(true); // API 호출 후 플래그를 true로 설정
+        } catch (error) {
+          console.error("🔴 Home API 최초 호출 실패 (home/index.tsx):", error);
+          // 실패 시에도 플래그를 true로 설정하여, 앱의 현재 세션에서 재시도를 방지합니다.
+          // 만약 실패 시 재시도 로직이 필요하다면 이 부분을 다르게 처리해야 합니다.
+          setInitialHomeApiCalled(true);
+        }
+      } else {
+        console.log("ℹ️ Home API는 이미 최초 호출되었습니다 (플래그 기반, home/index.tsx).");
+      }
+    };
+
+    fetchHomeDataOnceOnAppLaunch();
   }, []);
 
   // 바텀시트 파라미터 설정
@@ -84,57 +121,68 @@ const HomeScreen = () => {
     }, []) // 의존성 배열이 비어있으므로, 포커스될 때마다 실행
   );
 
-  const handleImageClick = (num: number) => {
-    // 파라미터 숫자에 따라 바텀시트 설정
-    const params = {
-      1: {
-        backgroundColor: '#6DA0E1',
-        status: 'THEME_ON',
-        icon: <DiceFriendsIcon width={width * 0.13} height={width * 0.13} />,
-        title: '다이스프렌즈',
-        lineColor: 'white',
-        description: `다이스 프렌즈에 참여하는 플레이어는 6명 입니다.
+  const handleImageClick = (themeId: number) => {
+    if (!themesFromStore) return;
 
-다이즈 프렌즈는 2일간 진행됩니다.
-
-24시간 후 단 한명의 플레이어에게 메세지를 보낼 수 있습니다.
-(단, 발신자의 닉네임은 표시되지 않습니다.)`,
-      },
-      2: {
-        backgroundColor: '#DEC2DB',
-        status: 'THEME_ON',
-        icon: <HeartSignalIcon width={width * 0.13} height={width * 0.13} />,
-        title: '하트시그널',
-        lineColor: '#a47bd6',
-        description: `하트 시그널하우스에 입주하는 플레이어는 6명 입니다.
-
-하트 시그널 하우스에 입주한 날부터 2일간 진행됩니다.
-
-24시간 후 단 한명의 플레이어에게 메세지를 보낼 수 있습니다.
-(단, 발신자의 닉네임은 표시되지 않습니다.)`,
-      },
-      3: {
-        backgroundColor: '#EDE2E0',
+    const clickedTheme = themesFromStore.find(t => t.themeId === themeId);
+    if (!clickedTheme) {
+      console.warn(`Theme with id ${themeId} not found.`);
+      setBottomSheetParams({
+        backgroundColor: '#ffffff',
         status: 'THEME_PLANNED',
-        icon: <ExLoveIcon width={width * 0.13} height={width * 0.13} />,
-        title: '환승연애',
-        lineColor: '#ffffff',
-        description: '2025. 04. 05일에 open 됩니다!',
-      },
-      // 만약 null이 들어 올 경우 기본 설정
-    }[num] || {
-      backgroundColor: '#ffffff',
-      status: 'THEME_PLANNED',
-      icon: null,
-      title: 'Default',
-      lineColor: '#000000',
-      description: 'Default description',
-    };
-    // 바텀시트 파라미터 설정
-    setBottomSheetParams(params);
-    // 바텀시트 표시
+        icon: null,
+        title: '테마 정보 없음',
+        lineColor: '#000000',
+        description: '선택하신 테마 정보를 불러올 수 없습니다.',
+      });
+      setBottomSheetVisible(true);
+      return;
+    }
+
+    let iconComponent: React.ReactNode = null;
+    let bgColor = '#f0f0f0';
+    let lnColor = '#ccc';
+
+    // themeId에 따라 아이콘, 배경색, 라인색, 설명 매핑
+    // API 응답의 themeId: 1 (하트시그널), themeId: 2 (친구찾기/다이스프렌즈), themeId: 3 (환승연애)
+    if (clickedTheme.themeId === 2) { // 다이스프렌즈 (API상 친구찾기)
+      iconComponent = <DiceFriendsIcon width={width * 0.13} height={width * 0.13} />;
+      bgColor = '#6DA0E1';
+      lnColor = 'white';
+    } else if (clickedTheme.themeId === 1) { // 하트시그널
+      iconComponent = <HeartSignalIcon width={width * 0.13} height={width * 0.13} />;
+      bgColor = '#DEC2DB';
+      lnColor = '#a47bd6';
+    } else if (clickedTheme.themeId === 3) { // 환승연애
+      iconComponent = <ExLoveIcon width={width * 0.13} height={width * 0.13} />;
+      bgColor = '#EDE2E0';
+      lnColor = '#ffffff';
+    }
+
+    setBottomSheetParams({
+      backgroundColor: bgColor,
+      status: clickedTheme.themeStatus,
+      icon: iconComponent,
+      title: clickedTheme.name,
+      lineColor: lnColor,
+      description: clickedTheme.description, // HomeStore에서 직접 가져온 description 사용
+    });
     setBottomSheetVisible(true);
   };
+
+  // HomeStore에서 가져온 themes 데이터로 캐러셀 페이지 구성
+  const carouselPages = themesFromStore
+    ? themesFromStore.map((theme: Theme) => ({
+        // themeId는 ThemeCarousel 컴포넌트 내부에서 직접 사용되지 않지만,
+        // 명확성을 위해 또는 향후 확장을 위해 전달할 수 있습니다.
+        // 현재 ThemeCarousel의 pages prop 타입은 { icon: React.ReactNode }[] 입니다.
+        icon: (
+          <TouchableOpacity onPress={() => handleImageClick(theme.themeId)}>
+            <Image source={{ uri: theme.image }} style={styles.carouselImage} />
+          </TouchableOpacity>
+        ),
+      }))
+    : [];
 
   const handleConfirmBannedModal = () => {
     setIsBannedModalVisible(false);
@@ -143,14 +191,7 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={{
-        position: 'absolute',
-        top: 0, // 화면 상단부터
-        left: 0, // 화면 좌측부터
-        right: 0, // 화면 우측까지
-        bottom: 0, // 화면 하단까지
-        zIndex: -1 // 배경이므로 가장 뒤로
-      }}>
+      <View style={styles.mainBackgroundContainer}>
         <MainBackground 
           width="100%"         // 부모 View의 너비에 맞춤
           height="100%"        // 부모 View의 높이에 맞춤
@@ -180,39 +221,20 @@ const HomeScreen = () => {
           </View>
         )}
       </View>
-      <View style={{
-        position: 'absolute',
-        top: height * 0.2,      // 상단 배너 높이(20%) 제외
-        left: 0,
-        right: 0,
-        bottom: height * 0.1,     // 하단 푸터 높이(10%) 제외
-        justifyContent: 'center', // 이 영역 내에서 ThemeCarousel을 수직 가운데 정렬
-      }}>
-         {/* 케러셀 */}
-      <ThemeCarousel
-        pages={[
-          { num: 1, icon: (
-            // 캐러셀 이미지 클릭 시 바텀시트 표시 
-            <TouchableOpacity onPress={() => handleImageClick(1)}>
-              <Image source={DiceFriends} style={{ width: width * 0.7, height: width * 0.7 }} />
-            </TouchableOpacity>
-          ) },
-          { num: 2, icon: (
-            <TouchableOpacity onPress={() => handleImageClick(2)}>
-              <Image source={HartSignal} style={{ width: width * 0.7, height: width * 0.7 }} />
-            </TouchableOpacity>
-          ) },
-          { num: 3, icon: (
-            <TouchableOpacity onPress={() => handleImageClick(3)}>
-              <Image source={ExLove} style={{ width: width * 0.7, height: width * 0.7 }} />
-            </TouchableOpacity>
-          ) },
-        ]}
-        pageWidth={width * 0.75}
-        gap={16}
-        offset={width * 0.1}
-      />
-      </View>
+      {carouselPages.length > 0 ? (
+        <View style={styles.themeCarouselOuterContainer}>
+          <ThemeCarousel
+            pages={carouselPages} // 동적으로 생성된 페이지 사용
+            pageWidth={width * 0.75}
+            gap={16}
+            offset={width * 0.1}
+          />
+        </View>
+      ) : (
+        <View style={[styles.themeCarouselOuterContainer, styles.loadingContainer]}>
+          <Text>테마 정보를 불러오는 중입니다...</Text>
+        </View>
+      )}
      
       <Modal
         visible={isBottomSheetVisible}
@@ -261,6 +283,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  mainBackgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  themeCarouselOuterContainer: {
+    position: 'absolute',
+    top: height * 0.2,
+    left: 0,
+    right: 0,
+    bottom: height * 0.1,
+    justifyContent: 'center',
+  },
+  loadingContainer: { // 로딩 텍스트를 위한 스타일 추가
+    alignItems: 'center',
+  },
   bottomSheetWrapper: {
     position: 'absolute',
     bottom: 0,
@@ -306,7 +347,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 'bold',
   },
-
+  carouselImage: {
+    width: width * 0.7,
+    height: width * 0.7,
+    resizeMode: 'cover', // 이미지가 영역에 맞게 잘리거나 채워지도록 설정
+  },
 });
 
 export default HomeScreen;
