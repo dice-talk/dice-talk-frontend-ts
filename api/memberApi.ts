@@ -165,3 +165,17 @@ export const deleteMember = async (reason: string) => {
     }
 };
 
+// 회원 단일 조회
+export const getMember = async () => {
+    try{
+        const memberId = Number(await AsyncStorage.getItem("memberId"));
+        // const memberId = 4;
+        const response = await axiosWithToken.get(`/my-info/${memberId}`, {
+        });
+        return response.data.data;
+    } catch (error) {
+        console.error("🚨 회원 조회 실패:", error);
+        throw error;
+    }
+};
+
