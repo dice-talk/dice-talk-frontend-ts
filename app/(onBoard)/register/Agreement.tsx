@@ -3,7 +3,7 @@ import LogoIcon from '@/assets/images/login/logo_icon.svg'; // SVG 사용 시
 import TossAuth from '@/components/common/TossAuth';
 import UnderageRestrictionModal from '@/components/login/UnderageRestrictionModal'; // 미성년자 모달 임포트
 import MediumButton from '@/components/profile/myInfoPage/MediumButton'; // 경로 예시
-import { useMemberInfoStore, UserRegistrationInfo } from '@/zustand/stores/memberInfoStore'; // UserRegistrationInfo 타입 임포트
+import useSignupProgressStore, { SignupData } from '@/zustand/stores/signupProgressStore'; // 새 스토어 및 타입 임포트
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router'; // useLocalSearchParams 임포트
 import { useEffect, useState } from "react"; // React 임포트
@@ -30,7 +30,7 @@ export default function Agreement() {
     const [checkedTerms, setCheckedTerms] = useState<boolean[]>(() => terms.map(() => false));
     const [showTossAuth, setShowTossAuth] = useState(false);
     const [showUnderageModal, setShowUnderageModal] = useState(false); // 미성년자 모달 상태
-    const setStoreRegistrationInfo = useMemberInfoStore((state) => state.setRegistrationInfo);
+    const { updateSignupData } = useSignupProgressStore((state) => state.actions); // 새 스토어 액션 사용
 
     // DetailAgreement에서 돌아올 때 상태 업데이트
     useEffect(() => {
@@ -98,15 +98,15 @@ export default function Agreement() {
             storeGender = 'FEMALE';
         }
 
-        const registrationUpdate: Partial<UserRegistrationInfo> = {
+        const signupUpdate: Partial<SignupData> = {
             name: userInfo.name,
-            phone: userInfo.phone, // phone이 없으면 null로 저장
+            phone: userInfo.phone ?? null, // phone이 undefined이면 null로 저장
             gender: storeGender,
             birth: userInfo.birth || null, // 로그에서 birth 필드 사용
             ageGroup: userInfo.ageGroup || null, // ageGroup 추가
         };
-        setStoreRegistrationInfo(registrationUpdate);
-        console.log("스토어에 사용자 인증 정보 저장 완료:", registrationUpdate);
+        updateSignupData(signupUpdate); // 새 스토어 액션 호출
+        console.log("SignupProgress 스토어에 사용자 인증 정보 저장 완료:", signupUpdate);
 
         router.push('/(onBoard)/register/SignupInput');
     };

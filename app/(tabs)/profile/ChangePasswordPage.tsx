@@ -29,19 +29,26 @@ const handleChangePassword = async () => {
     }
      setLoading(true);
     try {
-        const response = await updatePassword(oldPassword, newPassword);
-        if (response.status === 200) {
-            Alert.alert("성공", "비밀번호가 성공적으로 변경되었습니다.");
-            setOldPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            router.replace("/profile/MyInfoPage");
+        await updatePassword(oldPassword, newPassword); // response 변수 사용 안 함, 에러 없으면 성공 간주
+        
+        // 성공 시 로직 (updatePassword에서 에러가 throw되지 않으면 성공)
+        Alert.alert("성공", "비밀번호가 성공적으로 변경되었습니다.");
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        router.replace("/profile/MyInfoPage");
+        
+    } catch (error: any) {
+        if (error.response && error.response.status === 403) {
+            Alert.alert("오류", "현재 비밀번호가 일치하지 않거나, 권한이 없습니다. 다시 한번 확인 후 요청바랍니다.");
+        } else if (error.response && error.response.data && error.response.data.message) {
+            Alert.alert("오류", error.response.data.message);
+        } else {
+            Alert.alert("오류", "비밀번호 변경에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도해주세요.");
         }
-    } catch (error) {
-        Alert.alert("오류", "비밀번호 변경에 실패했습니다.");
     } finally {
         setLoading(false);
-}
+    }
 };
 
     return (

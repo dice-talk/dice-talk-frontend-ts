@@ -1,4 +1,5 @@
-import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore";
+// import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore";
+import useAuthStore from '@/zustand/stores/authStore'; // authStore 임포트
 import { axiosWithToken } from "./axios/axios";
 
 export interface ChatRoomOpponent { 
@@ -78,7 +79,8 @@ export const getChatHistory = async (
 ): Promise<ChatRoomListResponse> => {
   //console.log(`[API] getChatHistory 호출: memberId=${memberId}, page=${page}, size=${size}`);
   try {
-    const memberId = useMemberInfoStore.getState().memberId;
+    // const memberId = useMemberInfoStore.getState().memberId;
+    const memberId = useAuthStore.getState().memberId; // authStore 사용
     const response = await axiosWithToken.get(`/chat-rooms/my-chat-rooms/${memberId}`, {
       params: {
         page, // 백엔드가 0-indexed page를 사용한다면 조정
@@ -142,7 +144,8 @@ export const getMyHeartHistory = async (
   size: number = 20,
 ): Promise<HeartHistoryListResponse> => {
   try {
-    const memberId = useMemberInfoStore.getState().memberId; // Assuming memberId needed or inferred
+    // const memberId = useMemberInfoStore.getState().memberId; // Assuming memberId needed or inferred
+    const memberId = useAuthStore.getState().memberId; // authStore 사용
     if (!memberId) {
         console.error("🚨 하트 내역 조회 실패: memberId가 없습니다.");
         throw new Error("memberId is not available");

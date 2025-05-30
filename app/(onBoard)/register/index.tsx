@@ -1,6 +1,7 @@
 // EmailInput 컴포넌트 (예: app/(onBoard)/register/components/EmailInputForm.tsx 또는 index.tsx에 통합)
 import MediumButton from '@/components/profile/myInfoPage/MediumButton';
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore';
+// import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore';
+import useSignupProgressStore from '@/zustand/stores/signupProgressStore'; // signupProgressStore 임포트
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -11,7 +12,8 @@ import { Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, Text
 export default function EmailInputScreen() { // 컴포넌트 이름 변경
     const router = useRouter();
     // Zustand 스토어의 setEmail 함수를 가져옵니다.
-    const setEmailInStore = useMemberInfoStore((state) => state.setEmail);
+    // const setEmailInStore = useMemberInfoStore((state) => state.setEmail);
+    const { updateSignupData } = useSignupProgressStore((state) => state.actions); // 수정된 부분
     
     const [inputEmail, setInputEmail] = useState<string>('');
     const [isValid, setIsValid] = useState<boolean>(false);
@@ -34,7 +36,8 @@ export default function EmailInputScreen() { // 컴포넌트 이름 변경
             // Alert.alert('성공', '입력하신 이메일로 인증번호를 보냈습니다.');
 
             // API 호출 성공 후 또는 데모/테스트 목적으로 스토어에 이메일 저장
-            setEmailInStore(inputEmail);
+            // setEmailInStore(inputEmail);
+            updateSignupData({ email: inputEmail }); // 수정된 부분
             console.log(`스토어에 이메일 저장: ${inputEmail}`);
 
             // 인증번호 입력 페이지로 이동
@@ -46,7 +49,8 @@ export default function EmailInputScreen() { // 컴포넌트 이름 변경
             // 데모용 임시 에러 처리 및 화면 이동 (실제 API 연동 시 수정)
             console.error("이메일 발송 처리 중 에러 (데모):", error);
             Alert.alert('알림', '이메일 발송에 실패했습니다. (데모 메시지). 다음 단계로 이동합니다.'); 
-            setEmailInStore(inputEmail); // 실패 시에도 테스트를 위해 임시로 저장
+            // setEmailInStore(inputEmail); // 실패 시에도 테스트를 위해 임시로 저장
+            updateSignupData({ email: inputEmail }); // 수정된 부분
             router.push('/(onBoard)/register/VerifyCode');
 
             // 이미 등록된 이메일 등의 분기 처리는 VerifyCode 또는 해당 API 응답에서 처리
