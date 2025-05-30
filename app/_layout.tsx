@@ -1,5 +1,6 @@
 import { attemptAutoLogin } from '@/api/authApi'; // 자동 로그인 함수 임포트
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // Zustand 스토어 임포트
+// import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // 기존 스토어 임포트 제거
+import useAuthStore from '@/zustand/stores/authStore'; // 새로운 authStore 임포트
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter } from 'expo-router';
@@ -17,41 +18,41 @@ let appInitializationPromise: Promise<boolean> | null = null;
 
 const initializeAppGlobally = async () => {
   console.log('initializeAppGlobally: 앱 전역 초기화 시작...');
-  const { isAutoLoginAttempted, setIsAutoLoginAttempted } = useMemberInfoStore.getState();
-
-  if (isAutoLoginAttempted) {
-    console.log('initializeAppGlobally: 이미 자동 로그인 시도됨. 추가 실행 안 함.');
-    // 이미 시도했다면, 이전 결과를 기다리거나 반환해야 할 수 있으나,
-    // 여기서는 RootLayout의 useEffect에서 isAutoLoginAttempted 상태를 참조하므로,
-    // 여기서 바로 반환해도 큰 문제는 없을 것으로 예상됨.
-    // 다만, 로그인 성공 여부를 반환해야 한다면 이전 attemptAutoLogin의 결과를 알아야 함.
-    // 현재 attemptAutoLogin은 로그인 성공 여부를 반환함.
-    // 이 함수는 로그인 성공 여부 자체보다는 '초기화가 시작되었는가'에 초점.
-    return useMemberInfoStore.getState().token ? true : false; // 단순히 현재 토큰 유무로 반환 (개선 여지 있음)
+  // Zustand 스토어에서 직접 getter를 사용하는 대신, 스토어 액션을 통해 상태를 변경하고,
+  // 컴포넌트 내에서 구독을 통해 상태 변화에 반응하는 것이 일반적입니다.
+  // 여기서는 attemptAutoLogin을 호출하고 그 결과를 반환하는 데 집중합니다.
+  // isAutoLoginAttempted 상태는 attemptAutoLogin 내부 및 authStore에서 관리됩니다.
+  
+  // 자동 로그인을 시도하기 전에 authStore의 isAutoLoginAttempted 상태를 확인하여 중복 실행 방지 (선택적 강화)
+  // 다만, appInitializationPromise 자체가 한 번만 실행되도록 하므로 이중 방어임.
+  if (useAuthStore.getState().isAutoLoginAttempted && appInitializationPromise) {
+    console.log('initializeAppGlobally: 이미 자동 로그인 시도됨 또는 진행 중. 현재 토큰 상태 반환.');
+    return useAuthStore.getState().accessToken ? true : false;
   }
 
-  console.log('initializeAppGlobally: 자동 로그인 첫 시도.');
-  // setIsAutoLoginAttempted(true); // attemptAutoLogin 내부에서 호출되므로 여기서 중복 호출 필요 없음
-  const loginSuccess = await attemptAutoLogin(); // attemptAutoLogin 내부에서 isAutoLoginAttempted=true 설정
+  console.log('initializeAppGlobally: 자동 로그인 첫 시도 또는 Promise 재생성.');
+  const loginSuccess = await attemptAutoLogin(); // attemptAutoLogin은 내부에서 isAutoLoginAttempted=true 설정
   console.log('initializeAppGlobally: attemptAutoLogin 결과:', loginSuccess);
-  // isAppInitialized는 RootLayout에서 모든 조건 만족 시 설정
   return loginSuccess;
 };
 
-// 앱 로드 시 한 번만 이 함수를 호출하여 Promise를 생성
-// RootLayout이 여러 번 마운트 되어도 이 Promise는 하나만 존재
 if (!appInitializationPromise) {
   console.log('RootLayout Module Scope: appInitializationPromise 없음. initializeAppGlobally 호출하여 생성.');
   appInitializationPromise = initializeAppGlobally();
 } else {
-  console.log('RootLayout Module Scope: appInitializationPromise 이미 존재함.');
+  console.log('RootLayout Module Scope: appInitializationPromise 이미 존재함. (핫 리로드 등으로 인해 재실행될 수 있음)');
+  // 핫 리로드 시 이전 Promise가 완료되지 않았을 수 있으므로, 상태를 보고 다시 실행할지 결정할 수 있습니다.
+  // 예를 들어, authStore의 isAutoLoginAttempted가 false이면 다시 시도할 수 있습니다.
+  if (!useAuthStore.getState().isAutoLoginAttempted) {
+    console.log('RootLayout Module Scope: isAutoLoginAttempted가 false이므로 초기화 Promise 재생성 시도');
+    appInitializationPromise = initializeAppGlobally();
+  }
 }
 // #############################################################################
 
 export default function RootLayout() {
   console.log('RootLayout: 컴포넌트 렌더링 시작.');
 
-  // 폰트 로딩
   const [fontsLoaded, fontError] = useFonts({
     Pretendard: require("../assets/fonts/Pretendard-Regular.otf"),
     "Pretendard-Bold": require("../assets/fonts/Pretendard-Bold.otf"),
@@ -62,102 +63,89 @@ export default function RootLayout() {
 
   const router = useRouter();
 
-  // Zustand 스토어에서 상태 구독
-  const { 
-    token, // 현재 로그인된 토큰 (자동 로그인 성공 시 여기에 값 존재)
-    isAutoLoginAttempted, // 자동 로그인 시도 여부
-    isAppInitialized,     // 앱 최종 준비 완료 여부
-    setIsAppInitialized   // 앱 준비 완료 상태 변경 액션
-  } = useMemberInfoStore();
+  // 새로운 authStore에서 상태 및 액션 구독
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const isAutoLoginAttempted = useAuthStore((state) => state.isAutoLoginAttempted);
+  const isAppInitialized = useAuthStore((state) => state.isAppInitialized);
+  const { setAppInitialized } = useAuthStore((state) => state.actions);
 
-  console.log(`RootLayout Render State: fontsLoaded=${fontsLoaded}, fontError=${!!fontError}, token=${!!token}, isAutoLoginAttempted=${isAutoLoginAttempted}, isAppInitialized=${isAppInitialized}`);
+  console.log(`RootLayout Render State: fontsLoaded=${fontsLoaded}, fontError=${!!fontError}, accessToken=${!!accessToken}, isAutoLoginAttempted=${isAutoLoginAttempted}, isAppInitialized=${isAppInitialized}`);
 
   useEffect(() => {
-    console.log('RootLayout useEffect: 실행됨. Dependencies - [fontsLoaded, fontError, isAutoLoginAttempted, token, router, setIsAppInitialized]');
+    console.log('RootLayout useEffect: 실행됨. Dependencies 업데이트됨.');
     
-    // appInitializationPromise가 완료되기를 기다림 (선택적: 이미 위에서 호출했으므로 상태만 봐도 됨)
-    // 하지만 상태 변화에 따른 반응이므로, 상태를 직접 보는 것이 더 React 스러움
+    // initializeAppGlobally Promise가 완료되기를 기다립니다.
+    // 이 Promise는 앱 로드 시 한 번만 실행되어 자동 로그인을 시도합니다.
     appInitializationPromise?.then(loginSuccessFromPromise => {
         console.log('RootLayout useEffect: appInitializationPromise 완료. loginSuccessFromPromise:', loginSuccessFromPromise);
-        // 이 시점의 isAutoLoginAttempted는 true여야 함 (initializeAppGlobally에서 설정)
-        // 이 시점의 token 상태는 initializeAppGlobally -> attemptAutoLogin을 통해 업데이트 되었을 수 있음
+        // 이 시점에 isAutoLoginAttempted는 attemptAutoLogin 내부에서 true로 설정되었어야 합니다.
+        // accessToken 상태는 attemptAutoLogin을 통해 업데이트 되었을 수 있습니다.
 
-        if (fontsLoaded || fontError) { // 1. 폰트 로딩 완료 (또는 에러)
+        if (fontsLoaded || fontError) { 
             console.log('RootLayout useEffect: 폰트 로딩 완료/에러 조건 충족.');
-            if (isAutoLoginAttempted) { // 2. 자동 로그인 시도 완료
-                console.log('RootLayout useEffect: 자동 로그인 시도 완료 조건 충족.');
-                
-                // 아직 앱 최종 준비가 안 되었다면, 라우팅 및 스플래시 처리
-                if (!isAppInitialized) {
-                    console.log('RootLayout useEffect: 앱 최종 준비 안됨. 라우팅 및 스플래시 처리 시작.');
-                    if (token) { // Zustand 스토어의 토큰 유무로 최종 로그인 상태 판단
-                        console.log('RootLayout useEffect: 토큰 존재. 홈으로 이동.');
-                        router.replace('/(tabs)/home');
-                    } else {
-                        console.log('RootLayout useEffect: 토큰 없음. 로그인 화면으로 이동.');
-                        router.replace('/(onBoard)');
-                    }
-
-                    SplashScreen.hideAsync().then(() => {
-                        console.log('RootLayout useEffect: 스플래시 화면 숨김 완료.');
-                        setIsAppInitialized(true); // 모든 준비 완료
-                        console.log('RootLayout useEffect: isAppInitialized = true 설정 완료.');
-                    }).catch(e => {
-                        console.error('RootLayout useEffect: 스플래시 화면 숨기기 실패:', e);
-                        setIsAppInitialized(true); // 실패해도 앱은 준비된 것으로 간주 (흰 화면 방지)
-                        console.log('RootLayout useEffect: (스플래시 실패 시) isAppInitialized = true 설정 완료.');
-                    });
+            // isAutoLoginAttempted 상태가 true가 될 때까지 기다리거나, 
+            // appInitializationPromise가 완료된 시점을 기준으로 판단합니다.
+            // 여기서는 appInitializationPromise가 완료되었으므로, 자동 로그인 시도는 끝난 것으로 간주합니다.
+            
+            if (!isAppInitialized) { // 아직 앱 최종 준비가 안 되었다면, 라우팅 및 스플래시 처리
+                console.log('RootLayout useEffect: 앱 최종 준비 안됨. 라우팅 및 스플래시 처리 시작.');
+                if (accessToken) { // authStore의 accessToken 유무로 최종 로그인 상태 판단
+                    console.log('RootLayout useEffect: accessToken 존재. 홈으로 이동.');
+                    router.replace('/(tabs)/home');
                 } else {
-                    console.log('RootLayout useEffect: 앱 이미 최종 준비 완료됨 (isAppInitialized=true). 추가 작업 없음.');
+                    console.log('RootLayout useEffect: accessToken 없음. 로그인 화면으로 이동.');
+                    router.replace('/(onBoard)');
                 }
+
+                SplashScreen.hideAsync().then(() => {
+                    console.log('RootLayout useEffect: 스플래시 화면 숨김 완료.');
+                    setAppInitialized(true); // 모든 준비 완료
+                    console.log('RootLayout useEffect: isAppInitialized = true 설정 완료.');
+                }).catch(e => {
+                    console.error('RootLayout useEffect: 스플래시 화면 숨기기 실패:', e);
+                    setAppInitialized(true); 
+                    console.log('RootLayout useEffect: (스플래시 실패 시) isAppInitialized = true 설정 완료.');
+                });
             } else {
-                console.log('RootLayout useEffect: 자동 로그인 시도 아직 완료 안됨 (isAutoLoginAttempted=false). 대기.');
-                // 이 경우는 initializeAppGlobally가 아직 isAutoLoginAttempted를 true로 못 바꾼 상황.
-                // 또는 appInitializationPromise가 너무 빨리 resolve 된 경우 (이론상 가능성은 낮음)
+                console.log('RootLayout useEffect: 앱 이미 최종 준비 완료됨 (isAppInitialized=true). 추가 작업 없음.');
             }
         } else {
             console.log('RootLayout useEffect: 폰트 로딩 아직 안됨. 대기.');
         }
     }).catch(error => {
         console.error("RootLayout useEffect: appInitializationPromise 처리 중 에러 발생", error);
-        // 심각한 초기화 오류. 로그인 화면으로 보내고 앱 준비된 것으로 처리 (선택적)
         if (!isAppInitialized) {
-            router.replace('/(onBoard)/Login');
-            SplashScreen.hideAsync().finally(() => setIsAppInitialized(true));
+            router.replace('/(onBoard)'); // 에러 발생 시 안전하게 로그인 화면으로
+            SplashScreen.hideAsync().finally(() => setAppInitialized(true));
         }
     });
 
-    // useEffect의 클린업 함수는 여기서 특별히 할 일 없음
     return () => {
         console.log('RootLayout useEffect: 클린업 함수 실행.');
     };
-    // 의존성 배열: 이 값들이 변경될 때마다 useEffect가 재실행
-    // token: 자동 로그인 성공 후 변경
-    // isAutoLoginAttempted: 자동 로그인 시도 후 변경
-    // isAppInitialized: 모든 준비 완료 후 변경
-}, [fontsLoaded, fontError, isAutoLoginAttempted, token, router, setIsAppInitialized, isAppInitialized]);
+}, [fontsLoaded, fontError, router, setAppInitialized, isAppInitialized, accessToken]); // isAutoLoginAttempted를 의존성 배열에서 제거하고, accessToken으로 로그인 상태 변화를 감지
 
 
-  // 1. 폰트가 로딩 중이면 아무것도 표시하지 않음 (스플래시 화면이 계속 보임)
   if (!fontsLoaded && !fontError) {
     console.log('Render: 폰트 로딩 중... (null 반환)');
     return null;
   }
 
-  // 2. 폰트 로딩은 끝났지만, 앱이 최종적으로 준비되지 않았다면 아무것도 표시하지 않음
+  // isAppInitialized 상태를 사용하여 스플래시 화면을 제어하고 초기 렌더링을 결정합니다.
+  // initializeAppGlobally와 useEffect가 비동기적으로 실행되므로,
+  // isAppInitialized가 true가 될 때까지는 스플래시 화면이 유지되거나 null이 반환됩니다.
   if (!isAppInitialized) {
     console.log(`Render: 앱 최종 준비 안됨 (isAppInitialized=${isAppInitialized}). (null 반환)`);
     return null;
   }
 
-  // 모든 준비가 완료되면 실제 앱 UI 렌더링
   console.log('Render: 앱 준비 완료! UI 렌더링.');
   return (
     <ThemeProvider value={DefaultTheme}>
       <Stack>
         {/* <Stack.Screen name="(onBoard)" options={{ headerShown: false }} /> */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="Loading" options={{ headerShown: false }} />
+        <Stack.Screen name="Loading" options={{ headerShown: false }} /> 
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

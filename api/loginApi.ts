@@ -1,4 +1,5 @@
-import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore";
+// import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore";
+import useAuthStore from '@/zustand/stores/authStore'; // authStore 임포트
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { axiosWithoutToken } from "./axios/axios";
 // AsyncStorage import는 스토어 저장 로직을 loginApi 내부에 유지한다면 필요할 수 있습니다.
@@ -34,15 +35,21 @@ export const loginMember = async (email: string, password: string): Promise<bool
         console.log('추출된 memberId:', memberId);
 
         if (memberId && accessToken && refreshToken) { 
-            useMemberInfoStore.getState().setMemberId(memberId);
-            useMemberInfoStore.getState().setToken(accessToken); 
+            // useMemberInfoStore.getState().setMemberId(memberId);
+            // useMemberInfoStore.getState().setToken(accessToken); 
+            useAuthStore.getState().actions.setAuthInfo({ // authStore 사용
+                memberId: Number(memberId), 
+                accessToken: accessToken, 
+                refreshToken: refreshToken
+            });
             
             await AsyncStorage.setItem('accessToken', accessToken);
             await AsyncStorage.setItem('refreshToken', refreshToken);
             await AsyncStorage.setItem('memberId', String(memberId));
             
             console.log('AsyncStorage 및 스토어 저장 완료. AccessToken:', accessToken, 'RefreshToken:', refreshToken, 'MemberId:', memberId);
-            console.log('스토어 상태:', useMemberInfoStore.getState());
+            // console.log('스토어 상태:', useMemberInfoStore.getState());
+            console.log('authStore 상태:', useAuthStore.getState()); // authStore 상태 로깅
             return true;
         } else {
             console.error("🚨 로그인 실패: 응답에서 memberId, accessToken 또는 refreshToken(header)을 찾을 수 없습니다.", 
@@ -50,6 +57,8 @@ export const loginMember = async (email: string, password: string): Promise<bool
             await AsyncStorage.removeItem('accessToken');
             await AsyncStorage.removeItem('refreshToken');
             await AsyncStorage.removeItem('memberId');
+            // 로그인 실패 시 스토어도 정리 (선택적, authStore에 clearAuthInfo 같은 액션이 있다면 호출)
+            useAuthStore.getState().actions.clearAuthInfo();
             throw new Error("로그인 응답 형식이 올바르지 않습니다. 토큰 또는 memberId 누락.");
         }
         
@@ -58,6 +67,8 @@ export const loginMember = async (email: string, password: string): Promise<bool
         await AsyncStorage.removeItem('accessToken');
         await AsyncStorage.removeItem('refreshToken');
         await AsyncStorage.removeItem('memberId');
+        // 에러 발생 시 스토어도 정리
+        useAuthStore.getState().actions.clearAuthInfo();
         throw new Error(error.response?.data?.message || error.message || "로그인 중 오류가 발생했습니다.");
     }
 };
