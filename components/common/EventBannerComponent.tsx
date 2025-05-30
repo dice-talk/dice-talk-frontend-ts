@@ -1,37 +1,26 @@
-import { EventBanner } from "@/types/EventBanner";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from "react-native";
 
 // 현재 기기의 화면 너비를 가져와서 배너 이미지 너비로 사용
 const { width } = Dimensions.get("window");
 const { height } = Dimensions.get("window");
-const EventBannerComponent = () => {
-    // 이벤트 요청 데이터 관리 (배열로 관리함))
-  const [eventBanner, setEventBanner] = useState<EventBanner[]>([]);
+
+// EventBannerComponent가 받을 props 타입 정의
+export interface EventBannerData {
+  id: number;
+  imageUrl: string; // API에서 받은 URL은 string 타입
+  title: string;
+}
+
+interface EventBannerComponentProps {
+  banners: EventBannerData[];
+}
+
+const EventBannerComponent = ({ banners = [] }: EventBannerComponentProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-//   useEffect(() => {
-//     // 이벤트 요청이 성공했을때 응답 데이터를 이벤트 상태관리에 셋팅
-//     getEventBanner().then((data) => setEventBanner(data));
-//     // 페이지가 열릴때마다 리렌더링
-//   }, []);
-  useEffect(() => {
-    // 목 데이터로 테스트
-    const imageMap: Record<string, any> = {
-        banner1: require('@/assets/images/eventBanner/eventBanner_01.png'),
-        banner2: require('@/assets/images/eventBanner/eventBanner_02.png'),
-        banner3: require('@/assets/images/eventBanner/eventBanner_03.png'),
-      };
-      const dummyData = [
-        { id: 1, imageUrl: imageMap.banner1, title: '배너 1' },
-        { id: 2, imageUrl: imageMap.banner2, title: '배너 2' },
-        { id: 3, imageUrl: imageMap.banner3, title: '배너 3' },
-      ];
-    setEventBanner(dummyData);
-  }, []);
-
   // flatList 스크롤제어를 위한 참조 변수 (리랜더링 되어도 값이 유지된다))
-  const flatListRef = useRef<FlatList<EventBanner>>(null);
+  const flatListRef = useRef<FlatList<EventBannerData>>(null);
 
   // flatList가 드레그 후 손을 뗏을 때 실행되는 함수
   const onMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -43,7 +32,7 @@ const EventBannerComponent = () => {
     setCurrentIndex(index);
     
     // 총 길이
-    const totalItems = eventBanner.length;
+    const totalItems = banners.length;
 
     // 만약 사용자가 마지막 이미지에서 오른쪽으로 스크롤했다면
     if (index === totalItems) {
@@ -54,15 +43,17 @@ const EventBannerComponent = () => {
 
   const BANNER_HEIGHT = height * 0.2;
 
-  return (
+  if (!banners || banners.length === 0) {
+    return null; // 배너 데이터가 없으면 아무것도 렌더링하지 않음
+  }
 
+  return (
     <View>
         <View style={[styles.container, { height: BANNER_HEIGHT }]}>
             <FlatList
                 style={{ width: width}} // 배너 높이 조정
                 ref={flatListRef}
-                // 응답 데이버에서 배열 데이터 출력
-                data={eventBanner}
+                data={banners}
                 // 각 항목의 고유키 (리액트 최적화))
                 keyExtractor={(item) => item.id.toString()}
                 
@@ -75,13 +66,13 @@ const EventBannerComponent = () => {
                 // 각 항목(배너)을 렌더링하는 함수
                 renderItem={({ item }) => (
                     // 디바이스 화면에 맞춰 비율로 이미지 크기 조정
-                <Image source={ item.imageUrl} style={{ width: width, height: BANNER_HEIGHT}} />
+                <Image source={{ uri: item.imageUrl }} style={{ width: width, height: BANNER_HEIGHT}} resizeMode="cover" />
                 )}
                 // 스크롤 마지막에서 한번더 스크롤시 실행되는 함수 (0번 인덱스로 돌아감))
                 onMomentumScrollEnd={onMomentumScrollEnd}
             />
             <View style={styles.pageIndicator}>
-                <Text style={styles.pageText}>{currentIndex + 1} / {eventBanner.length}</Text>
+                <Text style={styles.pageText}>{banners.length > 0 ? currentIndex + 1 : 0} / {banners.length}</Text>
             </View>
         </View>
     </View>
