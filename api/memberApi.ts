@@ -28,6 +28,7 @@ export const updateRegion = async (memberId: number | null, region: string) => {
             throw new Error("memberId is not available for updateRegion");
         }
         const response = await axiosWithToken.patch(`/my-info/${memberId}`, { region });
+        console.log("✅ 지역 변경 API 호출 성공:", region);
 
         // 이 함수는 API 호출만 담당. Zustand 스토어 직접 업데이트 X.
         // MyInfoPage에서 이 함수 호출 후, 성공 시 로컬 상태를 업데이트하거나, 
@@ -35,7 +36,7 @@ export const updateRegion = async (memberId: number | null, region: string) => {
         // 만약 sharedProfileStore에 간략한 지역 정보가 있고, 그것도 갱신해야 한다면 여기서 처리 가능하나,
         // 현재 설계에서는 sharedProfileStore에 상세 지역 정보 없음.
         console.log("✅ 지역 변경 API 호출 성공:", response.data.data?.region || response.data.region);
-        return response.data.data || response.data; 
+        return region;//response.data.data || response.data; 
     } catch (error) {
         console.error("🚨 지역 수정 실패:", error);
         throw error;
@@ -46,7 +47,7 @@ export const updateRegion = async (memberId: number | null, region: string) => {
 export const updatePassword = async (oldPassword: string, newPassword: string) => {
     try {
         // 비밀번호 변경 API는 memberId가 필요 없을 수도 있지만, 필요하다면 authStore에서 가져와 사용
-        // const memberId = useAuthStore.getState().memberId;
+        //const memberId = useAuthStore.getState().memberId;
         const response = await axiosWithToken.post("/password", {
             oldPassword,
             newPassword,
