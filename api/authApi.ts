@@ -110,7 +110,7 @@ export const attemptAutoLogin = async (): Promise<boolean> => {
       if (refreshedSuccessfully) {
           console.log('attemptAutoLogin: 토큰 재발급 성공 또는 기존 토큰 유효.');
           // 익명 정보(공유 프로필 정보) 가져오기
-          const anonymousInfo = await getAnonymousInfo(); // memberApi에서 가져옴
+          const anonymousInfo = await getAnonymousInfo(memberId); // memberApi에서 가져옴
           if (anonymousInfo) {
             useSharedProfileStore.getState().actions.setSharedProfile({
               nickname: anonymousInfo.nickname,

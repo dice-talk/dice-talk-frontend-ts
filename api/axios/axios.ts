@@ -52,9 +52,9 @@ axiosWithToken.interceptors.response.use(
           console.log('axiosWithToken Interceptor: 토큰 재발급 성공. 원래 요청 재시도.');
           const newAccessToken = useAuthStore.getState().accessToken;
           if (newAccessToken) {
-            if (originalRequest.headers) {
-                (originalRequest.headers as Record<string, string>)['Authorization'] = `Bearer ${newAccessToken}`;
-            }
+            // originalRequest.headers가 없을 경우를 대비하여 초기화
+            originalRequest.headers = originalRequest.headers || {};
+            (originalRequest.headers as Record<string, string>)['Authorization'] = `Bearer ${newAccessToken}`;
           }
           return axiosWithToken(originalRequest);
         } else {
