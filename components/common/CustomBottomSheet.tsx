@@ -1,8 +1,10 @@
 import React from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import IsPlanned from '@/assets/images/home/isPlanned.svg';
 import CustomButton from '../home/CustomButton';
 import { useRouter } from 'expo-router';
+import { getMember } from '@/api/memberApi'; // memberApi.ts의 getMember 함수 임포트
+import useUserStore from '@/zustand/stores/UserStore'; // UserStore 임포트
 
 interface CustomBottomSheetProps {
   isPlanned: boolean;
@@ -28,6 +30,39 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
   onClose,
 }) => {
   const router = useRouter();
+  const { setUserInfo } = useUserStore((state) => state.actions); // UserStore의 setUserInfo 액션 가져오기
+
+  const handleParticipate = async () => {
+    try {
+      console.log('📞 참여하기 버튼 클릭: getMember 호출 시도');
+      const memberData = await getMember(); // memberApi.ts의 getMember 호출
+      console.log('👤 getMember 응답:', memberData);
+
+      if (memberData) {
+        // UserStore에 정의된 필드(region, birth)만 추출하여 전달합니다.
+        // memberData 객체에 해당 키가 존재하면 그 값을 사용하고,
+        // 존재하지 않으면 undefined가 전달되어 UserStore의 setUserInfo에서 기존 값을 유지합니다.
+        const userInfoToStore = {
+          region: memberData.region,
+          birth: memberData.birth,
+        };
+
+        setUserInfo(userInfoToStore);
+        console.log('✅ UserStore에 사용자 정보 저장 완료:', userInfoToStore);
+        
+        // 사용자 정보 저장 후 다음 페이지로 이동
+        router.push('/home/OptionPageRegion');
+      } else {
+        // memberData가 null이거나 undefined인 경우 (API가 데이터를 반환하지 않은 경우)
+        Alert.alert('오류', '회원 정보를 가져오는데 실패했습니다. 응답 데이터가 없습니다.');
+      }
+    } catch (error) {
+      console.error('🚨 참여하기 처리 중 오류 발생:', error);
+      // Axios 에러인 경우 더 자세한 정보 로깅 (선택 사항)
+      // if (axios.isAxiosError(error)) { console.error('Axios error details:', error.response?.data, error.response?.status); }
+      Alert.alert('오류', '회원 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해주세요.');
+    }
+  };
   // 테마 준비 중일 경우
   if (isPlanned) {
     return (
@@ -61,7 +96,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
       </View>
       <Text style={styles.description}>{description}</Text>
       <View style={styles.fixedButtonContainer}>
-        <CustomButton label="참여하기" onPress={() => router.push('/home/OptionPageRegion')} />
+        <CustomButton label="참여하기" onPress={handleParticipate} />
         <CustomButton label="창 닫기" onPress={onClose} />
       </View>
     </View>

@@ -1,7 +1,8 @@
 import { ChatRoomItem, HeartHistoryItem, PageInfo, getChatHistory, getMyHeartHistory } from "@/api/historyApi";
-import EventBannerComponent from "@/components/common/EventBannerComponent";
+import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent";
 import Tab from "@/components/common/Tab";
 import HistoryItem, { HistoryItemProps } from "@/components/history/HistoryItem";
+import useHomeStore from "@/zustand/stores/HomeStore";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Dimensions, FlatList, Platform, StyleSheet, Text, View } from "react-native";
@@ -38,6 +39,26 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(false); // 초기 로딩 상태
   const [loadingMore, setLoadingMore] = useState(false); // 더 불러오기 로딩 상태
 
+  const noticesFromStore = useHomeStore((state) => state.notices);
+
+  const eventBannersForDisplay: EventBannerData[] = useMemo(() => {
+    if (!noticesFromStore) return [];
+
+    return noticesFromStore
+      .filter(notice =>
+        notice.noticeStatus === "ONGOING" &&
+        notice.noticeType === "EVENT" &&
+        notice.noticeImages.some(img => img.thumbnail === true)
+      )
+      .map(notice => {
+        const thumbnailImage = notice.noticeImages.find(img => img.thumbnail === true);
+        return {
+          id: notice.noticeId,
+          imageUrl: thumbnailImage!.imageUrl,
+          title: notice.title,
+        };
+      });
+  }, [noticesFromStore]);
   // 채팅 내역 불러오기 (페이지 기반)
   const loadChatHistory = useCallback(async (page: number, isInitialLoad = false) => {
     if (loadingMore && !isInitialLoad) return; // 이미 더 불러오는 중이면 중복 실행 방지
@@ -188,7 +209,9 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topFixedContent}>
-        <EventBannerComponent />
+        {eventBannersForDisplay.length > 0 && (
+          <EventBannerComponent banners={eventBannersForDisplay} />
+        )}
         <Tab
           tabs={['1 대 1 채팅 내역', '하트 히스토리']}
           activeTab={activeTab === 'chat' ? '1 대 1 채팅 내역' : '하트 히스토리'}
@@ -301,4 +324,3 @@ const styles = StyleSheet.create({
     // justifyContent: 'flex-end', 
   },
 });
-
