@@ -5,15 +5,16 @@ import SelectBox from '@/components/home/SelectBox';
 import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react'; // useMemo 추가
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import useUserStore from '@/zustand/stores/UserStore'; // UserStore 임포트
+import useUserStore from '@/zustand/stores/UserStore';
+import useChatOptionStore, { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
 
 const { width, height } = Dimensions.get('window');
 
 const OptionPageAge = () => {
   const router = useRouter();
   const userStoredRegion = useUserStore((state) => state.region); // UserStore에서 저장된 지역 정보 가져오기
-  const userBirth = useUserStore((state) => state.birth); // UserStore에서 생년월일 가져오기
-  const { setUserInfo } = useUserStore((state) => state.actions); // UserStore의 setUserInfo 액션 가져오기
+  const userBirth = useUserStore((state) => state.birth);
+  const { setBirth: setChatAgeGroup } = useChatOptionActions(); // ChatOptionStore의 setBirth (ageGroup) 액션 가져오기
 
   const [selectedBox, setSelectedBox] = useState<string | null>(null);
 
@@ -41,12 +42,21 @@ const OptionPageAge = () => {
     const currentYear = new Date().getFullYear();
     const age = currentYear - birthYear + 1; // 한국식 나이 계산
 
-    if (age < 10) {
-      return null; // 10대 미만은 현재 로직에서 처리하지 않음 (또는 "10대 미만" 등으로 처리 가능)
+    // randomAgeGroupOptions에 맞게 나이대 문자열 반환
+    if (age >= 20 && age <= 29) {
+      return "20대";
+    } else if (age >= 30 && age <= 39) {
+      return "30대";
+    } else if (age >= 40 && age <= 49) {
+      return "40대";
+    } else if (age >= 50 && age <= 59) {
+      return "50대";
+    } else if (age >= 60) {
+      return "50대 이상";
     }
 
-    const ageGroupStart = Math.floor(age / 10) * 10;
-    return `${ageGroupStart}대 초반`;
+    // 위 조건에 해당하지 않는 경우 (예: 20대 미만)
+    return null;
   };
 
   // 사용자의 실제 나이대를 기반으로 표시할 문자열 계산 (메모이제이션 사용)
@@ -66,10 +76,9 @@ const OptionPageAge = () => {
   };
 
   const handleConfirm = () => {
-    // 선택된 나이 선호도를 UserStore에 저장합니다.
-    // 참고: 이 로직은 UserStore의 'birth' 필드에 나이 선호도 문자열을 저장합니다.
-    setUserInfo({ birth: selectedBox !== null ? selectedBox : undefined });
-    console.log('UserStore updated with age preference (in birth field):', selectedBox);
+    // 선택된 나이 선호도를 ChatOptionStore의 ageGroup에 저장합니다.
+    setChatAgeGroup(selectedBox); // selectedBox가 null일 수도 있음 (선택 안 한 경우)
+    console.log(useChatOptionStore.getState());
     router.replace('/Loading');
   };
 
