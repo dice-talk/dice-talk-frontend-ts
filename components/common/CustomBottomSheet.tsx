@@ -40,8 +40,9 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
       <View style={[styles.line, { backgroundColor: lineColor }]} />
       <IsPlanned width={width * 0.4} height={width * 0.4} style={{ marginTop: 30 }}/>
       <Text style={styles.isPLannedDescription}>{description}</Text>
-      <View style={styles.fixedButtonContainer}>
-        <CustomButton label="참여하기" onPress={() => router.push('/home/OptionPageAge')} />
+      {/* THEME_PLANNED 상태일 때는 참여하기 버튼을 숨기고 창 닫기 버튼만 중앙에 표시 */}
+      <View style={[styles.fixedButtonContainer, styles.plannedButtonContainer]}>
+        {/* <CustomButton label="참여하기" onPress={() => router.push('/home/OptionPageAge')} /> */}
         <CustomButton label="창 닫기" onPress={onClose} />
       </View>
     </View>
@@ -124,6 +125,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: width * 0.01,
+  },
+  plannedButtonContainer: { // THEME_PLANNED 상태일 때 버튼을 중앙 정렬하기 위한 스타일
+    justifyContent: 'center',
   },
 });
 
