@@ -2,7 +2,8 @@
 import { createMemberInfo } from '@/api/memberApi'; // createMemberInfo API 임포트
 import RegionDropDown from '@/components/profile/RegionDropDown'; // 경로 예시
 import MediumButton from '@/components/profile/myInfoPage/MediumButton'; // 경로 예시
-import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // memberInfoStore 임포트
+import useAuthStore from '@/zustand/stores/authStore'; // authStore 임포트 (로그인 성공 시 사용)
+import useSignupProgressStore from '@/zustand/stores/signupProgressStore'; // 새 스토어 임포트
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router'; // useLocalSearchParams 제거
@@ -21,21 +22,24 @@ import {
 export default function SignupInput() {
     const router = useRouter();
     // const params = useLocalSearchParams<UserInfoFromAuth & { /* 다른 파라미터 타입 */ }>(); // 스토어 사용으로 대체
-    const registrationInfo = useMemberInfoStore((state) => state.registrationInfo);
+    const signupProgress = useSignupProgressStore((state) => state.signupData);
+    const { clearSignupData } = useSignupProgressStore((state) => state.actions);
+    const { setAuthInfo } = useAuthStore((state) => state.actions); // 로그인 정보 저장을 위해 추가
 
     // 스토어에서 가져온 값들을 사용합니다.
-    const emailFromStore = registrationInfo?.email || '';
-    const nameFromStore = registrationInfo?.name || '';
-    const phoneFromStore = registrationInfo?.phone || '010-1234-5670';
-    const birthFromStore = registrationInfo?.birth || ''; // YYYYMMDD 형식
-    const ageGroupFromStore = registrationInfo?.ageGroup || '';
+    const nameFromStore = signupProgress?.name || '';
+    const phoneFromStore = signupProgress?.phone || '010-1234-5670';
+    const birthFromStore = signupProgress?.birth || ''; // YYYYMMDD 형식
+    const ageGroupFromStore = signupProgress?.ageGroup || '';
     // 화면 표시용 성별 변환
-    const genderDisplay = registrationInfo?.gender === 'MALE' ? '남성' : registrationInfo?.gender === 'FEMALE' ? '여성' : '';
-      // 화면 표시용 생년월일 (YYYY-MM-DD)
-      const birthDisplay = birthFromStore && birthFromStore.length === 8
+    const genderFromStore = signupProgress?.gender;
+    const genderDisplay = genderFromStore === 'MALE' ? '남성' : genderFromStore === 'FEMALE' ? '여성' : '';
+    // 화면 표시용 생년월일 (YYYY-MM-DD)
+    const birthDisplay = birthFromStore && birthFromStore.length === 8
         ? `${birthFromStore.substring(0, 4)}-${birthFromStore.substring(4, 6)}-${birthFromStore.substring(6, 8)}`
-        : '';
+        : birthFromStore; // YYYY-MM-DD 형식으로 이미 들어올 수도 있으므로 원본도 고려
 
+    const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -49,45 +53,40 @@ export default function SignupInput() {
 
     // 가입하기 버튼 활성화 조건
     const isFormValid = 
-        !!emailFromStore &&       // 이메일 (스토어)
-        !!nameFromStore &&        // 이름 (스토어)
-        !!registrationInfo?.gender && // 성별 (스토어)
-        !!birthFromStore &&       // 생년월일 (스토어)
-        !!phoneFromStore &&       // 전화번호 (스토어, Toss에서 못 받으면 기본값이라도 있어야 함)
-        isPasswordValid &&        // 비밀번호 유효성
-        isPasswordMatch &&        // 비밀번호 일치
-        !!selectedCity &&         // 지역 (시/도 선택)
-        !!selectedDistrict;       // 지역 (구/군 선택)
+        !!email && // 이메일 (직접 입력)
+        !!nameFromStore &&
+        !!genderFromStore &&
+        !!birthFromStore &&
+        (!!phoneFromStore && phoneFromStore !== '010-1234-5670') && // Toss에서 제대로 받아온 경우
+        isPasswordValid &&
+        isPasswordMatch &&
+        !!selectedCity &&
+        !!selectedDistrict;
 
     const handleSignup = async (): Promise<void> => {
         if (!isFormValid) {
             let alertMessage = '모든 필수 정보를 올바르게 입력해주세요.';
-            if (!emailFromStore) alertMessage = '이메일 정보가 없습니다. 처음부터 다시 시도해주세요.';
+            if (!email) alertMessage = '이메일을 입력해주세요.';
             else if (!nameFromStore) alertMessage = '이름 정보가 없습니다. 본인인증을 다시 시도해주세요.';
-            else if (!registrationInfo?.gender) alertMessage = '성별 정보가 없습니다. 본인인증을 다시 시도해주세요.';
+            else if (!genderFromStore) alertMessage = '성별 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!birthFromStore) alertMessage = '생년월일 정보가 없습니다. 본인인증을 다시 시도해주세요.';
-            else if (!phoneFromStore || phoneFromStore === '010-1234-5670') alertMessage = '휴대폰 번호 인증이 필요합니다.'; // 기본값인 경우도 오류로 간주 (Toss에서 못 받았다는 의미)
+            else if (!phoneFromStore || phoneFromStore === '010-1234-5670') alertMessage = '휴대폰 번호 인증이 필요합니다. 본인인증을 다시 시도해주세요.';
             else if (!selectedCity || !selectedDistrict) alertMessage = '지역을 선택해주세요.';
             else if (!isPasswordValid) alertMessage = '비밀번호 형식이 올바르지 않습니다.';
             else if (!isPasswordMatch) alertMessage = '비밀번호가 일치하지 않습니다.';
             
             Alert.alert('입력 오류', alertMessage);
-            // 필수 본인인증 정보 누락 시 Agreement 화면으로 돌려보내는 것이 더 적절할 수 있음
-            if (!emailFromStore || !nameFromStore || !registrationInfo?.gender || !birthFromStore || (!phoneFromStore || phoneFromStore === '010-1234-5670')) {
+            if (!nameFromStore || !genderFromStore || !birthFromStore || (!phoneFromStore || phoneFromStore === '010-1234-5670')) {
                 router.replace('/(onBoard)/register/Agreement'); 
             }
             return;
         }
 
-        const genderForApi = registrationInfo?.gender;
-        // genderForApi null 체크는 isFormValid에서 이미 수행됨
-
         const region = `${selectedCity} ${selectedDistrict}`; 
-        // API 요청 시 phoneFromStore이 기본값이면 실제로는 인증되지 않은 번호일 수 있으므로 서버측 검증 필요
         const payload = {
-            email: emailFromStore,
+            email: email,
             name: nameFromStore,
-            gender: genderForApi!,
+            gender: genderFromStore!,
             birth: birthDisplay,
             password,
             phone: phoneFromStore,
@@ -98,27 +97,41 @@ export default function SignupInput() {
         try {
             const response = await createMemberInfo(payload);
             console.log('📡 회원가입 요청 성공:', response);
-            useMemberInfoStore.getState().clearRegistrationInfo(); // 성공 시 스토어 정보 클리어
+            
+            if (response && response.data) {
+                const { memberId, token, refreshToken: newRefreshToken } = response.data;
+                if (memberId && token) {
+                    setAuthInfo({ memberId, accessToken: token, refreshToken: newRefreshToken || '' });
+                    console.log('회원가입 후 로그인 정보 저장됨', {memberId});
+                } else {
+                    console.error('회원가입 응답에 memberId 또는 token이 없습니다.', response.data);
+                    Alert.alert('오류', '회원가입은 되었으나, 로그인 정보 처리에 실패했습니다. 다시 로그인해주세요.');
+                    router.replace('/(onBoard)');
+                    return;
+                }
+            } else {
+                console.error('회원가입 응답 구조가 예상과 다릅니다.', response);
+                Alert.alert('오류', '회원가입 처리 중 예기치 않은 오류가 발생했습니다.');
+                return;
+            }
+
+            clearSignupData();
             router.replace('/(onBoard)/register/Congratulate');
         } catch (err: any) {
             console.error('회원가입 실패:', err);
-            let errMsg = '회원가입 중 문제가 발생했습니다.'; // 기본 에러 메시지
-
+            let errMsg = '회원가입 중 문제가 발생했습니다.';
             if (err.response) {
                 const { status, data } = err.response;
                 const message = data?.message;
-                const error = data?.error; // 혹시 error 필드도 사용될 경우 대비
-
+                const error = data?.error;
                 if (status === 409 && message === "Member exists") {
-                    errMsg = '이미 회원가입한 내역이 있습니다.';
+                    errMsg = '이미 가입된 이메일이거나 사용자 정보가 존재합니다.';
                 } else if (message) {
                     errMsg = message;
                 } else if (error) {
                     errMsg = error;
                 }
             }
-            // err.response가 없는 네트워크 오류 등의 경우 기본 errMsg 사용
-            
             Alert.alert('오류', errMsg);
         }
     };
@@ -127,7 +140,7 @@ export default function SignupInput() {
         setSelectedCity(city);
         setSelectedDistrict(district);
         console.log('Region Changed:', city, district); // 선택 확인용 로그
-      };
+    };
 
     return (
         <KeyboardAvoidingView
@@ -151,7 +164,14 @@ export default function SignupInput() {
                 </View>
 
                 <Text style={styles.label}>이메일</Text>
-                <TextInput style={[styles.input, styles.disabledInput]} value={emailFromStore} editable={false} />
+                <TextInput 
+                    style={styles.input} 
+                    value={email} 
+                    onChangeText={setEmail}
+                    placeholder="이메일 주소를 입력해주세요"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                />
 
                 <Text style={styles.label}>비밀번호</Text>
                 <Text style={styles.condition}>비밀번호는 영어 대문자, 소문자, 숫자, 특수문자를 1개씩 포함하여 8~16자여야 합니다.</Text>
