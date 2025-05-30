@@ -39,8 +39,8 @@ const handleChangePassword = async () => {
         router.replace("/profile/MyInfoPage");
         
     } catch (error: any) {
-        if (error.response && error.response.status === 403) {
-            Alert.alert("오류", "현재 비밀번호가 일치하지 않거나, 권한이 없습니다. 다시 한번 확인 후 요청바랍니다.");
+        if (error.response && error.response.status === 401) {
+            Alert.alert("오류", "현재 비밀번호가 일치하지 않습니다. 다시 한번 확인 후 요청바랍니다.");
         } else if (error.response && error.response.data && error.response.data.message) {
             Alert.alert("오류", error.response.data.message);
         } else {
