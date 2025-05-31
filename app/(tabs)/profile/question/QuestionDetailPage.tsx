@@ -492,10 +492,10 @@ export default function QuestionDetailPage() {
                 <Answer 
                     answer={{
                         content: questionDetail.answer.content,
-                        // Answer 컴포넌트에서도 createdAt 날짜 포맷팅 적용
                         createdAt: formatDateToYYYYMMDD(questionDetail.answer.createdAt),
-                        // API 명세에 따르면 answer.answerImages는 AnswerImage[] 타입
-                        images: questionDetail.answer.answerImages?.map(img => img.imageUrl) || [] 
+                        // API 명세에 따라 answer.answerImages는 AnswerImage[] | null 타입
+                        // Answer 컴포넌트의 props도 이에 맞게 AnswerImage[] | null을 받도록 수정했으므로, 그대로 전달
+                        answerImages: questionDetail.answer.answerImages 
                     }}
                 />
             )

@@ -25,7 +25,7 @@ axiosWithToken.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await AsyncStorage.getItem("accessToken"); // 요청 시점의 최신 토큰 사용
     // console.log("📄 token:", token ? token.substring(0, 10) + "..." : "No token"); // 디버깅 시 필요하면 주석 해제
-    // console.log("📡 요청 URL:", config.baseURL + (config.url ?? "")); // 디버깅 시 필요하면 주석 해제
+    console.log("📡 요청 URL:", config.baseURL + (config.url ?? "")); // 디버깅 시 필요하면 주석 해제
 
     if (token) {
         config.headers = config.headers || {};

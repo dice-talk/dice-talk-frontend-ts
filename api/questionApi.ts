@@ -20,29 +20,29 @@ type CreateQuestionParams = {
 
 export interface AnswerImage {
   answerImageId: number;
-  answerId: number;
   imageUrl: string;
 }
 
-type Answer = {
-    answerId: number;
-    content: string;
-    memberId: number;
-    createdAt: string;
-    modifiedAt?: string;
-    answerImages?: AnswerImage[];
+export interface Answer {
+  answerId: number;
+  content: string;
+  answerImages: AnswerImage[] | null;
+  questionId?: number | null;
+  memberId?: number | null;
+  createdAt: string;
+  modifiedAt: string;
 }
 
 export interface Question {
   questionId: number;
-  memberId: number;
   title: string;
   content: string;
+  questionStatus: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_COMPLETED" | string;
+  memberId: number;
+  answer: Answer | null;
+  questionImages: QuestionImage[] | null;
   createdAt: string;
-  modifiedAt?: string;
-  questionStatus?: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_DELETED" | "QUESTION_DEACTIVED";
-  answer?: Answer;
-  questionImages?: QuestionImage[];
+  modifiedAt: string;
 }
 
 export const createQuestion = async ({ dto, imageUris }: CreateQuestionParams) => {
@@ -99,8 +99,9 @@ export const createQuestion = async ({ dto, imageUris }: CreateQuestionParams) =
 export interface QuestionUpdateDto {
   title?: string;
   content?: string;
-  memberId: number; // memberId는 경로 파라미터 questionId로 식별 가능하지만, 기존 로직 유지 및 명시적 전달
-  questionStatus?: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_DELETED" | "QUESTION_DEACTIVED";
+  memberId: number; 
+  // Question 인터페이스의 questionStatus 타입과 일치시키거나, 최소한 string을 포함하도록 수정
+  questionStatus?: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_COMPLETED" | string;
   keepImageIds?: number[];
 }
 
