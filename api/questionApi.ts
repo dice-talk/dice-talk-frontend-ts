@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { axiosWithToken } from "./axios/axios";
 
 export interface QuestionImage {
@@ -6,12 +7,15 @@ export interface QuestionImage {
   imageUrl: string;
 }
 
-type QuestionData = {
-    memberId: number;
-    questionId: number;
-    title: string;
-    content: string;
-    questionImages?: QuestionImage[];
+interface QuestionPostDto {
+  title: string;
+  content: string;
+  memberId: number;
+}
+
+type CreateQuestionParams = {
+  dto: QuestionPostDto;
+  imageUris?: string[];
 }
 
 export interface AnswerImage {
@@ -29,9 +33,11 @@ type Answer = {
     answerImages?: AnswerImage[];
 }
 
-export interface Question extends QuestionData {
+export interface Question {
   questionId: number;
   memberId: number;
+  title: string;
+  content: string;
   createdAt: string;
   modifiedAt?: string;
   questionStatus?: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_DELETED" | "QUESTION_DEACTIVED";
@@ -39,66 +45,167 @@ export interface Question extends QuestionData {
   questionImages?: QuestionImage[];
 }
 
-// 회원가입 
-export const createQuestion = async (questionData: QuestionData) => {
+export const createQuestion = async ({ dto, imageUris }: CreateQuestionParams) => {
+    const formData = new FormData();
+
+    formData.append('questionPostDto', JSON.stringify(dto));
+    console.log("📝 [createQuestion] DTO:", JSON.stringify(dto, null, 2));
+    console.log("🖼️ [createQuestion] Image URIs to be processed:", imageUris);
+
+    if (imageUris && imageUris.length > 0) {
+        imageUris.forEach((uri, index) => {
+            const fileName = uri.split('/').pop() || `photo_${index}.jpg`;
+            const fileType = fileName.split('.').pop()?.toLowerCase() === 'png' ? 'image/png' : 'image/jpeg';
+            
+            const imageFile = {
+                uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+                name: fileName,
+                type: fileType,
+            };
+            formData.append('images', imageFile as any);
+            console.log(`📄 [createQuestion] Appended image to FormData: ${fileName}, Type: ${fileType}, URI: ${uri}`);
+        });
+    }
+
+    // FormData 내용 확인용 로그 (주의: React Native 환경에서는 formData.entries() 등이 제한적일 수 있음)
+    // console.log("🔍 [createQuestion] FormData entries (raw):");
+    // if (formData.getParts) { // React Native FormData specific method
+    //   console.log(JSON.stringify(formData.getParts(), null, 2));
+    // } else {
+    //   // 일반적인 FormData의 entries()는 React Native에서 직접적으로 로깅하기 어려울 수 있음
+    //   // 아래 코드는 웹 환경에서는 동작하나, RN에서는 제한될 수 있습니다.
+    //   // for (let pair of (formData as any).entries()) {
+    //   //   console.log(pair[0] + ', ' + (typeof pair[1] === 'string' ? pair[1] : '[File Object]'));
+    //   // }
+    //   console.log("FormData logging for RN might require a different approach or debugging tools.");
+    // }
+    // 간단하게 FormData 객체 자체를 로깅 (내부 구조 확인은 어려울 수 있음)
+    console.log("🔍 [createQuestion] FormData object (may not show all details in RN console):", formData);
+
     try{
-        const response = await axiosWithToken.post("/questions", questionData);
+        const response = await axiosWithToken.post("/questions", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     } catch (error) {
-        console.error("🚨 회원 정보 생성 실패:", error);
+        console.error("🚨 문의 등록 실패:", error);
         throw error;
     }
 };
 
-export const updateQuestion = async (questionId: number, questionData: Partial<QuestionData>) => {
+// 수정 시 사용될 DTO 정의 (기존 QuestionPostDto와 유사하나, keepImageIds 추가)
+export interface QuestionUpdateDto {
+  title?: string;
+  content?: string;
+  memberId: number; // memberId는 경로 파라미터 questionId로 식별 가능하지만, 기존 로직 유지 및 명시적 전달
+  questionStatus?: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_DELETED" | "QUESTION_DEACTIVED";
+  keepImageIds?: number[];
+}
+
+// createQuestionParams와 유사하게 updateQuestion 파라미터도 정의
+type UpdateQuestionParams = {
+  questionId: number;
+  dto: QuestionUpdateDto;
+  newImageUris?: string[];
+}
+
+export const updateQuestion = async ({ questionId, dto, newImageUris }: UpdateQuestionParams) => {
+    const formData = new FormData();
+
+    // 1. DTO를 JSON 문자열로 변환하여 FormData에 추가
+    // 백엔드에서 받을 DTO 키 이름을 "questionPatchDto" 또는 명세에 따름
+    formData.append('questionPatchDto', JSON.stringify(dto));
+
+    // 2. 새로운 이미지 파일들을 FormData에 추가
+    if (newImageUris && newImageUris.length > 0) {
+        newImageUris.forEach((uri, index) => {
+            const fileName = uri.split('/').pop() || `update_photo_${index}.jpg`;
+            // 파일 확장자에 따라 정확한 MIME 타입 설정
+            let fileType = 'image/jpeg'; // 기본값
+            const extension = fileName.split('.').pop()?.toLowerCase();
+            if (extension === 'png') {
+                fileType = 'image/png';
+            } else if (extension === 'gif') {
+                fileType = 'image/gif';
+            }
+            // HEIC/HEIF 등의 경우 적절한 변환 또는 MIME 타입 설정 필요
+
+            formData.append('images', { // 백엔드에서 받을 파일 배열 키 이름, 예시에서는 "images"
+                uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+                name: fileName,
+                type: fileType,
+            } as any);
+        });
+    }
+
     try{
-        const response = await axiosWithToken.patch(`/questions/${questionId}`, questionData);
+        const response = await axiosWithToken.patch(`/questions/${questionId}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
-    } catch (error) {
-        console.error("🚨 질문 수정 실패:", error);
+    } catch (error: any) {
+        let errorMessage = "질문 수정 중 알 수 없는 오류가 발생했습니다.";
+        if (error.response && error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        console.error("🚨 질문 수정 실패 (updateQuestion):", errorMessage, JSON.stringify(error.response?.data));
         throw error;
     }
 }
 
-// ✅ 질문 전체 조회 API
-export const getQuestions = async (memberId: number, page: number = 0, size: number = 10) => {
+// API 응답의 pageInfo 타입 정의
+interface PageInfo {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+// getQuestions 함수는 이미 response.data.data를 사용하고 있어 올바르게 구현됨
+export const getQuestions = async (page: number = 1, size: number = 10, sortBy: string = "desc") => {
     try {
       const response = await axiosWithToken.get<{
-        data: Question[],
-        totalElements: number,
-        totalPages: number,
-        number: number,
-        size: number
+        data: Question[]; 
+        pageInfo: PageInfo; 
     }>(
-        `/questions/${memberId}?size=${size}&page=${page}`
+        `/questions/my-questions?size=${size}&page=${page}&sort=${sortBy}`
       );
       return {
-        questions: response.data.data,
-        totalElements: response.data.totalElements,
-        totalPages: response.data.totalPages,
-        currentPage: response.data.number,
-        size: response.data.size
+        questions: response.data.data, 
+        totalElements: response.data.pageInfo.totalElements,
+        totalPages: response.data.pageInfo.totalPages,
+        currentPage: response.data.pageInfo.page, 
+        size: response.data.pageInfo.size
     }
     } catch (error) {
-      console.error("🚨 질문 전체 조회 실패:", error);
+      console.error("🚨 나의 질문 목록 조회 실패:", error);
       throw error;
     }
   };
 
-  // ✅ 질문 상세 조회 API
-export const getQuestionDetail = async (memberId: number, questionId: number) => {
+// getQuestionDetail 함수 수정
+export const getQuestionDetail = async (questionId: number): Promise<Question> => {
     try {
-      const response = await axiosWithToken.get<Question>(`/questions/${memberId}/${questionId}`);
-      return response.data;
+      // 백엔드가 SingleResponseDto<Question> 형태로 응답하므로, axios의 제네릭 타입을 그에 맞게 수정
+      // 즉, response.data의 타입은 { data: Question } 형태가 됨
+      const response = await axiosWithToken.get<{ data: Question }>(`/questions/${questionId}`);
+      // 실제 Question 객체는 response.data.data에 있음
+      return response.data.data; 
     } catch (error) {
       console.error("🚨 질문 상세 조회 실패:", error);
       throw error;
     }
   };
 
-  export const deleteQuestion = async (memberId: number, questionId: number): Promise<void> => {
+export const deleteQuestion = async (questionId: number): Promise<void> => {
     try {
-        await axiosWithToken.delete(`/questions/${memberId}/${questionId}`);
+        await axiosWithToken.delete(`/questions/${questionId}`);
     } catch (error) {
         console.error("🚨 질문 삭제 실패:", error);
         throw error;

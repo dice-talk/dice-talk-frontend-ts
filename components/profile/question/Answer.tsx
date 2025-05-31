@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 type AnswerProps = {
     answer?: {
       content: string;
-      createAt: string;
+      createdAt: string;
       images: string[] | null;
     } | null;
   };
@@ -15,13 +15,13 @@ export default function Answer({ answer }: AnswerProps) {
         return null; // ✅ 답변이 없는 경우 아무것도 렌더링하지 않음
       }
 
-    const { content, createAt } = answer;
+    const { content, createdAt } = answer;
 
     return (
         <View style={styles.container}>
                 <View style={styles.checkContainer}>
                     <Text style={styles.sectionLabel}>답변</Text>
-                    <Text style={styles.createAt}>{createAt}</Text>
+                    <Text style={styles.createAt}>{createdAt}</Text>
                 </View>
             <View style={styles.contentContainer}>
                 <Text>{content}</Text>
