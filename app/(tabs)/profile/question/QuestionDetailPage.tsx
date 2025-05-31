@@ -41,70 +41,85 @@ const formatDateToYYYYMMDD = (dateString: string | undefined): string => {
 
 export default function QuestionDetailPage() {
   const router = useRouter();
-  const { questionId: questionIdParam } = useLocalSearchParams(); // 파라미터 이름 변경 (string | string[]일 수 있음)
-  const questionId = Number(questionIdParam); // 숫자로 변환
+  const { questionId: questionIdParam } = useLocalSearchParams();
+
+  // questionIdParam이 undefined일 경우 questionId도 undefined로 설정
+  // Number(undefined)는 NaN이 되므로, 초기 상태를 명확히 구분
+  const questionId = useMemo(() => {
+    if (questionIdParam === undefined) return undefined;
+    if (Array.isArray(questionIdParam)) { 
+        const firstParam = questionIdParam[0];
+        return firstParam !== undefined ? Number(firstParam) : undefined;
+    }
+    return Number(questionIdParam);
+  }, [questionIdParam]);
 
   const [questionDetail, setQuestionDetail] = useState<Question | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editTitle, setEditTitle] = useState(""); // 초기값 비우기
-  const [editContent, setEditContent] = useState(""); // 초기값 비우기
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  // const [selectedImages, setSelectedImages] = useState<string[]>([]); // FileButton 변경으로 이 상태는 직접 사용 안 함
   const [modalVisible, setModalVisible] = useState(false);
-
-  // FileButton으로부터 받을 이미지 관련 상태
   const [currentDisplayImageUris, setCurrentDisplayImageUris] = useState<string[]>([]);
   const [newImageUrisForUpload, setNewImageUrisForUpload] = useState<string[]>([]);
   const [retainedImageIdsForDto, setRetainedImageIdsForDto] = useState<number[]>([]);
+  const [isInvalidIdError, setIsInvalidIdError] = useState(false);
 
-  useEffect(() => {
-    if (!questionId || isNaN(questionId)) { // isNaN 체크 추가
-        console.error("🚨 Invalid questionId:", questionIdParam);
+  const fetchQuestionDetail = useCallback(async () => {
+    // questionId가 확정되지 않았거나 (undefined), 유효하지 않은 경우 (NaN) 처리
+    if (questionId === undefined || questionId === null || isNaN(questionId)) {
+      // questionIdParam이 아직 로드되지 않은 초기 undefined 상태와,
+      // 유효하지 않은 ID로 판명된 경우를 구분하여 에러 메시지 표시
+      if (questionId !== undefined) { // undefined가 아니라 NaN 등으로 판명된 경우에만 에러로 간주
+        setIsInvalidIdError(true);
         setToastMessage("잘못된 접근입니다. 유효한 질문 ID가 아닙니다.");
         setShowToast(true);
-        setIsLoading(false);
-        return;
+      }
+      setIsLoading(false); // 로딩 상태 종료
+      return;
     }
-    console.log(`📄 QuestionDetailPage mounted, fetching details for questionId: ${questionId}`);
-    fetchQuestionDetail();
-  }, [questionId]);
-
-  const fetchQuestionDetail = async () => {
-    console.log(`🚀 fetchQuestionDetail called for questionId: ${questionId}`);
+    setIsInvalidIdError(false); // 유효한 ID로 진행 시 에러 상태 초기화
     setIsLoading(true);
+    console.log(`🚀 fetchQuestionDetail called for questionId: ${questionId}`);
     try {
       const response = await getQuestionDetail(questionId);
-      console.log("✅ API Response (getQuestionDetail):", JSON.stringify(response, null, 2)); // 응답 전체를 자세히 로그
-      
-      if (response && typeof response === 'object') { // 응답이 유효한 객체인지 확인
+      if (response && typeof response === 'object') {
         setQuestionDetail(response);
-        setEditTitle(response.title || ""); // title이 없을 경우 대비
-        setEditContent(response.content || ""); // content가 없을 경우 대비
-        // 수정 모드 진입 시 FileButton 초기화를 위해 현재 표시될 이미지 URI 설정
+        setEditTitle(response.title || "");
+        setEditContent(response.content || "");
         setCurrentDisplayImageUris(response.questionImages?.map(img => img.imageUrl) || []);
         setCharCount(response.content?.length || 0);
-        console.log("👍 State updated with question details.");
       } else {
-        console.error("🚨 Invalid API response structure:", response);
         setToastMessage("문의 상세 정보를 불러오는 중 오류가 발생했습니다 (응답 구조 오류).");
         setShowToast(true);
-        setQuestionDetail(null); // 데이터가 유효하지 않으므로 null 처리
+        setQuestionDetail(null);
       }
     } catch (error: any) {
-      console.error("🚨 문의 상세 조회 실패 (catch block):", JSON.stringify(error, null, 2));
-      // Axios 에러인 경우 error.response.data를 확인할 수 있음
       const errorMessage = error.response?.data?.message || error.message || "문의 상세 정보를 불러오는데 실패했습니다.";
       setToastMessage(errorMessage);
       setShowToast(true);
-      setQuestionDetail(null); // 에러 발생 시 null 처리
+      setQuestionDetail(null);
     } finally {
       setIsLoading(false);
-      console.log("🏁 fetchQuestionDetail finished. isLoading:", false);
     }
-  };
+  }, [questionId]);
+
+  useEffect(() => {
+    // questionId가 확정된 경우에만 (undefined가 아닐 때) fetchQuestionDetail 호출
+    if (questionId !== undefined) {
+      console.log(`📄 QuestionDetailPage mounted or questionId changed: ${questionId}`);
+      fetchQuestionDetail();
+    } else {
+      // questionIdParam이 아직 로드되지 않아 questionId가 undefined인 경우
+      // 이 상태에서는 아직 데이터를 불러올 수 없음. 로딩 UI는 외부에서 처리.
+      console.log("❓ questionId is undefined, waiting for params...");
+      // 필요하다면 여기서 setIsLoading(true)를 호출하여 파라미터 로딩 중임을 명시할 수 있으나,
+      // 상단 questionId === undefined 조건에서 이미 로딩 화면을 보여줄 것이므로 중복될 수 있음.
+    }
+  }, [questionId, fetchQuestionDetail]);
 
   const handleEdit = () => {
     if (!questionDetail) return;
@@ -151,6 +166,18 @@ export default function QuestionDetailPage() {
     setRetainedImageIdsForDto(payload.retainedImageIds);
   }, []);
 
+  // FileButton에 전달할 initialExistingImages 가공 (수정 모드일 때만)
+  const initialImagesForFileButton = useMemo<ExistingImage[]>(() => {
+    console.log("📝 Recalculating initialImagesForFileButton, isEditMode:", isEditMode, "questionDetail exists:", !!questionDetail);
+    if (isEditMode && questionDetail && questionDetail.questionImages) {
+      return questionDetail.questionImages.map(img => ({
+        id: img.questionImageId,
+        url: img.imageUrl,
+      }));
+    }
+    return []; // 기본값은 빈 배열
+  }, [isEditMode, questionDetail?.questionImages]); // 의존성 배열을 questionDetail.questionImages로 더 명확히 함
+
    const handleSaveEdit = async () => {
     if (!editTitle?.trim() || !editContent?.trim()) { 
       setToastMessage("제목과 내용을 입력해주세요.");
@@ -160,6 +187,13 @@ export default function QuestionDetailPage() {
 
     if (!questionDetail) {
         setToastMessage("수정할 문의 정보가 없습니다.");
+        setShowToast(true);
+        return;
+    }
+
+    // questionId 타입 가드 추가
+    if (questionId === undefined || isNaN(questionId)) {
+        setToastMessage("유효하지 않은 질문 ID입니다. 수정을 진행할 수 없습니다.");
         setShowToast(true);
         return;
     }
@@ -199,7 +233,13 @@ export default function QuestionDetailPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!questionId) return;
+    // questionId 타입 가드 추가
+    if (questionId === undefined || isNaN(questionId)) {
+      setToastMessage("유효하지 않은 질문 ID입니다. 삭제를 진행할 수 없습니다.");
+      setShowToast(true);
+      setModalVisible(false); // 모달 닫기
+      return;
+    }
     try {
       await deleteQuestion(questionId); 
       setToastMessage("문의가 삭제되었습니다.");
@@ -216,8 +256,27 @@ export default function QuestionDetailPage() {
   //   setSelectedImages(images);
   // };
   
+  // 렌더링 로직: 모든 Hooks 호출 이후에 조건부 UI 반환
+  if (questionId === undefined) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <GradientHeader title="QnA 상세보기" />
+        <ActivityIndicator size="large" color="#B28EF8" />
+        <Text style={styles.loadingText}>질문 ID를 불러오는 중...</Text>
+      </View>
+    );
+  }
+
+  if (isInvalidIdError) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <GradientHeader title="QnA 상세보기" />
+        <Text style={styles.errorText}>{toastMessage || "잘못된 접근입니다."}</Text>
+      </View>
+    );
+  }
+
   if (isLoading) {
-    console.log("🔄 Rendering: Loading state");
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color="#B28EF8" />
@@ -227,12 +286,10 @@ export default function QuestionDetailPage() {
   }
 
   if (!questionDetail && !isLoading) {
-    console.log("🚫 Rendering: No question detail and not loading");
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <GradientHeader title="QnA 상세보기" />
-        {/* 토스트 메시지가 이미 표시될 것이므로, 여기서는 간단한 메시지만 표시하거나 아무것도 표시 안 함 */}
-        <Text style={styles.errorText}>문의 내용을 표시할 수 없습니다.</Text>
+        <Text style={styles.errorText}>{toastMessage || "문의 내용을 표시할 수 없습니다."}</Text>
       </View>
     );
   }
@@ -240,18 +297,6 @@ export default function QuestionDetailPage() {
   if (questionDetail) {
       console.log("✅ Rendering: Displaying question details", JSON.stringify(questionDetail, null, 2));
   }
-
-  // FileButton에 전달할 initialExistingImages 가공 (수정 모드일 때만)
-  const initialImagesForFileButton = useMemo<ExistingImage[]>(() => {
-    console.log("📝 Recalculating initialImagesForFileButton, isEditMode:", isEditMode, "questionDetail exists:", !!questionDetail);
-    if (isEditMode && questionDetail && questionDetail.questionImages) {
-      return questionDetail.questionImages.map(img => ({
-        id: img.questionImageId,
-        url: img.imageUrl,
-      }));
-    }
-    return []; // 기본값은 빈 배열
-  }, [isEditMode, questionDetail?.questionImages]); // 의존성 배열을 questionDetail.questionImages로 더 명확히 함
 
   return (
     <View style={styles.container}>
