@@ -72,3 +72,76 @@ export const loginMember = async (email: string, password: string): Promise<bool
         throw new Error(error.response?.data?.message || error.message || "로그인 중 오류가 발생했습니다.");
     }
 };
+
+export const sendVerificationEmail = async (email: string): Promise<{ message: string }> => {
+    try {
+        const response = await axiosWithoutToken.post<{ message: string }>("/auth/email", { email });
+        console.log('이메일 인증 요청 API 응답:', response.data);
+        return response.data; // 성공 시 { message: "..." } 반환
+    } catch (error: any) {
+        console.error("🚨 이메일 인증 요청 실패:", error.response?.data || error.message);
+        // 500 에러 시 반환되는 객체에서 message를 추출하거나, 일반적인 에러 메시지 사용
+        const errorMessage = error.response?.data?.message || "이메일 인증 요청 중 오류가 발생했습니다.";
+        throw new Error(errorMessage);
+    }
+};
+
+interface VerifyCodeParams {
+  email: string;
+  code: string;
+}
+
+interface VerifyCodeResponse {
+  message: string; // 성공 시
+  error?: string;   // 실패 시 (선택적)
+}
+
+export const verifyAuthCode = async ({ email, code }: VerifyCodeParams): Promise<VerifyCodeResponse> => {
+    try {
+        const response = await axiosWithoutToken.post<VerifyCodeResponse>("/auth/verify-code", { email, code });
+        console.log('인증번호 검증 API 응답:', response.data);
+        return response.data; // 성공 시 { message: "..." }
+    } catch (error: any) {
+        console.error("🚨 인증번호 검증 실패 (API 응답):", error.response?.data);
+        console.error("🚨 인증번호 검증 실패 (전체 에러 객체):", error);
+
+        if (error.response && error.response.data) {
+            // 서버가 응답 본문에 에러 정보를 담아 보냈다면, 그 객체를 throw
+            // 이렇게 하면 VerifyCode.tsx에서 error.status, error.message 등을 사용할 수 있음
+            throw error.response.data;
+        }
+        // 그 외의 경우 (네트워크 오류 등 서버 응답이 없는 경우) 일반 에러 throw
+        throw new Error("인증 처리 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.");
+    }
+};
+
+export interface FindEmailResponse {
+  email: string;
+}
+
+// 아이디(이메일) 찾기 API (Toss 인증 후 txId 사용)
+export const findEmailByTxId = async (txId: string): Promise<FindEmailResponse> => {
+    try {
+        // txId를 application/x-www-form-urlencoded 형식으로 POST 요청
+        const params = new URLSearchParams();
+        params.append('txId', txId);
+
+        const response = await axiosWithoutToken.post<FindEmailResponse>(
+            "/auth/recover/email", 
+            params, 
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+        console.log('아이디(이메일) 찾기 API 응답 (POST, form-urlencoded):', response.data);
+        return response.data; // 성공 시 { email: "user@gmail.com" }
+    } catch (error: any) {
+        console.error("🚨 아이디(이메일) 찾기 실패:", error.response?.data || error.message);
+        if (error.response && error.response.data) {
+            throw error.response.data;
+        }
+        throw new Error("아이디(이메일)를 찾는 중 오류가 발생했습니다.");
+    }
+};
