@@ -4,7 +4,7 @@ import { termsData } from '@/dummyData/TermsData'; // 경로 및 타입 정의 �
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface TermDataItem {
     id: string | number;
@@ -16,6 +16,7 @@ interface TermDataItem {
 export default function DetailAgreement() {
     const router = useRouter();
     const params = useLocalSearchParams<{ currentAgreements?: string }>();
+    const { height } = Dimensions.get('window');
 
     const [checked, setChecked] = useState<boolean[]>(() => {
         if (params.currentAgreements) {
@@ -97,6 +98,7 @@ export default function DetailAgreement() {
                     <Text style={styles.allCheckText}>전체 동의</Text>
                 </TouchableOpacity>
             </View>
+            <View style={{ marginBottom: height * 0.2 }}>
             <FlatList
                 data={termsData}
                 keyExtractor={(item) => item.id.toString()}
@@ -111,6 +113,7 @@ export default function DetailAgreement() {
                 }
                 showsVerticalScrollIndicator={false}
             />
+            </View>
         </View>
     );
 }
@@ -190,7 +193,6 @@ const styles = StyleSheet.create({
     },
     buttonBox: {
         marginTop: 20,
-        marginBottom: 10,
         alignItems: 'center',
     },
 });

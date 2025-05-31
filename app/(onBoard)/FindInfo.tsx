@@ -1,6 +1,7 @@
+import { findEmailByTxId } from '@/api/loginApi'; // 새로 추가한 API 함수 임포트
 import PasswordInput from '@/components/common/NewPassword'; // 비밀번호 입력 컴포넌트
 import Tab from '@/components/common/Tab'; // 생성한 탭 컴포넌트 임포트
-import TossAuth from '@/components/common/TossAuth';
+import TossAuth, { TossAuthSuccessData } from '@/components/common/TossAuth'; // TossAuthSuccessData 타입 임포트
 import MediumButton from '@/components/profile/myInfoPage/MediumButton';
 import { Ionicons } from '@expo/vector-icons'; // 뒤로가기 아이콘 사용
 import { useRouter } from 'expo-router';
@@ -87,38 +88,44 @@ export default function FindInfoScreen() {
   //const setEmailInStore = useMemberInfoStore((state) => state.setEmail); // 스토어 액션
 
   // 아이디 찾기 - Toss 인증 성공 콜백
-  const handleFindIdAuthSuccess = async (tossAuthInfo: any) => {
-    console.log('Toss 인증 성공 (아이디 찾기):', tossAuthInfo); 
-    setShowTossAuthForId(false);
-    setIdFindingLoading(true);
-    setFoundEmail(null);
-    setIdFindingError(null);
-    try {
-      // 백엔드에 이메일 조회 요청 (Toss 결과 기반) -> 이 부분은 TossAuth 내부에서 처리되거나, 별도 API 필요
-      // 현재는 onAuthSuccess에서 사용자 정보가 바로 온다고 가정하고, 그 정보로 API 호출
-      // 실제로는 tossAuthInfo에 txId등이 오고, 그걸로 백엔드에 다시 요청해야 할 수 있음
-      // const response: any = await findIdApi(tossAuthInfo); // API 호출
-      // if (response.success && response.email) {
-      //   setFoundEmail(response.email);
-      // } else {
-      //   setIdFindingError(response.message || '가입된 이메일을 찾을 수 없습니다.');
-      // }
-      // TossAuth에서 이미 사용자 정보를 가져오므로, 해당 정보를 사용 (데모용)
-      if (tossAuthInfo && tossAuthInfo.name) { // 이름이 있다는 것은 정보가 있다는 뜻으로 간주 (실제로는 email 필드 확인)
-        // 이메일 정보를 스토어 또는 상태에 저장해야 함.
-        // 백엔드에서 실제 이메일을 받아와야 하므로, 임시로 고정값 사용
-        const mockEmail = `${tossAuthInfo.name.substring(0,1)}${tossAuthInfo.phone.slice(-4)}@example.com`; // 예시 이메일
-        setFoundEmail(mockEmail); // 실제로는 API를 통해 받은 이메일
-        //setEmailInStore(mockEmail); // 필요시 스토어에 저장
-      } else {
-        setIdFindingError('본인 인증 결과에서 사용자 정보를 가져올 수 없습니다.');
-      }
+  const handleFindIdAuthSuccess = async (tossAuthResult: TossAuthSuccessData) => {
+    console.log('Toss 인증 성공 (아이디 찾기) - Handled in FindInfo:', tossAuthResult);
+    setShowTossAuthForId(false); // Toss UI 숨김
 
-    } catch (error) {
-      console.error('아이디 찾기 에러:', error);
-      setIdFindingError('아이디를 찾는 중 오류가 발생했습니다.');
-    } finally {
-      setIdFindingLoading(false);
+    // 이제 tossAuthResult에 txId가 포함되어 있음
+    const { txId } = tossAuthResult; // 직접 구조 분해 할당
+
+    if (txId) { 
+      setIdFindingLoading(true);
+      setFoundEmail(null);
+      setIdFindingError(null);
+      try {
+        const response = await findEmailByTxId(txId);
+        if (response && response.email) {
+          setFoundEmail(response.email);
+        } else {
+          setIdFindingError('이메일 정보를 받지 못했습니다.');
+        }
+      } catch (error: any) {
+        console.error('아이디 찾기 API 호출 에러:', error);
+        const errorCode = error?.errorCode;
+        const errorMessage = error?.errorMessage;
+
+        if (errorCode === 404 && errorMessage === "Member not found") {
+          setIdFindingError('가입된 이메일을 찾을 수 없습니다.');
+        } else {
+          setIdFindingError(errorMessage || '아이디를 찾는 중 오류가 발생했습니다.');
+        }
+      } finally {
+        setIdFindingLoading(false);
+      }
+    } else {
+      // 이 경우는 TossAuth.tsx에서 onAuthSuccess가 txId 없이 호출되었거나, 
+      // 또는 그 이전 단계에서 txId를 받지 못한 매우 예외적인 경우입니다.
+      // TossAuthSuccessData 타입 정의상 txId는 항상 존재해야 합니다.
+      const errorMessage = '인증 처리 중 txId를 가져오지 못했습니다. 다시 시도해주세요.';
+      setIdFindingError(errorMessage);
+      Alert.alert('인증 오류', errorMessage);
     }
   };
 

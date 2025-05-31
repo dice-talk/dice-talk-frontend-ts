@@ -1,13 +1,13 @@
 // EmailInput 컴포넌트 (예: app/(onBoard)/register/components/EmailInputForm.tsx 또는 index.tsx에 통합)
 import MediumButton from '@/components/profile/myInfoPage/MediumButton';
 // import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore';
+import { sendVerificationEmail } from '@/api/loginApi'; // sendVerificationEmail 함수 임포트
 import useSignupProgressStore from '@/zustand/stores/signupProgressStore'; // signupProgressStore 임포트
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
-// import { sendEmail } from '@/api/axios/emailApi'; // 실제 API 연동 시 주석 해제
 
 export default function EmailInputScreen() { // 컴포넌트 이름 변경
     const router = useRouter();
@@ -21,7 +21,7 @@ export default function EmailInputScreen() { // 컴포넌트 이름 변경
 
     const validateEmail = (text: string): void => {
         setInputEmail(text);
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[^​\s@]+@[^​\s@]+\.[^​\s@]+$/; // 제로 너비 공백 문자 제거
         setIsValid(emailRegex.test(text));
     };
 
@@ -30,30 +30,22 @@ export default function EmailInputScreen() { // 컴포넌트 이름 변경
 
         setIsSending(true);
         try {
-            // TODO: 실제 이메일 인증 API (sendEmail) 호출 로직 구현
-            // const result = await sendEmail(inputEmail);
+            // 실제 이메일 인증 API (sendVerificationEmail) 호출
+            const result = await sendVerificationEmail(inputEmail);
             // console.log('이메일 발송 API 서버 응답:', result);
-            // Alert.alert('성공', '입력하신 이메일로 인증번호를 보냈습니다.');
 
-            // API 호출 성공 후 또는 데모/테스트 목적으로 스토어에 이메일 저장
-            // setEmailInStore(inputEmail);
-            updateSignupData({ email: inputEmail }); // 수정된 부분
-            console.log(`스토어에 이메일 저장: ${inputEmail}`);
+            updateSignupData({ email: inputEmail });
+            // console.log(`스토어에 이메일 저장: ${inputEmail}`);
 
             // 인증번호 입력 페이지로 이동
             router.push('/(onBoard)/register/VerifyCode');
         } catch (error: any) {
-            // const errMsg = error.response?.data?.error || '알 수 없는 오류로 이메일 발송에 실패했습니다.';
-            // Alert.alert('오류', errMsg);
-
-            // 데모용 임시 에러 처리 및 화면 이동 (실제 API 연동 시 수정)
-            console.error("이메일 발송 처리 중 에러 (데모):", error);
-            Alert.alert('알림', '이메일 발송에 실패했습니다. (데모 메시지). 다음 단계로 이동합니다.'); 
-            // setEmailInStore(inputEmail); // 실패 시에도 테스트를 위해 임시로 저장
-            updateSignupData({ email: inputEmail }); // 수정된 부분
-            router.push('/(onBoard)/register/VerifyCode');
-
-            // 이미 등록된 이메일 등의 분기 처리는 VerifyCode 또는 해당 API 응답에서 처리
+            // console.error("이메일 발송 처리 중 에러:", error);
+            Alert.alert('오류', error.message || '알 수 없는 오류로 이메일 발송에 실패했습니다.');
+            // 실패 시에는 다음 단계로 넘어가지 않거나, 사용자의 선택에 따라 다르게 처리할 수 있습니다.
+            // 여기서는 실패 시 다음 단계로 넘어가지 않도록 router.push를 주석 처리합니다.
+            // updateSignupData({ email: inputEmail }); // 실패 시에는 스토어 업데이트 안 함
+            // router.push('/(onBoard)/register/VerifyCode');
         } finally {
             setIsSending(false);
         }

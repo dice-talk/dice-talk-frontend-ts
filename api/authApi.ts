@@ -19,12 +19,13 @@ const clearAllStores = async () => {
 
 // 토큰 재발급 API 호출
 export const refreshAccessToken = async (): Promise<boolean> => {
-  const { accessToken: currentAccessToken, refreshToken: currentRefreshToken, memberId } = useAuthStore.getState();
+  const { accessToken: currentAccessTokenInStore, refreshToken: currentRefreshTokenInStore, memberId } = useAuthStore.getState();
+  // AsyncStorage에서 직접 토큰을 가져옵니다. 스토어 상태는 API 호출 성공 후 업데이트될 예정입니다.
   const storedAccessToken = await AsyncStorage.getItem('accessToken');
   const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
 
-  // 스토어의 refreshToken 또는 AsyncStorage의 refreshToken 중 하나라도 있어야 함
-  const refreshTokenToUse = currentRefreshToken || storedRefreshToken;
+  // API 요청에 사용할 refreshToken. AsyncStorage 값이 우선 (가장 최근 값일 가능성)
+  const refreshTokenToUse = storedRefreshToken || currentRefreshTokenInStore;
 
   if (!refreshTokenToUse) {
     console.log('refreshAccessToken: 유효한 refreshToken이 스토어 또는 AsyncStorage에 없습니다. 재발급 불가.');
@@ -32,46 +33,47 @@ export const refreshAccessToken = async (): Promise<boolean> => {
     return false;
   }
 
-  // accessToken은 만료되었을 수 있으므로, 스토어의 값 또는 AsyncStorage의 값을 사용 (또는 빈 문자열)
-  const accessTokenForHeader = currentAccessToken || storedAccessToken || '';
+  // API 요청에 사용할 accessToken. AsyncStorage 값이 우선.
+  const accessTokenForHeader = storedAccessToken || currentAccessTokenInStore || '';
 
-  console.log('refreshAccessToken: 재발급 시도. 사용될 refreshToken:', refreshTokenToUse ? refreshTokenToUse.substring(0,15)+'...' : ' 없음');
+  console.log('refreshAccessToken: 재발급 시도. 사용될 refreshToken (앞 15자):', refreshTokenToUse ? refreshTokenToUse.substring(0,15)+'...' : ' 없음');
+  // console.log('refreshAccessToken: 사용될 accessToken (앞 15자):', accessTokenForHeader ? accessTokenForHeader.substring(0,15)+'...' : ' 없음'); // 디버깅 시 필요하면 주석 해제
 
   try {
     const response = await axiosWithoutToken.post('/auth/refresh', {}, { 
       headers: {
-        'Authorization': `Bearer ${accessTokenForHeader}`,
+        // 백엔드에서 Authorization 헤더를 필요로 하는지 확인 필요. 일반적으로 refresh API는 refresh 토큰만으로 인증.
+        // 만약 필요하다면, 만료된 accessToken이라도 보내야 할 수 있음.
+        'Authorization': `Bearer ${accessTokenForHeader}`, // 백엔드 요구사항에 따라 이 줄을 주석 처리하거나 유지
         'Refresh': refreshTokenToUse, 
       },
     });
 
     const newAccessToken = response.data?.accessToken;
-    const newRefreshToken = response.data?.refreshToken; // 백엔드가 새 refreshToken도 줄 경우
+    const newRefreshToken = response.data?.refreshToken; // 1회용 정책이므로, 이 값은 항상 새로 받아야 함
 
-    if (newAccessToken) {
+    if (newAccessToken && newRefreshToken) { // 새로운 액세스 토큰과 새로운 리프레시 토큰이 모두 있어야 성공
       await AsyncStorage.setItem('accessToken', newAccessToken);
-      const finalRefreshToken = newRefreshToken || refreshTokenToUse; // 새 refreshToken이 있으면 사용, 없으면 기존 것 유지
-      if (newRefreshToken) {
-        await AsyncStorage.setItem('refreshToken', newRefreshToken);
-      }
+      await AsyncStorage.setItem('refreshToken', newRefreshToken); // 새로운 리프레시 토큰 저장
       
       // memberId는 변경되지 않으므로 기존 값 사용 (null일 수 없음, refresh 시도 전제는 로그인 상태)
+      // attemptAutoLogin에서 스토어에 memberId를 먼저 로드하므로, 여기서 memberId가 null이면 문제 상황.
       if (memberId !== null) { 
         useAuthStore.getState().actions.setAuthInfo({
             memberId: memberId, 
             accessToken: newAccessToken, 
-            refreshToken: finalRefreshToken
+            refreshToken: newRefreshToken // 스토어에도 새로운 리프레시 토큰 업데이트
         });
-        console.log('refreshAccessToken: 토큰 재발급 성공. 새 accessToken 저장됨.');
-        if (newRefreshToken) console.log('refreshAccessToken: 새 refreshToken도 저장됨.');
+        console.log('refreshAccessToken: 토큰 재발급 성공. 새 accessToken 및 새 refreshToken 저장됨.');
         return true;
       } else {
-        console.error('🚨 refreshAccessToken 성공했으나 memberId가 스토어에 없어 AuthInfo 업데이트 불가.');
+        // 이 경우는 attemptAutoLogin에서 스토어에 memberId를 제대로 못 넣었거나, 호출 순서가 꼬인 경우.
+        console.error('🚨 refreshAccessToken 성공했으나 스토어에 memberId가 없어 AuthInfo 업데이트 불가. 심각한 오류 가능성.');
         await clearAllStores(); // 일관성을 위해 클리어
         return false;
       }
     } else {
-      console.error('🚨 refreshAccessToken 실패: API 응답에 newAccessToken이 없습니다.', response.data);
+      console.error('🚨 refreshAccessToken 실패: API 응답에 newAccessToken 또는 newRefreshToken이 없습니다.', response.data);
       await clearAllStores();
       return false;
     }

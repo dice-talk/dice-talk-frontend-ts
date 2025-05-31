@@ -21,29 +21,28 @@ import {
 
 export default function SignupInput() {
     const router = useRouter();
-    // const params = useLocalSearchParams<UserInfoFromAuth & { /* 다른 파라미터 타입 */ }>(); // 스토어 사용으로 대체
     const signupProgress = useSignupProgressStore((state) => state.signupData);
     const { clearSignupData } = useSignupProgressStore((state) => state.actions);
     const { setAuthInfo } = useAuthStore((state) => state.actions); // 로그인 정보 저장을 위해 추가
 
     // 스토어에서 가져온 값들을 사용합니다.
     const nameFromStore = signupProgress?.name || '';
-    const phoneFromStore = signupProgress?.phone || '010-1234-5670';
+    const phoneFromStore = signupProgress?.phone || '010-1234-5689';
     const birthFromStore = signupProgress?.birth || ''; // YYYYMMDD 형식
     const ageGroupFromStore = signupProgress?.ageGroup || '';
+    const emailFromStore = signupProgress?.email || ''; // 스토어에서 이메일 가져오기
     // 화면 표시용 성별 변환
     const genderFromStore = signupProgress?.gender;
     const genderDisplay = genderFromStore === 'MALE' ? '남성' : genderFromStore === 'FEMALE' ? '여성' : '';
     // 화면 표시용 생년월일 (YYYY-MM-DD)
     const birthDisplay = birthFromStore && birthFromStore.length === 8
         ? `${birthFromStore.substring(0, 4)}-${birthFromStore.substring(4, 6)}-${birthFromStore.substring(6, 8)}`
-        : birthFromStore; // YYYY-MM-DD 형식으로 이미 들어올 수도 있으므로 원본도 고려
+        : birthFromStore; 
 
-    const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{}[\]|;:'\",.<>/?]).{8,16}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{}\[\]|;:'",.<>/?]).{8,16}$/;
 
     const [selectedCity, setSelectedCity] = useState<string | null>(null);
     const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
@@ -51,13 +50,26 @@ export default function SignupInput() {
     const isPasswordMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
     const isPasswordValid = passwordRegex.test(password);
 
+    // isFormValid 조건 확인을 위한 로그 추가
+    console.log('--- isFormValid Check ---');
+    console.log('emailFromStore:', !!emailFromStore, emailFromStore);
+    console.log('nameFromStore:', !!nameFromStore, nameFromStore);
+    console.log('genderFromStore:', !!genderFromStore, genderFromStore);
+    console.log('birthFromStore:', !!birthFromStore, birthFromStore);
+    console.log('phoneFromStore (temp_allow_placeholder):', !!phoneFromStore, phoneFromStore); // 조건 변경 및 로그 메시지 수정
+    console.log('isPasswordValid:', isPasswordValid, password);
+    console.log('isPasswordMatch:', isPasswordMatch, password, confirmPassword);
+    console.log('selectedCity:', !!selectedCity, selectedCity);
+    console.log('selectedDistrict:', !!selectedDistrict, selectedDistrict);
+    console.log('-------------------------');
+
     // 가입하기 버튼 활성화 조건
     const isFormValid = 
-        !!email && // 이메일 (직접 입력)
+        !!emailFromStore && // 스토어 이메일 사용
         !!nameFromStore &&
         !!genderFromStore &&
         !!birthFromStore &&
-        (!!phoneFromStore && phoneFromStore !== '010-1234-5670') && // Toss에서 제대로 받아온 경우
+        !!phoneFromStore && // 조건 변경: 기본값도 유효하도록 수정
         isPasswordValid &&
         isPasswordMatch &&
         !!selectedCity &&
@@ -66,17 +78,29 @@ export default function SignupInput() {
     const handleSignup = async (): Promise<void> => {
         if (!isFormValid) {
             let alertMessage = '모든 필수 정보를 올바르게 입력해주세요.';
-            if (!email) alertMessage = '이메일을 입력해주세요.';
+            if (!emailFromStore) alertMessage = '이메일 정보가 없습니다. 이전 단계로 돌아가주세요.'; // 스토어 이메일 기준
             else if (!nameFromStore) alertMessage = '이름 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!genderFromStore) alertMessage = '성별 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!birthFromStore) alertMessage = '생년월일 정보가 없습니다. 본인인증을 다시 시도해주세요.';
-            else if (!phoneFromStore || phoneFromStore === '010-1234-5670') alertMessage = '휴대폰 번호 인증이 필요합니다. 본인인증을 다시 시도해주세요.';
+            else if (!phoneFromStore || phoneFromStore === '010-1234-5689') alertMessage = '휴대폰 번호 인증이 필요합니다. 본인인증을 다시 시도해주세요.'; // 오타 수정 및 조건 유지 (실제 인증 전까지)
             else if (!selectedCity || !selectedDistrict) alertMessage = '지역을 선택해주세요.';
             else if (!isPasswordValid) alertMessage = '비밀번호 형식이 올바르지 않습니다.';
             else if (!isPasswordMatch) alertMessage = '비밀번호가 일치하지 않습니다.';
+
+            console.log('--- isFormValid Check ---');
+            console.log('emailFromStore:', !!emailFromStore, emailFromStore);
+            console.log('nameFromStore:', !!nameFromStore, nameFromStore);
+            console.log('genderFromStore:', !!genderFromStore, genderFromStore);
+            console.log('birthFromStore:', !!birthFromStore, birthFromStore);
+            console.log('phoneFromStore:', !!phoneFromStore && phoneFromStore !== '010-1234-5670', phoneFromStore);
+            console.log('isPasswordValid:', isPasswordValid, password);
+            console.log('isPasswordMatch:', isPasswordMatch, password, confirmPassword);
+            console.log('selectedCity:', !!selectedCity, selectedCity);
+            console.log('selectedDistrict:', !!selectedDistrict, selectedDistrict);
+            console.log('-------------------------');
             
             Alert.alert('입력 오류', alertMessage);
-            if (!nameFromStore || !genderFromStore || !birthFromStore || (!phoneFromStore || phoneFromStore === '010-1234-5670')) {
+            if (!nameFromStore || !genderFromStore || !birthFromStore || (!phoneFromStore || phoneFromStore === '010-1234-5689')) { 
                 router.replace('/(onBoard)/register/Agreement'); 
             }
             return;
@@ -84,7 +108,7 @@ export default function SignupInput() {
 
         const region = `${selectedCity} ${selectedDistrict}`; 
         const payload = {
-            email: email,
+            email: emailFromStore, // 스토어 이메일 사용
             name: nameFromStore,
             gender: genderFromStore!,
             birth: birthDisplay,
@@ -165,12 +189,12 @@ export default function SignupInput() {
 
                 <Text style={styles.label}>이메일</Text>
                 <TextInput 
-                    style={styles.input} 
-                    value={email} 
-                    onChangeText={setEmail}
-                    placeholder="이메일 주소를 입력해주세요"
+                    style={[styles.input, styles.disabledInput]} // 비활성화 스타일 적용
+                    value={emailFromStore} // 스토어 이메일 사용
+                    placeholder="이메일 주소"
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    editable={false} // 입력 비활성화
                 />
 
                 <Text style={styles.label}>비밀번호</Text>
@@ -216,7 +240,7 @@ export default function SignupInput() {
                     editable={false}
                 />
 
-                <Text style={styles.label}>성함</Text>
+                <Text style={styles.label}>이름</Text>
                 <TextInput style={[styles.input, styles.disabledInput]} value={nameFromStore} editable={false} />
 
                 <Text style={styles.label}>성별</Text>

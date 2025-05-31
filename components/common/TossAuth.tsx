@@ -14,9 +14,14 @@ type TossUserInfo = {
   gender: string;
 };
 
+// onAuthSuccess 콜백이 전달하는 데이터 타입을 명확히 정의 (txId 포함)
+export type TossAuthSuccessData = TossUserInfo & {
+  txId: string;
+};
+
 type TossAuthProps = {
-  onAuthSuccess?: (userInfo: TossUserInfo) => void;
-  targetScreen?: "/(onBoard)/register/SignupInput" // ✅ 인증 성공 후 이동할 페이지 (기본: 회원가입)
+  onAuthSuccess?: (authData: TossAuthSuccessData) => void;
+  targetScreen?: "/(onBoard)/register/SignupInput"
   onAuthFailure?: () => void;
 };
 
@@ -85,7 +90,13 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
 
       // ✅ 사용자 정보 페이지로 이동 (회원가입으로 연결)
       if (onAuthSuccess) {
-        onAuthSuccess(data); // ✅ 콜백 함수로 전달
+        // data (사용자 정보)와 현재 컴포넌트의 state인 txId를 함께 전달
+        if (txId) { // txId가 유효한지 한번 더 확인
+          onAuthSuccess({ ...data, txId: txId }); // txId 추가
+        } else {
+          console.error("❌ fetchUserInfo: txId가 유효하지 않아 onAuthSuccess 호출 불가");
+          if (onAuthFailure) onAuthFailure(); // txId가 없으면 실패 처리
+        }
       } else {
         router.replace({
           pathname: targetScreen,
@@ -94,6 +105,10 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
             phone: data.phone,
             birth: data.birth,
             gender: data.gender,
+            // txId도 필요하다면 여기서 params로 넘길 수 있으나, 
+            // targetScreen이 SignupInput이라면 일반적으로 txId는 직접 필요하지 않을 수 있음.
+            // 만약 SignupInput에서도 txId가 필요하다면 추가:
+            // txId: txId, 
           },
         });
       }
