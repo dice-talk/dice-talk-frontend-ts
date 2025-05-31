@@ -13,8 +13,7 @@ const TAB_BAR_HEIGHT_APPROX = Platform.OS === 'ios' ? 80 : 60; // 일반적인 �
 // 화면 높이에 따라 ITEMS_PER_PAGE 결정하는 함수
 const getItemsPerPage = () => {
   const windowHeight = Dimensions.get('window').height;
-  // 예시: 화면 높이가 800px 이상이면 8개, 미만이면 6개 (무한 스크롤이므로 한 번에 더 많이 가져오도록 조정 가능)
-  return windowHeight >= 800 ? 8 : 6;
+  return windowHeight >= 800 ? 10 : 8; // 페이지당 아이템 수 조정
 };
 
 export default function HistoryScreen() {
@@ -30,108 +29,77 @@ export default function HistoryScreen() {
   const [currentChatPage, setCurrentChatPage] = useState(1);
   const [hasMoreChat, setHasMoreChat] = useState(true);
 
-  // 하트 내역 상태
-  const [fullHeartHistory, setFullHeartHistory] = useState<HeartHistoryItem[]>([]); // 전체 하트 내역
-  const [displayedHeartHistory, setDisplayedHeartHistory] = useState<HeartHistoryItem[]>([]); // 화면에 표시될 하트 내역
-  const [currentHeartOffset, setCurrentHeartOffset] = useState(0); // 하트 내역 현재 오프셋
+  // 하트 내역 상태 (서버 사이드 페이징으로 변경)
+  const [heartHistory, setHeartHistory] = useState<HeartHistoryItem[]>([]);
+  const [heartPageInfo, setHeartPageInfo] = useState<PageInfo | null>(null);
+  const [currentHeartPage, setCurrentHeartPage] = useState(1); // API는 1-based page
   const [hasMoreHearts, setHasMoreHearts] = useState(true);
 
-  const [loading, setLoading] = useState(true); // 초기 로딩 상태는 true로 시작하는 것이 일반적
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
   // 채팅 내역 불러오기 (페이지 기반)
   const loadChatHistory = useCallback(async (page: number, isInitialLoad = false) => {
     if (loadingMore && !isInitialLoad) return;
-    if(isInitialLoad) setLoading(true);
-    else setLoadingMore(true);
-
+    if(isInitialLoad) setLoading(true); else setLoadingMore(true);
     try {
-      const response = await getChatHistory(page, itemsPerPage); // itemsPerPage 사용
+      const response = await getChatHistory(page, itemsPerPage);
       setChatHistory(prev => isInitialLoad ? response.data : [...prev, ...response.data]);
       setChatPageInfo(response.pageInfo);
-      setCurrentChatPage(response.pageInfo.page);
+      setCurrentChatPage(response.pageInfo.page); 
       setHasMoreChat(response.pageInfo.page < response.pageInfo.totalPages);
     } catch (error) {
       console.error("채팅 내역 로딩 실패:", error);
       setHasMoreChat(false); 
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      setLoading(false); setLoadingMore(false);
     }
   }, [itemsPerPage, loadingMore]);
 
-  // 전체 하트 내역 한 번에 불러오기
-  const loadFullHeartHistory = useCallback(async () => {
-    setLoading(true);
+  // 하트 내역 불러오기 (서버 사이드 페이징)
+  const loadHeartHistory = useCallback(async (page: number, isInitialLoad = false) => {
+    if (loadingMore && !isInitialLoad) return;
+    if(isInitialLoad) setLoading(true); else setLoadingMore(true);
     try {
-      const response = await getMyHeartHistory(0, 1000); // 일단 모든 데이터를 가져오도록 size를 크게 설정
-      setFullHeartHistory(response.data);
-      setDisplayedHeartHistory(response.data.slice(0, itemsPerPage));
-      setCurrentHeartOffset(itemsPerPage);
-      setHasMoreHearts(response.data.length > itemsPerPage);
+      const response = await getMyHeartHistory(page, itemsPerPage);
+      setHeartHistory(prev => isInitialLoad ? response.data : [...prev, ...response.data]);
+      // HeartHistoryListResponse의 pageInfo는 이제 non-optional이므로 직접 사용
+      setHeartPageInfo(response.pageInfo);
+      setCurrentHeartPage(response.pageInfo.page); 
+      setHasMoreHearts(response.pageInfo.page < response.pageInfo.totalPages);
     } catch (error) {
       console.error("하트 히스토리 로딩 실패:", error);
       setHasMoreHearts(false);
     } finally {
-      setLoading(false);
+      setLoading(false); setLoadingMore(false);
     }
-  }, [itemsPerPage]);
-
-  // 하트 내역 더 보여주기 (클라이언트 사이드)
-  const loadMoreHearts = useCallback(() => {
-    if (loadingMore || !hasMoreHearts) return;
-    setLoadingMore(true);
-    
-    const nextOffset = currentHeartOffset + itemsPerPage;
-    const newHearts = fullHeartHistory.slice(currentHeartOffset, nextOffset);
-    
-    setTimeout(() => {
-      setDisplayedHeartHistory(prev => [...prev, ...newHearts]);
-      setCurrentHeartOffset(nextOffset);
-      setHasMoreHearts(fullHeartHistory.length > nextOffset);
-      setLoadingMore(false);
-    }, 300); // 로딩 인디케이터가 보이도록 약간의 딜레이
-
-  }, [fullHeartHistory, currentHeartOffset, itemsPerPage, hasMoreHearts, loadingMore]);
+  }, [itemsPerPage, loadingMore]);
   
-  // 탭 변경 또는 초기 로드
   useEffect(() => {
     if (activeTab === 'chat') {
-      loadChatHistory(1, true);
+      loadChatHistory(1, true); // 1-based 페이지로 호출
     } else {
-      loadFullHeartHistory();
+      loadHeartHistory(1, true); // 1-based 페이지로 호출
     }
-  }, [activeTab, loadChatHistory, loadFullHeartHistory]);
+  }, [activeTab, loadChatHistory, loadHeartHistory]);
 
   const handleTabChange = (tabName: string) => {
-    // 상태 초기화
-    setChatHistory([]);
-    setChatPageInfo(null);
-    setCurrentChatPage(1);
-    setHasMoreChat(true);
-    setFullHeartHistory([]);
-    setDisplayedHeartHistory([]);
-    setCurrentHeartOffset(0);
-    setHasMoreHearts(true);
-    setLoading(true); // 탭 변경 시 로딩 상태 true로 설정
-    setLoadingMore(false);
+    setChatHistory([]); setChatPageInfo(null); setCurrentChatPage(1); setHasMoreChat(true);
+    setHeartHistory([]); setHeartPageInfo(null); setCurrentHeartPage(1); setHasMoreHearts(true);
+    setLoading(true); setLoadingMore(false);
 
-    if (tabName === '1 대 1 채팅 내역') {
-      setActiveTab('chat');
-    } else if (tabName === '하트 히스토리') {
-      setActiveTab('heart');
-    }
+    if (tabName === '1 대 1 채팅 내역') setActiveTab('chat');
+    else if (tabName === '하트 히스토리') setActiveTab('heart');
   };
 
-  // 무한 스크롤 핸들러
   const handleEndReached = () => {
     if (activeTab === 'chat') {
       if (!loadingMore && hasMoreChat && chatPageInfo && currentChatPage < chatPageInfo.totalPages) {
         loadChatHistory(currentChatPage + 1);
       }
-    } else { // heart 탭
-      if (!loadingMore && hasMoreHearts) {
-        loadMoreHearts();
+    } else { 
+      if (!loadingMore && hasMoreHearts && heartPageInfo && currentHeartPage < heartPageInfo.totalPages) {
+        loadHeartHistory(currentHeartPage + 1);
       }
     }
   };
@@ -146,59 +114,28 @@ export default function HistoryScreen() {
   if (activeTab === 'chat') {
     listTitle = "내 채팅";
     currentData = chatHistory.map(item => ({
-      id: item.chatRoomId,
-      type: 'chat',
-      svgComponentName: item.opponentProfileSvg || 'HanaSvg',
-      name: item.opponentName || '알 수 없는 상대',
-      content: item.lastChat,
-      createdAt: item.createdAt,
-      onPress: handleChatItemPress,
-      roomType: item.roomType,
+      id: item.chatRoomId, type: 'chat', svgComponentName: item.opponentProfileSvg || 'HanaSvg',
+      name: item.opponentName || '알 수 없는 상대', content: item.lastChat, createdAt: item.createdAt,
+      onPress: handleChatItemPress, roomType: item.roomType,
     }));
-  } else { // heart 탭
+  } else { 
     listTitle = "내가 받은 하트";
-    currentData = displayedHeartHistory.map(item => ({
-      id: item.roomEventId,
-      type: 'heart',
-      svgComponentName: item.senderProfileSvg || 'HanaSvg',
-      name: item.senderName || '알 수 없는 사용자',
-      content: item.message,
-      createdAt: item.createdAt,
+    currentData = heartHistory.map(item => ({
+      id: item.roomEventId, type: 'heart', svgComponentName: item.senderProfileSvg || 'HanaSvg',
+      name: item.senderName || '알 수 없는 사용자', content: item.message, createdAt: item.createdAt,
     }));
   }
 
-  const renderListHeader = () => {
-    if (currentData.length > 0) {
-      return <Text style={styles.listTitleStyle}>{listTitle}</Text>;
-    }
-    return null;
-  };
-
-  const renderListFooter = () => {
-    if (!loadingMore) return null;
-    return (
-      <View style={styles.loadingMoreContainer}>
-        <ActivityIndicator size="small" color="#B28EF8" />
-      </View>
-    );
-  };
-
-  const renderEmptyList = () => {
-    if (loading) return null;
-    return <EmptyHistoryPlaceholder type={activeTab} />;
-  };
+  const renderListHeader = () => currentData.length > 0 ? <Text style={styles.listTitleStyle}>{listTitle}</Text> : null;
+  const renderListFooter = () => !loadingMore ? null : <View style={styles.loadingMoreContainer}><ActivityIndicator size="small" color="#B28EF8" /></View>;
+  const renderEmptyList = () => loading ? null : <EmptyHistoryPlaceholder type={activeTab} />;
  
   return (
     <View style={styles.container}>
       <View style={styles.topFixedContent}>
         <EventBannerComponent />
-        <Tab
-          tabs={['1 대 1 채팅 내역', '하트 히스토리']}
-          activeTab={activeTab === 'chat' ? '1 대 1 채팅 내역' : '하트 히스토리'}
-          onTabChange={handleTabChange}
-        />
+        <Tab tabs={['1 대 1 채팅 내역', '하트 히스토리']} activeTab={activeTab === 'chat' ? '1 대 1 채팅 내역' : '하트 히스토리'} onTabChange={handleTabChange} />
       </View>
-
       <FlatList
         ListHeaderComponent={renderListHeader}
         data={currentData}
@@ -212,9 +149,7 @@ export default function HistoryScreen() {
         ListEmptyComponent={renderEmptyList}
       />
       {loading && currentData.length === 0 && (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#B28EF8" />
-        </View>
+        <View style={styles.loaderContainer}><ActivityIndicator size="large" color="#B28EF8" /></View>
       )}
     </View>
   );
