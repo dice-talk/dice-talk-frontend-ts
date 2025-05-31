@@ -1,9 +1,15 @@
 // src/screens/profile/question/QuestionDetailPage.tsx
+import { deleteQuestion, getQuestionDetail, Question, QuestionUpdateDto, updateQuestion } from "@/api/questionApi";
+import GradientHeader from "@/components/common/GradientHeader";
 import Toast from "@/components/common/Toast";
+import Answer from "@/components/profile/question/Answer";
+import CancelModal from "@/components/profile/question/CancelModal";
+import FileButton, { ExistingImage, ImageChangePayload } from "@/components/profile/question/FileButton";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   ScrollView,
   StyleSheet,
@@ -11,11 +17,6 @@ import {
   TextInput,
   View
 } from "react-native";
-//import CancelModal from "@/components/common/CancelModal";
-import { deleteQuestion, getQuestionDetail, Question, QuestionUpdateDto, updateQuestion } from "@/api/questionApi";
-import GradientHeader from "@/components/common/GradientHeader";
-import Answer from "@/components/profile/question/Answer";
-import FileButton, { ExistingImage, ImageChangePayload } from "@/components/profile/question/FileButton";
 
 import QuestionButton from "@/components/profile/question/QuestionButton";
 import { Dimensions } from "react-native";
@@ -67,59 +68,113 @@ export default function QuestionDetailPage() {
   const [newImageUrisForUpload, setNewImageUrisForUpload] = useState<string[]>([]);
   const [retainedImageIdsForDto, setRetainedImageIdsForDto] = useState<number[]>([]);
   const [isInvalidIdError, setIsInvalidIdError] = useState(false);
+  const loadingTimerIdRef = useRef<number | null>(null);
 
-  const fetchQuestionDetail = useCallback(async () => {
-    // questionId가 확정되지 않았거나 (undefined), 유효하지 않은 경우 (NaN) 처리
+  const fetchQuestionDetail = useCallback(async (options?: { showLoadingIndicatorAfterMs?: number }) => {
+    console.log(`[FETCH_START] Called with options: ${JSON.stringify(options)}`);
+    console.log(`[FETCH_STATE] Current isLoading: ${isLoading}, loadingTimerIdRef.current (before clearing): ${loadingTimerIdRef.current}`);
+
+    if (loadingTimerIdRef.current !== null) {
+      console.log(`[FETCH_TIMER_CLEAR_AT_START] Clearing existing timer ID from ref: ${loadingTimerIdRef.current}`);
+      clearTimeout(loadingTimerIdRef.current);
+      loadingTimerIdRef.current = null;
+    }
+
     if (questionId === undefined || questionId === null || isNaN(questionId)) {
-      // questionIdParam이 아직 로드되지 않은 초기 undefined 상태와,
-      // 유효하지 않은 ID로 판명된 경우를 구분하여 에러 메시지 표시
-      if (questionId !== undefined) { // undefined가 아니라 NaN 등으로 판명된 경우에만 에러로 간주
+      if (questionId !== undefined) {
+        console.log("[FETCH_INVALID_ID] Invalid question ID.");
         setIsInvalidIdError(true);
         setToastMessage("잘못된 접근입니다. 유효한 질문 ID가 아닙니다.");
         setShowToast(true);
       }
-      setIsLoading(false); // 로딩 상태 종료
+      console.log("[FETCH_END_INVALID_ID] Setting isLoading to false.");
+      setIsLoading(false); 
       return;
     }
-    setIsInvalidIdError(false); // 유효한 ID로 진행 시 에러 상태 초기화
-    setIsLoading(true);
-    console.log(`🚀 fetchQuestionDetail called for questionId: ${questionId}`);
+    console.log("[FETCH_VALID_ID] Valid question ID, proceeding.");
+    setIsInvalidIdError(false);
+
+    const showLoader = () => {
+      console.log("[FETCH_SHOW_LOADER] Timer expired, setIsLoading(true).");
+      setIsLoading(true);
+      loadingTimerIdRef.current = null;
+    };
+
+    if (options?.showLoadingIndicatorAfterMs && options.showLoadingIndicatorAfterMs > 0) {
+      console.log(`[FETCH_SET_TIMER] Setting ${options.showLoadingIndicatorAfterMs}ms loading delay timer.`);
+      const timerId = setTimeout(showLoader, options.showLoadingIndicatorAfterMs);
+      loadingTimerIdRef.current = timerId;
+    } else {
+      console.log("[FETCH_NO_DELAY] No delay, setIsLoading(true) immediately.");
+      setIsLoading(true);
+    }
+    
+    console.log(`[FETCH_API_CALL] Calling getQuestionDetail for questionId: ${questionId}`);
+
     try {
       const response = await getQuestionDetail(questionId);
+      console.log("[FETCH_API_SUCCESS] getQuestionDetail API success.");
+
+      if (loadingTimerIdRef.current !== null) {
+        console.log(`[FETCH_TIMER_CLEAR_POST_API] API finished before timer. Clearing timer ID from ref: ${loadingTimerIdRef.current}`);
+        clearTimeout(loadingTimerIdRef.current);
+        loadingTimerIdRef.current = null;
+      }
+
       if (response && typeof response === 'object') {
+        console.log("[FETCH_DATA_UPDATE] Updating questionDetail state.");
         setQuestionDetail(response);
-        setEditTitle(response.title || "");
-        setEditContent(response.content || "");
+        if (!isEditMode) {
+            setEditTitle(response.title || "");
+            setEditContent(response.content || "");
+        }
         setCurrentDisplayImageUris(response.questionImages?.map(img => img.imageUrl) || []);
         setCharCount(response.content?.length || 0);
       } else {
+        console.log("[FETCH_DATA_ERROR] Response structure error.");
         setToastMessage("문의 상세 정보를 불러오는 중 오류가 발생했습니다 (응답 구조 오류).");
         setShowToast(true);
         setQuestionDetail(null);
       }
     } catch (error: any) {
+      console.error("[FETCH_API_ERROR] getQuestionDetail API error:", error);
+      if (loadingTimerIdRef.current !== null) { 
+        console.log(`[FETCH_TIMER_CLEAR_ON_ERROR] Clearing timer ID from ref: ${loadingTimerIdRef.current} due to API error.`);
+        clearTimeout(loadingTimerIdRef.current);
+        loadingTimerIdRef.current = null;
+      }
       const errorMessage = error.response?.data?.message || error.message || "문의 상세 정보를 불러오는데 실패했습니다.";
       setToastMessage(errorMessage);
       setShowToast(true);
       setQuestionDetail(null);
     } finally {
+      console.log("[FETCH_FINALLY] Entering finally block.");
+      if (loadingTimerIdRef.current !== null) { 
+        console.log(`[FETCH_TIMER_CLEAR_IN_FINALLY] Clearing timer ID from ref: ${loadingTimerIdRef.current} in finally.`);
+        clearTimeout(loadingTimerIdRef.current);
+        loadingTimerIdRef.current = null;
+      }
+      console.log("[FETCH_END] Setting isLoading to false in finally.");
       setIsLoading(false);
     }
-  }, [questionId]);
+  }, [questionId, isEditMode, isLoading]);
 
   useEffect(() => {
-    // questionId가 확정된 경우에만 (undefined가 아닐 때) fetchQuestionDetail 호출
     if (questionId !== undefined) {
-      console.log(`📄 QuestionDetailPage mounted or questionId changed: ${questionId}`);
-      fetchQuestionDetail();
+      console.log(`📄 QuestionDetailPage mounted or questionId changed to: ${questionId}. Fetching details.`);
+      fetchQuestionDetail(); 
     } else {
-      // questionIdParam이 아직 로드되지 않아 questionId가 undefined인 경우
-      // 이 상태에서는 아직 데이터를 불러올 수 없음. 로딩 UI는 외부에서 처리.
       console.log("❓ questionId is undefined, waiting for params...");
-      // 필요하다면 여기서 setIsLoading(true)를 호출하여 파라미터 로딩 중임을 명시할 수 있으나,
-      // 상단 questionId === undefined 조건에서 이미 로딩 화면을 보여줄 것이므로 중복될 수 있음.
     }
-  }, [questionId, fetchQuestionDetail]);
+
+    return () => {
+      if (loadingTimerIdRef.current !== null) {
+        console.log(`[EFFECT_CLEANUP] Clearing timer ID from ref: ${loadingTimerIdRef.current} due to questionId change or unmount.`);
+        clearTimeout(loadingTimerIdRef.current);
+        loadingTimerIdRef.current = null;
+      }
+    };
+  }, [questionId]);
 
   const handleEdit = () => {
     if (!questionDetail) return;
@@ -179,16 +234,37 @@ export default function QuestionDetailPage() {
   }, [isEditMode, questionDetail?.questionImages]); // 의존성 배열을 questionDetail.questionImages로 더 명확히 함
 
    const handleSaveEdit = async () => {
-    if (!editTitle?.trim() || !editContent?.trim()) { 
-      setToastMessage("제목과 내용을 입력해주세요.");
+    console.log("handleSaveEdit 시작");
+    if (!questionDetail) { // 원본 데이터가 없으면 비교 불가, 오류로 간주
+        setToastMessage("수정할 원본 문의 정보가 없습니다.");
+        setShowToast(true);
+        return;
+    }
+
+    const originalImageIds = questionDetail.questionImages?.map(img => img.questionImageId) || [];
+
+    const titleChanged = editTitle !== questionDetail.title;
+    const contentChanged = editContent !== questionDetail.content;
+    const newImagesAdded = newImageUrisForUpload.length > 0;
+    // 기존 이미지가 있었는데, 유지되는 이미지 ID 목록의 길이가 원본 이미지 ID 목록의 길이와 다른 경우 (삭제된 이미지가 있음)
+    // 또는, 기존 이미지가 없었는데 새로 추가된 이미지가 없는 경우도 고려해야 하지만, newImagesAdded가 이미 그 경우를 커버함.
+    // 좀 더 정확하게는, 원본 ID 목록과 유지 ID 목록의 내용(순서 무관)이 다른지를 봐야 하지만, 길이 비교로 간소화.
+    // 더 정확한 비교: originalImageIds.length !== retainedImageIdsForDto.length || !originalImageIds.every(id => retainedImageIdsForDto.includes(id))
+    const existingImagesChanged = originalImageIds.length !== retainedImageIdsForDto.length || 
+                                  !originalImageIds.every(id => retainedImageIdsForDto.includes(id)) || 
+                                  !retainedImageIdsForDto.every(id => originalImageIds.includes(id));
+
+
+    if (!titleChanged && !contentChanged && !newImagesAdded && !existingImagesChanged) {
+      setToastMessage("수정된 내용이 없습니다.");
       setShowToast(true);
       return;
     }
 
-    if (!questionDetail) {
-        setToastMessage("수정할 문의 정보가 없습니다.");
-        setShowToast(true);
-        return;
+    if (!editTitle?.trim() || !editContent?.trim()) { 
+      setToastMessage("제목과 내용을 입력해주세요.");
+      setShowToast(true);
+      return;
     }
 
     // questionId 타입 가드 추가
@@ -200,6 +276,7 @@ export default function QuestionDetailPage() {
 
     setIsLoading(true); 
     try {
+      console.log("try 블록 진입, updateQuestion 호출 전");
       const dto: QuestionUpdateDto = {
         title: editTitle,
         content: editContent,
@@ -211,13 +288,29 @@ export default function QuestionDetailPage() {
       await updateQuestion({
         questionId: questionId,
         dto: dto,
-        newImageUris: newImageUrisForUpload, // FileButton에서 관리된 새로 추가된 URI 목록
+        newImageUris: newImageUrisForUpload,
       });
+      console.log("updateQuestion 성공, setShowToast(true) 호출 전");
 
-      setShowToast(true);
-      setToastMessage("문의가 수정되었습니다.");
-      setIsEditMode(false);
-      fetchQuestionDetail(); 
+      // setToastMessage("문의가 수정되었습니다."); // 토스트 메시지 설정 부분 주석 처리
+      // setShowToast(true); // 토스트 표시 부분 주석 처리
+      // console.log("setShowToast(true) 및 setToastMessage 호출 완료");
+
+      // fetchQuestionDetail 및 setIsEditMode를 약간 지연시켜 Toast가 먼저 보이도록 함
+      setTimeout(async () => { // async 추가
+        try {
+          console.log("setTimeout 내부: fetchQuestionDetail 호출 전");
+          await fetchQuestionDetail({ showLoadingIndicatorAfterMs: 300 }); // await 추가
+          console.log("setTimeout 내부: fetchQuestionDetail 호출 완료, setIsEditMode(false) 호출 전");
+          setIsEditMode(false); // fetchQuestionDetail 완료 후 수정 모드 해제
+          console.log("setTimeout 내부: setIsEditMode(false) 호출 완료");
+        } catch (error) {
+            console.error("setTimeout 내부 fetchQuestionDetail 또는 setIsEditMode 에러:", error);
+            // 에러 발생 시에도 수정 모드는 해제하는 것이 좋을 수 있음 (선택 사항)
+            setIsEditMode(false);
+        }
+      }, 100); 
+
     } catch (error: any) {
       console.error("🚨 문의 수정 실패 (handleSaveEdit):", error);
       const errorMessage = error.response?.data?.errorMessage || error.message || "문의 수정에 실패했습니다.";
@@ -354,21 +447,27 @@ export default function QuestionDetailPage() {
                 maxImages={5} // 최대 이미지 개수 설정
               />
             ) : (
-            <View style={styles.imagePreviewContainer}>
-                {questionDetail?.questionImages && questionDetail.questionImages.length > 0 ? (
-                questionDetail.questionImages.map((imageObj, index) => (
-                    <View key={index} style={styles.imageWrapper}>
-                    <Image
-                        source={{ uri: imageObj.imageUrl }} 
-                        style={styles.imagePreview}
-                        resizeMode="contain"
-                    />
+              questionDetail?.questionImages && questionDetail.questionImages.length > 0 ? (
+                <FlatList
+                  data={questionDetail.questionImages}
+                  renderItem={({ item }) => (
+                    <View style={styles.flatListImageWrapper}>
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={styles.flatListImagePreview}
+                        resizeMode="cover" // 또는 "contain" 등 선호하는 모드로 변경
+                      />
                     </View>
-                ))
-                ) : (
+                  )}
+                  keyExtractor={(item) => item.questionImageId.toString()}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  ItemSeparatorComponent={() => <View style={styles.imageSeparator} />}
+                  contentContainerStyle={styles.flatListContainer} // FlatList 내용 컨테이너 스타일
+                />
+              ) : (
                 <Text style={styles.noImageText}>첨부된 이미지가 없습니다.</Text>
-                )}
-            </View>
+              )
             )}
         </View>
         <View style={styles.gradientBorder}/>
@@ -377,7 +476,7 @@ export default function QuestionDetailPage() {
             <View style={styles.saveButtonContainer}>
             {isEditMode ? (
                 <>
-                <QuestionButton title="수정" onPress={handleSaveEdit} />
+                <QuestionButton title="확인" onPress={handleSaveEdit} />
                 <QuestionButton title="취소" onPress={handleCancelEdit} />
                 </>
             ) : (
@@ -409,11 +508,14 @@ export default function QuestionDetailPage() {
         onHide={() => setShowToast(false)}
       />
       {/* 삭제 확인 모달 */}
-      {/* <CancelModal
+      <CancelModal
         visible={modalVisible}
         onCancel={() => setModalVisible(false)}
         onDelete={handleDeleteConfirm}
-      /> */}
+        message="정말로 이 문의를 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+      />
     </View>
   );
 }
@@ -535,5 +637,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 30,
+  },
+  flatListContainer: { // FlatList의 contentContainerStyle
+    paddingVertical: 8, // 위아래 약간의 패딩
+  },
+  flatListImageWrapper: {
+    width: 100, // 이미지 너비
+    height: 100, // 이미지 높이
+    borderRadius: 8,
+    overflow: "hidden", // borderRadius를 적용하기 위해 필요
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  flatListImagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  imageSeparator: { // 이미지 사이 간격 스타일
+    width: 10,
   },
 });

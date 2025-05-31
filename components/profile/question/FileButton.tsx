@@ -59,7 +59,7 @@ const FileButton: React.FC<FileButtonProps> = ({
 
   const pickImage = async () => {
     if (displayImages.length >= maxImages) {
-      Alert.alert(`최대 ${maxImages}개의 이미지만 선택할 수 있습니다.`);
+      Alert.alert(`알림`,`최대 ${maxImages}개의 이미지만 선택할 수 있습니다.`);
       return;
     }
     
