@@ -11,10 +11,12 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View
 } from "react-native";
 
@@ -68,7 +70,11 @@ export default function QuestionDetailPage() {
   const [newImageUrisForUpload, setNewImageUrisForUpload] = useState<string[]>([]);
   const [retainedImageIdsForDto, setRetainedImageIdsForDto] = useState<number[]>([]);
   const [isInvalidIdError, setIsInvalidIdError] = useState(false);
-  const loadingTimerIdRef = useRef<number | null>(null);
+  const loadingTimerIdRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 이미지 뷰어 모달 상태
+  const [isImageViewVisible, setIsImageViewVisible] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 
   const fetchQuestionDetail = useCallback(async (options?: { showLoadingIndicatorAfterMs?: number }) => {
     console.log(`[FETCH_START] Called with options: ${JSON.stringify(options)}`);
@@ -220,6 +226,17 @@ export default function QuestionDetailPage() {
     setNewImageUrisForUpload(payload.newlyAddedUris);
     setRetainedImageIdsForDto(payload.retainedImageIds);
   }, []);
+
+  // 이미지 클릭 핸들러 및 모달 닫기 함수
+  const handleImagePress = (uri: string) => {
+    setSelectedImageUri(uri);
+    setIsImageViewVisible(true);
+  };
+
+  const handleCloseImageView = () => {
+    setIsImageViewVisible(false);
+    setSelectedImageUri(null);
+  };
 
   // FileButton에 전달할 initialExistingImages 가공 (수정 모드일 때만)
   const initialImagesForFileButton = useMemo<ExistingImage[]>(() => {
@@ -438,7 +455,9 @@ export default function QuestionDetailPage() {
           )}
         </View>
 
-        <View style={styles.section}>
+        {/* 첨부 이미지 섹션: 수정 모드이거나 이미지가 있을 때만 표시 */}
+        {(isEditMode || (questionDetail?.questionImages && questionDetail.questionImages.length > 0)) && (
+          <View style={styles.section}>
             <Text style={styles.sectionLabel}>첨부 이미지</Text>
             {isEditMode ? (
               <FileButton 
@@ -447,29 +466,31 @@ export default function QuestionDetailPage() {
                 maxImages={5} // 최대 이미지 개수 설정
               />
             ) : (
-              questionDetail?.questionImages && questionDetail.questionImages.length > 0 ? (
+              // 이 부분은 위 조건에 의해 questionDetail.questionImages가 반드시 존재하고 length > 0일 때만 실행됨
+              questionDetail?.questionImages && questionDetail.questionImages.length > 0 && (
                 <FlatList
-                  data={questionDetail.questionImages}
+                  data={questionDetail.questionImages} // 이미 위에서 null/undefined 및 길이 체크됨
                   renderItem={({ item }) => (
-                    <View style={styles.flatListImageWrapper}>
-                      <Image
-                        source={{ uri: item.imageUrl }}
-                        style={styles.flatListImagePreview}
-                        resizeMode="cover" // 또는 "contain" 등 선호하는 모드로 변경
-                      />
-                    </View>
+                    <TouchableOpacity onPress={() => handleImagePress(item.imageUrl)}>
+                      <View style={styles.flatListImageWrapper}>
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          style={styles.flatListImagePreview}
+                          resizeMode="cover" // 또는 "contain" 등 선호하는 모드로 변경
+                        />
+                      </View>
+                    </TouchableOpacity>
                   )}
                   keyExtractor={(item) => item.questionImageId.toString()}
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  ItemSeparatorComponent={() => <View style={styles.imageSeparator} />}
+                  ItemSeparatorComponent={() => <View style={styles.imageSeparator} />}                  
                   contentContainerStyle={styles.flatListContainer} // FlatList 내용 컨테이너 스타일
                 />
-              ) : (
-                <Text style={styles.noImageText}>첨부된 이미지가 없습니다.</Text>
               )
             )}
-        </View>
+          </View>
+        )}
         <View style={styles.gradientBorder}/>
         {/* 답변 완료 상태는 questionDetail.answer 유무로 판단하거나, questionStatus 활용 */}
         {questionDetail?.questionStatus !== "QUESTION_ANSWERED" && questionDetail?.answer === null ? (
@@ -516,6 +537,29 @@ export default function QuestionDetailPage() {
         confirmText="삭제"
         cancelText="취소"
       />
+
+      {/* 이미지 뷰어 모달 */}
+      {selectedImageUri && (
+        <Modal
+          transparent={true}
+          visible={isImageViewVisible}
+          onRequestClose={handleCloseImageView}
+        >
+          <View style={styles.imageViewerContainer}>
+            <Image
+              source={{ uri: selectedImageUri }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={handleCloseImageView}
+            >
+              <Text style={styles.closeButtonText}>X</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -655,5 +699,33 @@ const styles = StyleSheet.create({
   },
   imageSeparator: { // 이미지 사이 간격 스타일
     width: 10,
+  },
+  imageViewerContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '90%',
+    height: '80%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: '16%', // 이미지 상단에서 10% 지점 + 1% 내려와 겹치도록
+    right: '3%', // 이미지 우측에서 5% 지점 + 1% 들어와 겹치도록
+    width: 40, // 원의 크기
+    height: 40, // 원의 크기
+    borderRadius: 20, // width/height의 절반
+    backgroundColor: 'rgba(128, 128, 128, 1)', // 회색 원 배경
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1, // 이미지가 버튼을 가리는 현상 방지
+  },
+  closeButtonText: {
+    color: '#FFFFFF', // X 글자 색상 (흰색)
+    fontSize: 18, // X 글자 크기
+    fontFamily: "Pretendard-Bold", // X 글자 굵게
+    lineHeight: 20, // iOS에서 X가 잘리는 현상 방지 (선택적)
   },
 });
