@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from "react-native";
+import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 
 // 현재 기기의 화면 너비를 가져와서 배너 이미지 너비로 사용
 const { width } = Dimensions.get("window");
@@ -10,6 +11,7 @@ export interface EventBannerData {
   id: number;
   imageUrl: string; // API에서 받은 URL은 string 타입
   title: string;
+  content: string; // content 필드 추가
 }
 
 interface EventBannerComponentProps {
@@ -18,6 +20,7 @@ interface EventBannerComponentProps {
 
 const EventBannerComponent = ({ banners = [] }: EventBannerComponentProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const router = useRouter();
 
   // flatList 스크롤제어를 위한 참조 변수 (리랜더링 되어도 값이 유지된다))
   const flatListRef = useRef<FlatList<EventBannerData>>(null);
@@ -39,6 +42,19 @@ const EventBannerComponent = ({ banners = [] }: EventBannerComponentProps) => {
       // 애니메이션을 사용하여 첫 번째 이미지로 이동
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
+  };
+
+  const handleBannerPress = (banner: EventBannerData) => {
+    // ✅ 단순히 탭 내 이동이면 navigate 사용
+     router.push({
+      pathname: "/(tabs)/plus/NoticeDetailPage",
+      params: {
+        noticeId: banner.id, // 'id'를 'noticeId'로 변경하여 전달
+        imageUrl: banner.imageUrl,
+        title: banner.title,
+        content: banner.content, // content 전달 추가
+      },
+    });
   };
 
   const BANNER_HEIGHT = height * 0.2;
@@ -65,8 +81,9 @@ const EventBannerComponent = ({ banners = [] }: EventBannerComponentProps) => {
                 showsHorizontalScrollIndicator={false}
                 // 각 항목(배너)을 렌더링하는 함수
                 renderItem={({ item }) => (
-                    // 디바이스 화면에 맞춰 비율로 이미지 크기 조정
-                <Image source={{ uri: item.imageUrl }} style={{ width: width, height: BANNER_HEIGHT}} resizeMode="cover" />
+                  <TouchableOpacity onPress={() => handleBannerPress(item)} activeOpacity={0.9}>
+                    <Image source={{ uri: item.imageUrl }} style={{ width: width, height: BANNER_HEIGHT}} resizeMode="cover" />
+                  </TouchableOpacity>
                 )}
                 // 스크롤 마지막에서 한번더 스크롤시 실행되는 함수 (0번 인덱스로 돌아감))
                 onMomentumScrollEnd={onMomentumScrollEnd}

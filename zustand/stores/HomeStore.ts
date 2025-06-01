@@ -13,6 +13,7 @@ export interface NoticeImage {
   noticeImageId: number;
   noticeId: number;
   imageUrl: string;
+  content: string;
   thumbnail?: boolean; // API 응답에 thumbnail이 있으므로 추가
 }
 

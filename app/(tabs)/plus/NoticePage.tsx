@@ -43,7 +43,7 @@ export default function NoticePage() {
       const params: Parameters<typeof getNotices>[0] = {
         page: pageToFetch + 1, // API는 1-indexed page를 기대
         size: ITEMS_PER_PAGE,
-        noticeType: filter, // 'ALL'도 그대로 전달, API 레이어에서 처리
+        type: filter, // 'noticeType'을 'type'으로 변경
         keyword: keyword.trim() || undefined,
         // sortBy, sortOrder는 api/noticeApi.ts에서 처리 (현재는 API 명세에 없어 주석처리됨)
       };
@@ -123,6 +123,11 @@ export default function NoticePage() {
     router.push(`/(tabs)/plus/NoticeDetailPage?noticeId=${noticeId}`);
   };
   
+  // GradientHeader의 뒤로가기 버튼 클릭 시 "plus" 탭의 index로 이동하는 함수
+  const handleHeaderBackPress = () => {
+    router.push('/(tabs)/plus'); // "plus" 탭의 초기 화면(index)으로 이동
+  };
+
   const combinedNotices = [...importantNotices, ...regularNotices];
 
   const renderListHeader = () => (
@@ -152,7 +157,7 @@ export default function NoticePage() {
   if (initialLoading && combinedNotices.length === 0) { 
     return (
       <View style={styles.container}>
-        <GradientHeader title="공지사항 / 이벤트" showBackButton={true} />
+        <GradientHeader title="공지사항 / 이벤트" showBackButton={true} onBackPress={handleHeaderBackPress} />
         <NoticeSearchBar onSearch={handleSearch} initialFilter="ALL" initialKeyword="" />
         <View style={styles.fullScreenLoader}><ActivityIndicator size="large" color="#B28EF8" /></View>
       </View>
@@ -161,7 +166,7 @@ export default function NoticePage() {
 
   return (
     <View style={styles.container}>
-      <GradientHeader title="공지사항 / 이벤트" showBackButton={true} />
+      <GradientHeader title="공지사항 / 이벤트" showBackButton={true} onBackPress={handleHeaderBackPress} />
       <NoticeSearchBar onSearch={handleSearch} initialFilter={currentFilter} initialKeyword={currentKeyword} />
       
       <FlatList
