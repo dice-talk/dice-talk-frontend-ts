@@ -45,10 +45,6 @@ export default function NoticePage() {
         size: ITEMS_PER_PAGE,
         type: filter, // 'noticeType'을 'type'으로 변경
         keyword: keyword.trim() || undefined,
-        // sortBy, sortOrder는 api/noticeApi.ts에서 처리 (현재는 API 명세에 없어 주석처리됨)
-        type: filter, // NoticeTypeFilter ('ALL', 'NOTICE', 'EVENT') 값을 그대로 전달
-                      // getNotices 함수 내부에서 type이 'ALL'인 경우 실제 쿼리 파라미터에서 제외함.
-        keyword: keyword.trim() || undefined, // 빈 문자열이면 undefined로 전달하여 파라미터에서 제외되도록 유도
       };
       
       console.log(`🔄 Fetching notices with apiParams:`, apiParams);
