@@ -6,9 +6,13 @@ interface ChatMessage {
   [key: string]: any; // 실제 메시지 구조에 맞게 수정
 }
 
-interface ChatParticipant {
-  // 예시: memberId: string; nickname: string; profileImageUrl?: string;
-  [key: string]: any; // 실제 참여자 구조에 맞게 수정
+export interface ChatParticipant { // <- 'export' 키워드 추가
+  partId: number;
+  nickname: string;
+  profile: string;
+  memberId: number;
+  chatRoomId: number;
+  exitStatus: string;
 }
 
 interface RoomEvent {
