@@ -6,7 +6,6 @@ import { SvgProps } from "react-native-svg";
 interface User {
   id: string;
   name: string;
-  color: string;
   profileSvg: React.FC<SvgProps>;
 }
 
