@@ -26,10 +26,12 @@ export default function Toast({ message, visible, onHide }: ToastProps) {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        onHide();
+        setTimeout(() => {
+          onHide();
+        }, 0);
       });
     }
-  }, [visible, onHide]);
+  }, [visible, onHide, opacity]);
 
   if (!visible) return null;
 

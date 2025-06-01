@@ -51,10 +51,10 @@ export interface HeartHistoryItem {
   senderProfileSvg?: any; // SVG 컴포넌트 또는 이미지 경로 (React.FC<SvgProps> | ImageSourcePropType)
 }
 
-// 하트 히스토리 조회 API 응답 타입 (API 명세에는 pageInfo가 없으나, 필요시 추가될 수 있음)
+// 하트 히스토리 조회 API 응답 타입 (API 명세에는 pageInfo가 있으므로 non-optional로 변경)
 export interface HeartHistoryListResponse {
   data: HeartHistoryItem[];
-  pageInfo?: PageInfo; // 필요시 추가
+  pageInfo: PageInfo; // optional 제거
 }
 
 // 사용자 기본 정보 (이름만)
@@ -69,25 +69,28 @@ const userBaseInfo: Record<string, { name: string }> = {
 
 /**
  * 1:1 채팅 내역 (채팅방 목록) 조회 API
- * @param memberId 회원 ID
- * @param page 페이지 번호 (1부터 시작)
+ * @param page 페이지 번호 (1부터 시작하는 것으로 가정)
  * @param size 페이지 당 항목 수
  */
 export const getChatHistory = async (
-  page: number = 0,
+  page: number = 1, // 기본값을 1로 변경 (1-based page 가정)
   size: number = 10,
 ): Promise<ChatRoomListResponse> => {
-  //console.log(`[API] getChatHistory 호출: memberId=${memberId}, page=${page}, size=${size}`);
   try {
-    // const memberId = useMemberInfoStore.getState().memberId;
-    const memberId = useAuthStore.getState().memberId; // authStore 사용
-    const response = await axiosWithToken.get(`/chat-rooms/my-chat-rooms/${memberId}`, {
+    const memberId = useAuthStore.getState().memberId;
+    if (!memberId) {
+      console.error("🚨 [getChatHistory] 채팅 내역 조회 실패: memberId가 없습니다.");
+      throw new Error("memberId is not available for getChatHistory");
+    }
+    // 요청 URL을 백엔드 컨트롤러의 전체 경로와 일치하도록 수정
+    // 클래스 레벨 @RequestMapping("/chat-rooms") + 메서드 레벨 @GetMapping("/my-chat-room/{member-id}")
+    const response = await axiosWithToken.get(`/chat-rooms/my-chat-room/${memberId}`, {
       params: {
-        page, // 백엔드가 0-indexed page를 사용한다면 조정
+        page, // 전달받은 page 값 사용 (1-based)
         size,
       },
     });
-    return response.data as ChatRoomListResponse; // 실제 응답 구조에 맞춰야 함
+    return response.data as ChatRoomListResponse; 
   } catch (error) {
     console.error('Error fetching chat history:', error);
     throw error;
@@ -136,28 +139,34 @@ export const getChatMessages = async (
 
 /**
  * 하트 히스토리 조회 API (내가 보내거나 받은 하트)
- * @param page 페이지 번호 (0부터 시작, API 스펙에 따라 조정)
+ * @param page 페이지 번호 (1부터 시작, API 명세에 따름)
  * @param size 페이지 당 항목 수
  */
 export const getMyHeartHistory = async (
-  page: number = 0,
+  page: number = 1, // 기본값을 1로 변경 (1-based page)
   size: number = 20,
 ): Promise<HeartHistoryListResponse> => {
   try {
-    // const memberId = useMemberInfoStore.getState().memberId; // Assuming memberId needed or inferred
-    const memberId = useAuthStore.getState().memberId; // authStore 사용
+    const memberId = useAuthStore.getState().memberId; 
     if (!memberId) {
-        console.error("🚨 하트 내역 조회 실패: memberId가 없습니다.");
-        throw new Error("memberId is not available");
+        // memberId가 없어도 API 호출은 가능할 수 있음 (토큰 기반 인증)
+        // 다만, 로깅이나 특정 플로우에 필요하다면 이 로직 유지
+        console.warn("🚨 [getMyHeartHistory] memberId is not available from authStore, proceeding without it for API call.");
+        // throw new Error("memberId is not available"); // 호출 자체를 막을 필요는 없을 수 있음
     }
-    // Original path: `/room-event-history/${memberId}`.
-    // Assuming backend infers user from token for a path like `/my-heart-history`
-    const response = await axiosWithToken.get(`/my-heart-history`, { // Path changed for consistency
-      params: { page, size }, // Assuming pagination
+    
+    // API 명세서에 따른 엔드포인트로 변경
+    const response = await axiosWithToken.get(`/room-event/history`, { 
+      params: { 
+        page, // 1-based 페이지 전달
+        size 
+      }, 
     });
-    return response.data as HeartHistoryListResponse; // Adjust based on actual response
+    // API 응답에 pageInfo가 있으므로, HeartHistoryListResponse에 pageInfo가 optional이 아니어야 할 수 있음.
+    // 현재는 optional로 되어 있으므로, 그대로 사용하거나 필요시 타입을 non-optional로 변경.
+    return response.data as HeartHistoryListResponse; 
   } catch (error) {
-    console.error('🚨 하트 내역 조회 실패:', error);
+    console.error('🚨 하트 내역 조회 실패 (getMyHeartHistory):', error);
     throw error;
   }
 };
