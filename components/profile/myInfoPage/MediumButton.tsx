@@ -1,11 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  Dimensions,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  ViewStyle,
+    ActivityIndicator,
+    Dimensions,
+    Pressable,
+    StyleProp,
+    StyleSheet,
+    Text,
+    ViewStyle,
 } from "react-native";
 
 // 🔹 GradientButton Props 타입 (height, width, fontSize, size를 optional로 변경)
@@ -17,10 +18,12 @@ interface GradientButtonProps {
   width?: number;
   fontSize?: number;
   size?: 'max' | 'custom';
+  disabled?: boolean;
+  isLoading?: boolean;
 }
 
 export default function MediumButton(props: GradientButtonProps) {
-  const { title, onPress, customStyle, height, width, fontSize, size } = props;
+  const { title, onPress, customStyle, height, width, fontSize, size, disabled, isLoading } = props;
   const screenWidth = Dimensions.get("window").width;
 
   // 기본값 정의
@@ -50,18 +53,25 @@ export default function MediumButton(props: GradientButtonProps) {
     finalFontSize = fontSize ?? defaultFontSize;
   }
 
+  // disabled 또는 isLoading 상태일 때 Pressable의 onPress를 undefined로 설정
+  const handlePress = disabled || isLoading ? undefined : onPress;
+
   return (
     <Pressable 
-      onPress={onPress} 
+      onPress={handlePress} 
       style={[styles.buttonWrapper, { width: finalWidth, height: finalHeight }, customStyle]}
     > 
       <LinearGradient
-        colors={["#B28EF8", "#F476E5"]}
+        colors={disabled || isLoading ? ["#D3D3D3", "#A9A9A9"] : ["#B28EF8", "#F476E5"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[styles.button, { width: '100%', height: '100%' }]}
       >
-        <Text style={[styles.buttonText, { fontSize: finalFontSize }]}>{title}</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={[styles.buttonText, { fontSize: finalFontSize }]}>{title}</Text>
+        )}
       </LinearGradient>
     </Pressable>
   );
