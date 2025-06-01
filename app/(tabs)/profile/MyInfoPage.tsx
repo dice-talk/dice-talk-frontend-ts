@@ -26,7 +26,6 @@ import { useRouter } from "expo-router";
 // MyInfoPage 필드용 상세 정보 타입
 type MyDetailedInfo = {
     email: string | null;
-    phone: string | null;
     name: string | null;
     birth: string | null;
     gender: 'MALE' | 'FEMALE' | null;
@@ -36,7 +35,6 @@ type MyDetailedInfo = {
 
 const initialDetailedInfo: MyDetailedInfo = {
     email: null,
-    phone: null,
     name: null,
     birth: null,
     gender: null,
@@ -115,7 +113,6 @@ export default function MyInfoPage() {
                         console.log("MyInfoPage: 상세 정보 API 응답 받음:", detailedApiData);
                         setMyDetailedInfo({
                             email: detailedApiData.email,
-                            phone: detailedApiData.phone,
                             name: detailedApiData.name,
                             birth: detailedApiData.birth,
                             gender: detailedApiData.gender,
@@ -147,17 +144,12 @@ export default function MyInfoPage() {
         router.back();
     };
 
-    const handlePhoneAuth = () => {
-        setShowTossAuth(true);
-    };
-
     const handleAuthSuccess = (userInfo: { name: string; phone: string }) => {
         console.log("MyInfoPage: Toss 인증 성공:", userInfo);
-        if (userInfo.name !== myDetailedInfo.name || userInfo.phone !== myDetailedInfo.phone) {
+        if (userInfo.name !== myDetailedInfo.name) {
             setMyDetailedInfo(prev => ({
                 ...prev,
                 name: userInfo.name, 
-                phone: userInfo.phone, 
             }));
             // TODO: 백엔드에 이 변경사항을 업데이트하는 API 호출 필요 (예: updateMemberProfile(memberId, { name: userInfo.name, phone: userInfo.phone }))
             console.log("MyInfoPage: 이름/휴대폰 번호 UI상 업데이트됨. 백엔드 업데이트 필요.");
@@ -257,15 +249,6 @@ export default function MyInfoPage() {
                     <MyInfoField iconName="mail-outline" label="이메일" value={myDetailedInfo.email ?? ""} editable={false} />
                     <MyInfoField iconName="male-female-outline" label="성별" value={myDetailedInfo.gender === 'MALE' ? '남성' : myDetailedInfo.gender === 'FEMALE' ? '여성' : ""} editable={false} />
                     <MyInfoField iconName="calendar-outline" label="생년월일" value={myDetailedInfo.birth ?? ""} editable={false} />
-                    <MyInfoField
-                        iconName="call-outline"
-                        label="휴대폰"
-                        value={myDetailedInfo.phone ?? ""}
-                        editable={false} 
-                        rightButtonLabel={myDetailedInfo.phone ? "재인증" : "인증하기"} 
-                        rightButtonGradient
-                        onPressRight={handlePhoneAuth}
-                    />
                     <MyInfoField
                         iconName="lock-closed-outline"
                         label="비밀번호"

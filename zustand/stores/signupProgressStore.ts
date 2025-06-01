@@ -4,7 +4,6 @@ import { create } from 'zustand';
 export interface SignupData {
   // Agreement.tsx에서 설정하고 SignupInput.tsx에서 사용
   name: string | null;
-  phone: string | null; // Toss 응답에 phone이 없을 수 있음을 명시
   gender: 'MALE' | 'FEMALE' | null;
   birth: string | null; // YYYYMMDD 또는 YYYY-MM-DD 형식
   ageGroup: string | null; 
@@ -24,7 +23,6 @@ interface SignupProgressState {
 
 const initialSignupData: SignupData = {
   name: null,
-  phone: null,
   gender: null,
   birth: null,
   ageGroup: null,
