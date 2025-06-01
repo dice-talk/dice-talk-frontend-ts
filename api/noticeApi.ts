@@ -48,7 +48,7 @@ export interface NoticeDetailDto extends Omit<NoticeItemDto, 'content'> {
 interface GetNoticesParams {
   page?: number; // 1-based for API call
   size?: number; 
-  noticeType?: "NOTICE" | "EVENT" | "UPDATE" | "ALL"; // "ALL" 추가
+  type?: "NOTICE" | "EVENT" | "UPDATE" | "ALL"; // "ALL" 추가
   keyword?: string;
   // sortBy?: string; // API 명세에 현재 없음, 필요시 추가
   // sortOrder?: "ASC" | "DESC"; // API 명세에 현재 없음, 필요시 추가
@@ -63,8 +63,8 @@ export const getNotices = async (params: GetNoticesParams = {}): Promise<NoticeL
     queryParams.page = params.page || 1;
     queryParams.size = params.size || 10; // 기본값 10
 
-    if (params.noticeType && params.noticeType !== "ALL") {
-      queryParams.noticeType = params.noticeType;
+    if (params.type && params.type !== "ALL") {
+      queryParams.type = params.type;
     }
     if (params.keyword && params.keyword.trim() !== "") {
       queryParams.keyword = params.keyword.trim();

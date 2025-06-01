@@ -4,7 +4,7 @@ import axios from "axios";
 import { LinearGradient } from 'expo-linear-gradient'; // 태그 그라데이션에 사용
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Dimensions, FlatList, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,6 +25,21 @@ export default function NoticeDetailPage() {
     const [noticeDetail, setNoticeDetail] = useState<NoticeDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // 이미지 뷰어 모달 상태 추가
+    const [isImageViewVisible, setIsImageViewVisible] = useState(false);
+    const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+
+    // 이미지 클릭 핸들러 및 모달 닫기 함수 추가
+    const handleImagePress = (uri: string) => {
+        setSelectedImageUri(uri);
+        setIsImageViewVisible(true);
+    };
+
+    const handleCloseImageView = () => {
+        setIsImageViewVisible(false);
+        setSelectedImageUri(null);
+    };
 
     useEffect(() => {
         if (noticeIdParam) {
@@ -129,9 +144,11 @@ export default function NoticeDetailPage() {
                 </View>
 
                 {noticeDetail.thumbnail && (
-                    <View style={styles.thumbnailContainer}>
-                         <Image source={{ uri: noticeDetail.thumbnail }} style={styles.thumbnailImage} resizeMode="cover"/>
-                    </View>
+                    <TouchableOpacity onPress={() => handleImagePress(noticeDetail.thumbnail!)}>
+                        <View style={styles.thumbnailContainer}>
+                            <Image source={{ uri: noticeDetail.thumbnail }} style={styles.thumbnailImage} resizeMode="cover"/>
+                        </View>
+                    </TouchableOpacity>
                 )}
                 
                 {noticeDetail.noticeImages && noticeDetail.noticeImages.length > 0 && (
@@ -143,19 +160,44 @@ export default function NoticeDetailPage() {
                             showsHorizontalScrollIndicator={false}
                             keyExtractor={(item: NoticeImage) => item.noticeImageId.toString()}
                             renderItem={({ item }: { item: NoticeImage }) => (
-                                <Image 
-                                    source={{ uri: item.imageUrl }}
-                                    style={styles.attachedImageInScroll}
-                                    resizeMode="cover" 
-                                />
+                                <TouchableOpacity onPress={() => handleImagePress(item.imageUrl)}>
+                                    <Image 
+                                        source={{ uri: item.imageUrl }}
+                                        style={styles.attachedImageInScroll}
+                                        resizeMode="cover" 
+                                    />
+                                </TouchableOpacity>
                             )}
-                            ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
+                            ItemSeparatorComponent={() => <View style={{ width: 10 }} />}                            
                             contentContainerStyle={{ paddingHorizontal: width * 0.05, paddingRight: width * 0.05 }}
                         />
                     </View>
                 )}
 
             </ScrollView>
+
+            {/* 이미지 뷰어 모달 추가 */}
+            {selectedImageUri && (
+                <Modal
+                    transparent={true}
+                    visible={isImageViewVisible}
+                    onRequestClose={handleCloseImageView}
+                >
+                    <View style={styles.imageViewerContainer}>
+                        <Image
+                            source={{ uri: selectedImageUri }}
+                            style={styles.fullScreenImage}
+                            resizeMode="contain"
+                        />
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={handleCloseImageView}
+                        >
+                            <Text style={styles.closeButtonText}>X</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+            )}
         </View>
     );
 }
@@ -263,5 +305,33 @@ const styles = StyleSheet.create({
         width: width * 0.7, 
         height: height * 0.22, 
         borderRadius: 8,
+    },
+    imageViewerContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fullScreenImage: {
+        width: '90%',
+        height: '80%',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: '16%', 
+        right: '3%', 
+        width: 40, 
+        height: 40, 
+        borderRadius: 20, 
+        backgroundColor: 'rgba(128, 128, 128, 1)', 
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1, 
+    },
+    closeButtonText: {
+        color: '#FFFFFF', 
+        fontSize: 18, 
+        fontFamily: "Pretendard-Bold", 
+        lineHeight: 20, 
     },
 });

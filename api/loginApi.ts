@@ -114,34 +114,3 @@ export const verifyAuthCode = async ({ email, code }: VerifyCodeParams): Promise
         throw new Error("인증 처리 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.");
     }
 };
-
-export interface FindEmailResponse {
-  email: string;
-}
-
-// 아이디(이메일) 찾기 API (Toss 인증 후 txId 사용)
-export const findEmailByTxId = async (txId: string): Promise<FindEmailResponse> => {
-    try {
-        // txId를 application/x-www-form-urlencoded 형식으로 POST 요청
-        const params = new URLSearchParams();
-        params.append('txId', txId);
-
-        const response = await axiosWithoutToken.post<FindEmailResponse>(
-            "/auth/recover/email", 
-            params, 
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            }
-        );
-        console.log('아이디(이메일) 찾기 API 응답 (POST, form-urlencoded):', response.data);
-        return response.data; // 성공 시 { email: "user@gmail.com" }
-    } catch (error: any) {
-        console.error("🚨 아이디(이메일) 찾기 실패:", error.response?.data || error.message);
-        if (error.response && error.response.data) {
-            throw error.response.data;
-        }
-        throw new Error("아이디(이메일)를 찾는 중 오류가 발생했습니다.");
-    }
-};

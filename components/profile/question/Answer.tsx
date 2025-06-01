@@ -1,5 +1,6 @@
 import { AnswerImage } from '@/api/questionApi';
-import { Dimensions, FlatList, Image, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Dimensions, FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -13,6 +14,9 @@ type AnswerProps = {
   };
 
 export default function Answer({ answer }: AnswerProps) {
+    // 이미지 뷰어 모달 상태
+    const [isImageViewVisible, setIsImageViewVisible] = useState(false);
+    const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 
     if (!answer) {
         return null; // ✅ 답변이 없는 경우 아무것도 렌더링하지 않음
@@ -20,12 +24,23 @@ export default function Answer({ answer }: AnswerProps) {
 
     const { content, createdAt, answerImages } = answer;
 
+    // 이미지 클릭 핸들러 및 모달 닫기 함수
+    const handleImagePress = (uri: string) => {
+        setSelectedImageUri(uri);
+        setIsImageViewVisible(true);
+    };
+
+    const handleCloseImageView = () => {
+        setIsImageViewVisible(false);
+        setSelectedImageUri(null);
+    };
+
     return (
         <View style={styles.container}>
-                <View style={styles.checkContainer}>
-                    <Text style={styles.sectionLabel}>답변</Text>
-                    <Text style={styles.createAt}>{createdAt}</Text>
-                </View>
+            <View style={styles.checkContainer}>
+                <Text style={styles.sectionLabel}>답변</Text>
+                <Text style={styles.createAt}>{createdAt}</Text>
+            </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.contentText}>{content}</Text>
             </View>
@@ -38,20 +53,45 @@ export default function Answer({ answer }: AnswerProps) {
                         showsHorizontalScrollIndicator={false}
                         keyExtractor={(item) => item.answerImageId.toString()}
                         renderItem={({ item }) => (
-                            <View style={styles.imageWrapper}>
-                                <Image 
-                                    source={{ uri: item.imageUrl }} 
-                                    style={styles.imagePreview}
-                                    resizeMode="cover"
-                                />
-                            </View>
+                            <TouchableOpacity onPress={() => handleImagePress(item.imageUrl)}>
+                                <View style={styles.imageWrapper}>
+                                    <Image 
+                                        source={{ uri: item.imageUrl }} 
+                                        style={styles.imagePreview}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                            </TouchableOpacity>
                         )}
                         ItemSeparatorComponent={() => <View style={styles.imageSeparator} />}
                         contentContainerStyle={styles.flatListContainer}
                     />
                 </View>
             )}
-          </View>
+
+            {/* 이미지 뷰어 모달 */}
+            {selectedImageUri && (
+                <Modal
+                    transparent={true}
+                    visible={isImageViewVisible}
+                    onRequestClose={handleCloseImageView}
+                >
+                    <View style={styles.imageViewerContainer}>
+                        <Image
+                            source={{ uri: selectedImageUri }}
+                            style={styles.fullScreenImage}
+                            resizeMode="contain"
+                        />
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={handleCloseImageView}
+                        >
+                            <Text style={styles.closeButtonText}>X</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+            )}
+        </View>
     )
 }
 
@@ -125,4 +165,36 @@ const styles = StyleSheet.create({
       imageSeparator: {
         width: 10,
       },
+      // --- 이미지 뷰어 관련 스타일 (QuestionDetailPage.tsx에서 복사) ---
+      imageViewerContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      fullScreenImage: {
+        width: '90%',
+        height: '80%',
+      },
+      closeButton: {
+        position: 'absolute',
+        // top: '11%', // 사용자가 QuestionDetailPage에서 top: '16%', right: '3%', backgroundColor: 'rgba(128, 128, 128, 1)' 로 수정한 것 반영
+        // right: '6%',
+        top: '16%', 
+        right: '3%', 
+        width: 40, 
+        height: 40, 
+        borderRadius: 20, 
+        backgroundColor: 'rgba(128, 128, 128, 1)', 
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1, 
+      },
+      closeButtonText: {
+        color: '#FFFFFF', 
+        fontSize: 18, 
+        fontFamily: "Pretendard-Bold", 
+        lineHeight: 20, 
+      },
+      // --- 여기까지 이미지 뷰어 관련 스타일 ---
 })
