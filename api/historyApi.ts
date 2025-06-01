@@ -69,25 +69,28 @@ const userBaseInfo: Record<string, { name: string }> = {
 
 /**
  * 1:1 채팅 내역 (채팅방 목록) 조회 API
- * @param memberId 회원 ID
- * @param page 페이지 번호 (1부터 시작)
+ * @param page 페이지 번호 (1부터 시작하는 것으로 가정)
  * @param size 페이지 당 항목 수
  */
 export const getChatHistory = async (
-  page: number = 0,
+  page: number = 1, // 기본값을 1로 변경 (1-based page 가정)
   size: number = 10,
 ): Promise<ChatRoomListResponse> => {
-  //console.log(`[API] getChatHistory 호출: memberId=${memberId}, page=${page}, size=${size}`);
   try {
-    // const memberId = useMemberInfoStore.getState().memberId;
-    const memberId = useAuthStore.getState().memberId; // authStore 사용
-    const response = await axiosWithToken.get(`/chat-rooms/my-chat-rooms/${memberId}`, {
+    const memberId = useAuthStore.getState().memberId;
+    if (!memberId) {
+      console.error("🚨 [getChatHistory] 채팅 내역 조회 실패: memberId가 없습니다.");
+      throw new Error("memberId is not available for getChatHistory");
+    }
+    // 요청 URL을 백엔드 컨트롤러의 전체 경로와 일치하도록 수정
+    // 클래스 레벨 @RequestMapping("/chat-rooms") + 메서드 레벨 @GetMapping("/my-chat-room/{member-id}")
+    const response = await axiosWithToken.get(`/chat-rooms/my-chat-room/${memberId}`, {
       params: {
-        page, // 백엔드가 0-indexed page를 사용한다면 조정
+        page, // 전달받은 page 값 사용 (1-based)
         size,
       },
     });
-    return response.data as ChatRoomListResponse; // 실제 응답 구조에 맞춰야 함
+    return response.data as ChatRoomListResponse; 
   } catch (error) {
     console.error('Error fetching chat history:', error);
     throw error;
