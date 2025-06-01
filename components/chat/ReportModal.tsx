@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -20,26 +20,40 @@ const reportReasons = [
 
 interface ReportModalProps {
   visible: boolean;
-  onClose: () => void;
+  onSubmitReport: (reasons: string[]) => void; // 신고 사유를 전달하며 실제 신고 처리 요청
+  onDismiss: () => void; // 모달을 단순히 닫는 경우
   themeId?: number;
 }
 
-const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, themeId = 1 }) => {
-  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+const ReportModal: React.FC<ReportModalProps> = ({ visible, onSubmitReport, onDismiss, themeId = 1 }) => {
+  const [selectedReason, setSelectedReason] = useState<string | null>(null); // 단일 선택으로 변경
+
+  useEffect(() => {
+    // 모달이 화면에 표시될 때 (visible 프롭이 true가 될 때)
+    // 이전에 선택했던 사유들을 초기화합니다.
+    if (visible) {
+      setSelectedReason(null); // 단일 선택 초기화
+    }
+  }, [visible]);
 
   const toggleReason = (reason: string) => {
-    setSelectedReasons(prev =>
-      prev.includes(reason) ? prev.filter(r => r !== reason) : [...prev, reason]
-    );
+    // 이미 선택된 사유를 다시 클릭하면 선택 해제, 아니면 새로운 사유로 변경
+    setSelectedReason(prevSelectedReason =>
+      prevSelectedReason === reason ? null : reason
+    ); 
   };
 
   const handleConfirm = () => {
-    // 선택된 항목 처리 로직
-    onClose();
+    // 선택된 항목(selectedReason)으로 실제 신고 처리 로직 호출 (배열로 전달)
+    onSubmitReport(selectedReason ? [selectedReason] : []);
+  };
+
+  const handleCancel = () => {
+    onDismiss();
   };
 
   // 확인 버튼 활성화 여부
-  const isConfirmEnabled = selectedReasons.length > 0;
+  const isConfirmEnabled = selectedReason !== null; // 단일 선택 여부로 변경
   
   // 테마에 따른 색상 설정
   const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#EF5A52";
@@ -66,7 +80,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, themeId = 1
                 style={styles.reasonBox}
                 onPress={() => toggleReason(reason)}
               >
-                {selectedReasons.includes(reason) ? (
+                {selectedReason === reason ? ( // 단일 선택 비교로 변경
                   <Ionicons name="checkmark-circle" size={SCREEN_WIDTH * 0.06} color="#EF5A52" />
                 ) : (
                   <Ionicons name="ellipse-outline" size={SCREEN_WIDTH * 0.06} color="#EF5A52" />
@@ -77,31 +91,21 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, themeId = 1
           </ScrollView>
           <View style={styles.buttonContainer}>
           <Pressable 
-            style={[
-              styles.confirmButton, 
-              !isConfirmEnabled && styles.disabledButton
-            ]} 
-            onPress={handleConfirm}
-            disabled={!isConfirmEnabled}
+            style={[styles.button, styles.cancelButton]}
+            onPress={handleCancel} // onClose 직접 호출 또는 별도 핸들러
           >
             <Text style={[
-              styles.confirmText,
-              !isConfirmEnabled && styles.disabledText
-            ]}>확인</Text>
+              styles.buttonText,
+              styles.cancelButtonText
+            ]}>취소</Text>
           </Pressable>
-          <Pressable 
-            style={[
-              styles.confirmButton, 
-              !isConfirmEnabled && styles.disabledButton
-            ]} 
+          <Pressable
+            style={[styles.button, styles.confirmButton, !isConfirmEnabled && styles.disabledButton]}
             onPress={handleConfirm}
             disabled={!isConfirmEnabled}
           >
-            <Text style={[
-              styles.confirmText,
-              !isConfirmEnabled && styles.disabledText
-              ]}>취소</Text>
-            </Pressable>
+            <Text style={[styles.buttonText, styles.confirmButtonText, !isConfirmEnabled && styles.disabledText]}>확인</Text>
+          </Pressable>
           </View>
         </View>
       </View>
@@ -166,21 +170,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 10,
   },
-  confirmButton: {
+  button: {
     marginTop: 16,
-    backgroundColor: "#EF5A52",
     paddingVertical: 10,
     paddingHorizontal: 0,
     borderRadius: 20,
     flex: 1,
     alignItems: "center",
   },
+  cancelButton: {
+    backgroundColor: "#E0E0E0", // 취소 버튼은 항상 활성화된 스타일
+  },
+  confirmButton: {
+    backgroundColor: "#EF5A52", // 확인 버튼 기본 색상
+  },
   disabledButton: {
     backgroundColor: "#CCCCCC",
   },
-  confirmText: {
-    color: "white",
+  buttonText: {
     fontWeight: "bold",
+  },
+  cancelButtonText: {
+    color: "#333333", // 취소 버튼 텍스트 색상
+  },
+  confirmButtonText: {
+    color: "white",
   },
   disabledText: {
     color: "#999999",
