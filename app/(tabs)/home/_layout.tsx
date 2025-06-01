@@ -23,6 +23,7 @@ export default function HomeLayout() {
           id: notice.noticeId,
           imageUrl: thumbnailImage!.imageUrl, // 위에서 some으로 존재를 확인했으므로 ! 사용 가능
           title: notice.title, // EventBannerData 타입에 title이 있으므로 추가
+          content: notice.content, // EventBannerData 타입에 content가 있으므로 추가
         };
       });
   }, [noticesFromStore]);

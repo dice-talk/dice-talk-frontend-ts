@@ -8,13 +8,18 @@ const { width } = Dimensions.get("window");
 type GradientHeaderProps = {
   title: string;
   showBackButton?: boolean;
+  onBackPress?: () => void; // 뒤로가기 버튼 커스텀 핸들러 추가
 };
 
-export default function GradientHeader({ title, showBackButton = true }: GradientHeaderProps) {
+export default function GradientHeader({ title, showBackButton = true, onBackPress }: GradientHeaderProps) {
   const router = useRouter();
 
   const handleBack = () => {
-    router.back();
+    if (onBackPress) {
+      onBackPress(); // 커스텀 핸들러가 있으면 실행
+    } else {
+      router.back(); // 없으면 기본 동작
+    }
   };
 
   return (
