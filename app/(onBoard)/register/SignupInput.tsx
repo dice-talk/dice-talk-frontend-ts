@@ -27,7 +27,6 @@ export default function SignupInput() {
 
     // 스토어에서 가져온 값들을 사용합니다.
     const nameFromStore = signupProgress?.name || '';
-    const phoneFromStore = signupProgress?.phone || '010-1234-5689';
     const birthFromStore = signupProgress?.birth || ''; // YYYYMMDD 형식
     const ageGroupFromStore = signupProgress?.ageGroup || '';
     const emailFromStore = signupProgress?.email || ''; // 스토어에서 이메일 가져오기
@@ -50,26 +49,12 @@ export default function SignupInput() {
     const isPasswordMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
     const isPasswordValid = passwordRegex.test(password);
 
-    // isFormValid 조건 확인을 위한 로그 추가
-    console.log('--- isFormValid Check ---');
-    console.log('emailFromStore:', !!emailFromStore, emailFromStore);
-    console.log('nameFromStore:', !!nameFromStore, nameFromStore);
-    console.log('genderFromStore:', !!genderFromStore, genderFromStore);
-    console.log('birthFromStore:', !!birthFromStore, birthFromStore);
-    console.log('phoneFromStore (temp_allow_placeholder):', !!phoneFromStore, phoneFromStore); // 조건 변경 및 로그 메시지 수정
-    console.log('isPasswordValid:', isPasswordValid, password);
-    console.log('isPasswordMatch:', isPasswordMatch, password, confirmPassword);
-    console.log('selectedCity:', !!selectedCity, selectedCity);
-    console.log('selectedDistrict:', !!selectedDistrict, selectedDistrict);
-    console.log('-------------------------');
-
     // 가입하기 버튼 활성화 조건
     const isFormValid = 
         !!emailFromStore && // 스토어 이메일 사용
         !!nameFromStore &&
         !!genderFromStore &&
         !!birthFromStore &&
-        !!phoneFromStore && // 조건 변경: 기본값도 유효하도록 수정
         isPasswordValid &&
         isPasswordMatch &&
         !!selectedCity &&
@@ -82,7 +67,6 @@ export default function SignupInput() {
             else if (!nameFromStore) alertMessage = '이름 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!genderFromStore) alertMessage = '성별 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!birthFromStore) alertMessage = '생년월일 정보가 없습니다. 본인인증을 다시 시도해주세요.';
-            else if (!phoneFromStore || phoneFromStore === '010-1234-5689') alertMessage = '휴대폰 번호 인증이 필요합니다. 본인인증을 다시 시도해주세요.'; // 오타 수정 및 조건 유지 (실제 인증 전까지)
             else if (!selectedCity || !selectedDistrict) alertMessage = '지역을 선택해주세요.';
             else if (!isPasswordValid) alertMessage = '비밀번호 형식이 올바르지 않습니다.';
             else if (!isPasswordMatch) alertMessage = '비밀번호가 일치하지 않습니다.';
@@ -92,7 +76,6 @@ export default function SignupInput() {
             console.log('nameFromStore:', !!nameFromStore, nameFromStore);
             console.log('genderFromStore:', !!genderFromStore, genderFromStore);
             console.log('birthFromStore:', !!birthFromStore, birthFromStore);
-            console.log('phoneFromStore:', !!phoneFromStore && phoneFromStore !== '010-1234-5670', phoneFromStore);
             console.log('isPasswordValid:', isPasswordValid, password);
             console.log('isPasswordMatch:', isPasswordMatch, password, confirmPassword);
             console.log('selectedCity:', !!selectedCity, selectedCity);
@@ -100,7 +83,7 @@ export default function SignupInput() {
             console.log('-------------------------');
             
             Alert.alert('입력 오류', alertMessage);
-            if (!nameFromStore || !genderFromStore || !birthFromStore || (!phoneFromStore || phoneFromStore === '010-1234-5689')) { 
+            if (!nameFromStore || !genderFromStore || !birthFromStore) { 
                 router.replace('/(onBoard)/register/Agreement'); 
             }
             return;
@@ -113,7 +96,6 @@ export default function SignupInput() {
             gender: genderFromStore!,
             birth: birthDisplay,
             password,
-            phone: phoneFromStore,
             region,
         };
         console.log('🔗 회원가입 요청 데이터:', payload);
@@ -236,7 +218,6 @@ export default function SignupInput() {
                 <Text style={styles.label}>휴대폰 번호</Text>
                 <TextInput
                     style={[styles.input, styles.disabledInput]}
-                    value={phoneFromStore}
                     editable={false}
                 />
 
