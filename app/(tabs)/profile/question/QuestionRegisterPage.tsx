@@ -2,9 +2,10 @@ import { createQuestion } from "@/api/questionApi";
 import GradientHeader from "@/components/common/GradientHeader";
 import Toast from "@/components/common/Toast";
 import MediumButton from "@/components/profile/myInfoPage/MediumButton";
-import FileButton from "@/components/profile/question/FileButton";
+import FileButton, { ExistingImage, ImageChangePayload } from "@/components/profile/question/FileButton";
+import useAuthStore from "@/zustand/stores/authStore";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Dimensions,
   ScrollView,
@@ -16,13 +17,18 @@ import {
 
 export default function QuestionRegisterPage() {
   const router = useRouter();
+  const memberId = useAuthStore((state) => state.memberId);
   const [titleValue, setTitleValue] = useState<string>("");
   const [contentValue, setContentValue] = useState<string>("");
   const [charCount, setCharCount] = useState<number>(0);
   const [showToast, setShowToast] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string>("");
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImageUris, setSelectedImageUris] = useState<string[]>([]);
   const height = Dimensions.get("window").height;
+
+  // FileButton에 전달할 initialExistingImages를 useMemo로 메모이제이션 (항상 빈 배열)
+  const memoizedInitialExistingImages = useMemo<ExistingImage[]>(() => [], []);
+
   // ✅ 내용 변경 핸들러 (500자 제한)
   const handleContentChange = (text: string) => {
     if (text.length <= 500) {
@@ -31,33 +37,42 @@ export default function QuestionRegisterPage() {
     }
   };
 
-  // ✅ 이미지 등록 핸들러
-  const handleImageSelect = (images: string[]) => {
-    setSelectedImages(images);
-    };
+  // ✅ 이미지 등록 핸들러 - FileButton 변경에 따라 수정
+  const handleImagesChange = useCallback((payload: ImageChangePayload) => {
+    console.log("📸 [QuestionRegisterPage] FileButton onImagesChange payload:", payload);
+    // QuestionRegisterPage에서는 새로 추가된 이미지만 사용합니다.
+    // 기존 이미지 수정/유지 기능은 상세 페이지에 있으므로, 여기서는 newlyAddedUris만 사용합니다.
+    setSelectedImageUris(payload.newlyAddedUris);
+  }, []);
 
   // ✅ 문의 등록 요청
   const handlePostQuestion = async () => {
+    if (!memberId) {
+      setToastMessage("사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
+      setShowToast(true);
+      return;
+    }
     if (!titleValue.trim()) {
       setToastMessage("제목을 입력해주세요.");
       setShowToast(true);
       return;
     }
-
     if (!contentValue.trim()) {
       setToastMessage("내용을 입력해주세요.");
       setShowToast(true);
       return;
     }
 
+    const questionDto = {
+      memberId: memberId,
+      title: titleValue.trim(),
+      content: contentValue.trim(),
+    };
+
     try {
-      await createQuestion({
-        memberId: 1,
-        questionId: 1,
-        title: titleValue,
-        content: contentValue,
-        images: selectedImages,
-      });
+      console.log("🚀 [QuestionRegisterPage] Attempting to create question with DTO:", questionDto);
+      console.log("🖼️ [QuestionRegisterPage] Selected image URIs for upload:", selectedImageUris);
+      await createQuestion({ dto: questionDto, imageUris: selectedImageUris });
       setToastMessage("문의가 등록되었습니다.");
       setShowToast(true);
       setTimeout(() => {
@@ -66,8 +81,8 @@ export default function QuestionRegisterPage() {
         });
       }, 1000);
     } catch (error) {
-      console.error("문의 등록 실패:", error);
-      setToastMessage("문의 등록에 실패했습니다.");
+      console.error("문의 등록 실패 페이지에서 에러:", error);
+      setToastMessage("문의 등록에 실패했습니다. 다시 시도해주세요.");
       setShowToast(true);
     }
   };
@@ -104,7 +119,11 @@ export default function QuestionRegisterPage() {
         </View>
 
         {/* 이미지 첨부 */}
-        <FileButton onImageSelect={handleImageSelect} /> {/* ✅ FileButton에서 선택된 이미지 관리 */}
+        <FileButton 
+          onImagesChange={handleImagesChange} 
+          initialExistingImages={memoizedInitialExistingImages} // 메모이제이션된 값 사용
+          maxImages={5} 
+        />
 
         {/* 등록 버튼 */}
         <View style={styles.saveButtonContainer}>

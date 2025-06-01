@@ -1,6 +1,7 @@
 import { ChatRoomItem, HeartHistoryItem, PageInfo, getChatHistory, getMyHeartHistory } from "@/api/historyApi";
 import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent";
 import Tab from "@/components/common/Tab";
+import EmptyHistoryPlaceholder from "@/components/history/EmptyHistoryPlaceholder";
 import HistoryItem, { HistoryItemProps } from "@/components/history/HistoryItem";
 import useHomeStore from "@/zustand/stores/HomeStore";
 import { useRouter } from "expo-router";
@@ -13,8 +14,7 @@ const TAB_BAR_HEIGHT_APPROX = Platform.OS === 'ios' ? 80 : 60; // 일반적인 �
 // 화면 높이에 따라 ITEMS_PER_PAGE 결정하는 함수
 const getItemsPerPage = () => {
   const windowHeight = Dimensions.get('window').height;
-  // 예시: 화면 높이가 800px 이상이면 8개, 미만이면 6개 (무한 스크롤이므로 한 번에 더 많이 가져오도록 조정 가능)
-  return windowHeight >= 800 ? 8 : 6;
+  return windowHeight >= 800 ? 10 : 8; // 페이지당 아이템 수 조정
 };
 
 export default function HistoryScreen() {
@@ -30,14 +30,14 @@ export default function HistoryScreen() {
   const [currentChatPage, setCurrentChatPage] = useState(1);
   const [hasMoreChat, setHasMoreChat] = useState(true);
 
-  // 하트 내역 상태
-  const [fullHeartHistory, setFullHeartHistory] = useState<HeartHistoryItem[]>([]); // 전체 하트 내역
-  const [displayedHeartHistory, setDisplayedHeartHistory] = useState<HeartHistoryItem[]>([]); // 화면에 표시될 하트 내역
-  const [currentHeartOffset, setCurrentHeartOffset] = useState(0); // 하트 내역 현재 오프셋
+  // 하트 내역 상태 (서버 사이드 페이징으로 변경)
+  const [heartHistory, setHeartHistory] = useState<HeartHistoryItem[]>([]);
+  const [heartPageInfo, setHeartPageInfo] = useState<PageInfo | null>(null);
+  const [currentHeartPage, setCurrentHeartPage] = useState(1); // API는 1-based page
   const [hasMoreHearts, setHasMoreHearts] = useState(true);
 
-  const [loading, setLoading] = useState(false); // 초기 로딩 상태
-  const [loadingMore, setLoadingMore] = useState(false); // 더 불러오기 로딩 상태
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const noticesFromStore = useHomeStore((state) => state.notices);
 
@@ -61,103 +61,66 @@ export default function HistoryScreen() {
   }, [noticesFromStore]);
   // 채팅 내역 불러오기 (페이지 기반)
   const loadChatHistory = useCallback(async (page: number, isInitialLoad = false) => {
-    if (loadingMore && !isInitialLoad) return; // 이미 더 불러오는 중이면 중복 실행 방지
-    setLoading(isInitialLoad ? true : false);
-    if (!isInitialLoad) setLoadingMore(true);
-
+    if (loadingMore && !isInitialLoad) return;
+    if(isInitialLoad) setLoading(true); else setLoadingMore(true);
     try {
-      const response = await getChatHistory(DUMMY_MEMBER_ID, page, /*itemsPerPage*/);
+      const response = await getChatHistory(page, itemsPerPage);
       setChatHistory(prev => isInitialLoad ? response.data : [...prev, ...response.data]);
       setChatPageInfo(response.pageInfo);
-      setCurrentChatPage(response.pageInfo.page);
+      setCurrentChatPage(response.pageInfo.page); 
       setHasMoreChat(response.pageInfo.page < response.pageInfo.totalPages);
     } catch (error) {
       console.error("채팅 내역 로딩 실패:", error);
-      setHasMoreChat(false); // 에러 발생 시 더 이상 로드 시도 안함
+      setHasMoreChat(false); 
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      setLoading(false); setLoadingMore(false);
     }
-  }, [itemsPerPage]);
+  }, [itemsPerPage, loadingMore]);
 
-  // 전체 하트 내역 한 번에 불러오기
-  const loadFullHeartHistory = useCallback(async () => {
-    setLoading(true);
+  // 하트 내역 불러오기 (서버 사이드 페이징)
+  const loadHeartHistory = useCallback(async (page: number, isInitialLoad = false) => {
+    if (loadingMore && !isInitialLoad) return;
+    if(isInitialLoad) setLoading(true); else setLoadingMore(true);
     try {
-      const response = await getMyHeartHistory();
-      setFullHeartHistory(response.data);
-      // 처음 itemsPerPage 만큼만 표시
-      setDisplayedHeartHistory(response.data.slice(0, itemsPerPage));
-      setCurrentHeartOffset(itemsPerPage);
-      setHasMoreHearts(response.data.length > itemsPerPage);
+      const response = await getMyHeartHistory(page, itemsPerPage);
+      setHeartHistory(prev => isInitialLoad ? response.data : [...prev, ...response.data]);
+      // HeartHistoryListResponse의 pageInfo는 이제 non-optional이므로 직접 사용
+      setHeartPageInfo(response.pageInfo);
+      setCurrentHeartPage(response.pageInfo.page); 
+      setHasMoreHearts(response.pageInfo.page < response.pageInfo.totalPages);
     } catch (error) {
       console.error("하트 히스토리 로딩 실패:", error);
       setHasMoreHearts(false);
     } finally {
-      setLoading(false);
+      setLoading(false); setLoadingMore(false);
     }
-  }, [itemsPerPage]);
-
-  // 하트 내역 더 보여주기 (클라이언트 사이드)
-  const loadMoreHearts = useCallback(() => {
-    if (loadingMore || !hasMoreHearts) return;
-    setLoadingMore(true);
-    
-    const nextOffset = currentHeartOffset + itemsPerPage;
-    const newHearts = fullHeartHistory.slice(currentHeartOffset, nextOffset);
-    
-    // 약간의 딜레이를 주어 로딩 인디케이터가 보이도록 (실제 API 호출이 아니므로)
-    setTimeout(() => {
-      setDisplayedHeartHistory(prev => [...prev, ...newHearts]);
-      setCurrentHeartOffset(nextOffset);
-      setHasMoreHearts(fullHeartHistory.length > nextOffset);
-      setLoadingMore(false);
-    }, 500);
-
-  }, [fullHeartHistory, currentHeartOffset, itemsPerPage, hasMoreHearts, loadingMore]);
+  }, [itemsPerPage, loadingMore]);
   
-  // 탭 변경 또는 초기 로드
   useEffect(() => {
     if (activeTab === 'chat') {
-      loadChatHistory(1, true); // 초기 로드 시 1페이지
+      loadChatHistory(1, true); // 1-based 페이지로 호출
     } else {
-      loadFullHeartHistory(); // 전체 하트 내역 로드 후 일부 표시
+      loadHeartHistory(1, true); // 1-based 페이지로 호출
     }
-  }, [activeTab, loadChatHistory, loadFullHeartHistory]); // currentChatPage 제거
+  }, [activeTab, loadChatHistory, loadHeartHistory]);
 
   const handleTabChange = (tabName: string) => {
-    // 상태 초기화
-    setChatHistory([]);
-    setChatPageInfo(null);
-    setCurrentChatPage(1);
-    setHasMoreChat(true);
-    setFullHeartHistory([]);
-    setDisplayedHeartHistory([]);
-    setCurrentHeartOffset(0);
-    setHasMoreHearts(true);
-    setLoading(false);
-    setLoadingMore(false);
+    setChatHistory([]); setChatPageInfo(null); setCurrentChatPage(1); setHasMoreChat(true);
+    setHeartHistory([]); setHeartPageInfo(null); setCurrentHeartPage(1); setHasMoreHearts(true);
+    setLoading(true); setLoadingMore(false);
 
-    if (tabName === '1 대 1 채팅 내역') {
-      setActiveTab('chat');
-      // useEffect가 activeTab 변경에 따라 loadChatHistory(1, true) 호출
-    } else if (tabName === '하트 히스토리') {
-      setActiveTab('heart');
-      // useEffect가 activeTab 변경에 따라 loadFullHeartHistory 호출
-    }
+    if (tabName === '1 대 1 채팅 내역') setActiveTab('chat');
+    else if (tabName === '하트 히스토리') setActiveTab('heart');
   };
 
-  // 무한 스크롤 핸들러
   const handleEndReached = () => {
     if (activeTab === 'chat') {
-      if (!loadingMore && hasMoreChat) {
-        console.log("Requesting next chat page:", currentChatPage + 1);
+      if (!loadingMore && hasMoreChat && chatPageInfo && currentChatPage < chatPageInfo.totalPages) {
         loadChatHistory(currentChatPage + 1);
       }
-    } else { // heart 탭
-      if (!loadingMore && hasMoreHearts) {
-        console.log("Requesting more hearts");
-        loadMoreHearts();
+    } else { 
+      if (!loadingMore && hasMoreHearts && heartPageInfo && currentHeartPage < heartPageInfo.totalPages) {
+        loadHeartHistory(currentHeartPage + 1);
       }
     }
   };
@@ -172,39 +135,21 @@ export default function HistoryScreen() {
   if (activeTab === 'chat') {
     listTitle = "내 채팅";
     currentData = chatHistory.map(item => ({
-      id: item.chatRoomId,
-      type: 'chat',
-      svgComponentName: item.opponentProfileSvg || 'HanaSvg',
-      name: item.opponentName || '알 수 없는 상대',
-      content: item.lastChat,
-      createdAt: item.createdAt,
-      onPress: handleChatItemPress,
-      roomType: item.roomType,
+      id: item.chatRoomId, type: 'chat', svgComponentName: item.opponentProfileSvg || 'HanaSvg',
+      name: item.opponentName || '알 수 없는 상대', content: item.lastChat, createdAt: item.createdAt,
+      onPress: handleChatItemPress, roomType: item.roomType,
     }));
-  } else { // heart 탭
+  } else { 
     listTitle = "내가 받은 하트";
-    currentData = displayedHeartHistory.map(item => ({
-      id: item.roomEventId,
-      type: 'heart',
-      svgComponentName: item.senderProfileSvg || 'HanaSvg',
-      name: item.senderName || '알 수 없는 사용자',
-      content: item.message,
-      createdAt: item.createdAt,
+    currentData = heartHistory.map(item => ({
+      id: item.roomEventId, type: 'heart', svgComponentName: item.senderProfileSvg || 'HanaSvg',
+      name: item.senderName || '알 수 없는 사용자', content: item.message, createdAt: item.createdAt,
     }));
   }
 
-  const ListHeader = () => (
-    <Text style={styles.listTitleStyle}>{listTitle}</Text>
-  );
-
-  const ListFooter = () => {
-    if (!loadingMore) return null;
-    return (
-      <View style={styles.loadingMoreContainer}>
-        <ActivityIndicator size="small" color="#B28EF8" />
-      </View>
-    );
-  };
+  const renderListHeader = () => currentData.length > 0 ? <Text style={styles.listTitleStyle}>{listTitle}</Text> : null;
+  const renderListFooter = () => !loadingMore ? null : <View style={styles.loadingMoreContainer}><ActivityIndicator size="small" color="#B28EF8" /></View>;
+  const renderEmptyList = () => loading ? null : <EmptyHistoryPlaceholder type={activeTab} />;
  
   return (
     <View style={styles.container}>
@@ -218,29 +163,20 @@ export default function HistoryScreen() {
           onTabChange={handleTabChange}
         />
       </View>
-
-      {loading && currentData.length === 0 ? ( // 초기 로딩 중이면서 데이터가 없을 때만 전체 로더 표시
-        <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#B28EF8" />
-        </View>
-      ) : currentData.length === 0 && !loading ? ( // 로딩이 끝났는데 데이터가 없을 경우
-        <View style={styles.emptyContainer}>
-          <ListHeader />
-          <Text style={styles.emptyText}>{activeTab === 'chat' ? '채팅 내역이 없습니다.' : '하트 내역이 없습니다.'}</Text>
-        </View>
-      ) : (
-        <FlatList
-          ListHeaderComponent={ListHeader}
-          data={currentData}
-          renderItem={({ item }) => <HistoryItem {...item} />}
-          keyExtractor={(item) => `${item.type}-${item.id.toString()}`} // 키를 더 고유하게
-          style={styles.listStyle}
-          contentContainerStyle={styles.listContentContainer}
-          scrollEnabled={true} // 스크롤 활성화
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.5} // 리스트 끝에서 얼마나 떨어졌을 때 onEndReached를 호출할지 (0.5는 절반)
-          ListFooterComponent={ListFooter}
-        />
+      <FlatList
+        ListHeaderComponent={renderListHeader}
+        data={currentData}
+        renderItem={({ item }) => <HistoryItem {...item} />}
+        keyExtractor={(item) => `${item.type}-${item.id.toString()}`}
+        style={styles.listStyle}
+        contentContainerStyle={styles.listContentContainer}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderListFooter}
+        ListEmptyComponent={renderEmptyList}
+      />
+      {loading && currentData.length === 0 && (
+        <View style={styles.loaderContainer}><ActivityIndicator size="large" color="#B28EF8" /></View>
       )}
     </View>
   );
@@ -283,27 +219,21 @@ const styles = StyleSheet.create({
   listContentContainer: {
     // TAB_BAR_HEIGHT_APPROX + 약간의 여유공간 (페이지네이션 공간 제거)
     paddingBottom: TAB_BAR_HEIGHT_APPROX + 20, 
+    flexGrow: 1, // 추가: 내용이 적을 때도 ListEmptyComponent가 중앙에 오도록
   },
-  loaderContainer: { // 초기 전체 로딩
-    flex: 1,
+  loaderContainer: { 
+    position: 'absolute', // 추가: 다른 내용 위에 오도록
+    top: HEADER_CONTENT_HEIGHT,
+    bottom: 0,
+    left: 0,
+    right: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: HEADER_CONTENT_HEIGHT, // 헤더 높이만큼 내려서 중앙에
+    backgroundColor: 'rgba(255,255,255,0.8)', // 약간의 투명 배경
+    zIndex: 2, // topFixedContent 위에 오도록
   },
   loadingMoreContainer: { // 더 불러오기 로딩 (푸터)
     paddingVertical: 20,
-  },
-  emptyContainer: {
-    // flex: 1, // ListHeader를 포함하므로 flex:1 제거 또는 조정
-    // justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: HEADER_CONTENT_HEIGHT + 20, // 헤더 아래, 약간의 여백 추가
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
-    fontFamily: 'Pretendard-Regular',
-    marginTop: 20, // 제목 아래 여백
   },
   bottomSheetWrapper: { // 이 스타일은 현재 사용되지 않는 것 같아 주석 처리 또는 확인 후 제거 가능
     // position: 'absolute',

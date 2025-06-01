@@ -36,7 +36,7 @@ const NoticeListItem: React.FC<NoticeListItemProps> = ({ item, onPressItem }) =>
     }
   };
 
-  const isImportant = item.importance === 1;
+  const isImportant = item.noticeImportance === 1;
   const tagText = item.noticeType === 'NOTICE' ? '공지' : '이벤트';
 
   const TagComponent = isImportant ? LinearGradient : View;

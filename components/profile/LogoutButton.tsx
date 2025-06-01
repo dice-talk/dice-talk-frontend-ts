@@ -24,7 +24,7 @@ export default function LogoutButton() {
           try {
             const loggedOut = await logoutMember();
             if (loggedOut) {
-              console.log('LogoutButton: 로그아웃 처리 완료, (onBoard)로 이동합니다.');
+              console.log('LogoutButton: 로그아웃 처리 완료, /(onBoard)로 이동합니다.');
               router.replace('/(onBoard)');
             } else {
               Alert.alert("로그아웃 실패", "로그아웃 중 문제가 발생했습니다. 다시 시도해주세요.");

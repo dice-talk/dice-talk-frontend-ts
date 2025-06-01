@@ -94,25 +94,25 @@ export default function ProfileScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <ScrollView
-                style={styles.scrollContainer}
-                contentContainerStyle={styles.scrollContent}
+        <View style={styles.pageContainer}>
+            <ScrollView 
+                style={styles.contentScrollContainer}
+                contentContainerStyle={styles.contentScrollContent}
                 showsVerticalScrollIndicator={false}
             >
+            <View style={styles.profileAreaContainer}>
                 <GradientBackground>
-                    {/* memberId가 없을 때도 ProfileHeader는 기본값을 보여줄 수 있도록 함 */}
                     <ProfileHeader {...displayInfo} mode="profile" />
                 </GradientBackground>
-                <View style={[styles.contentContainer, { marginTop: height * 0.41 }]}>
-                    <ProfileInfoCard onTabPress={handleTabPress}/>
-                    <GradientLine />
-                    <LogoutButton />
-                </View>
+            </View>
+                <ProfileInfoCard onTabPress={handleTabPress}/>
+                <GradientLine />
+                <LogoutButton />
             </ScrollView>
         </View>
     );
 }
+
 const { height, width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
@@ -122,31 +122,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: "#FFFFFF",
     },
-    container: {
+    pageContainer: {
         flex: 1,
         backgroundColor: "#FFFFFF",
     },
-    scrollContainer: {
+    profileAreaContainer: {
+        // 이 컨테이너는 GradientBackground의 높이만큼을 차지하게 됨
+        // 특별한 스타일이 필요 없을 수 있음. 필요시 배경색 등으로 디버깅
+        // backgroundColor: 'rgba(255,0,0,0.1)', // 영역 확인용
+    },
+    contentScrollContainer: {
         flex: 1,
     },
-    scrollContent: {
-        paddingBottom: height * 0.1, 
-    },
-    gradientContainer: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: height * 1.5, 
-    },
-    contentContainer: {
-        paddingHorizontal: 8, 
-        marginHorizontal: 8, 
-        backgroundColor: "rgba(255, 255, 255, 0)", 
-    },
-    headerContainer: {
-        alignItems: "center",
-        paddingTop: height * 0.25, 
+    contentScrollContent: {
+        paddingHorizontal: 16,
+        paddingBottom: height * 0.12,
     },
 });
 

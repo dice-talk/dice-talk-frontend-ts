@@ -71,8 +71,8 @@ export default function MyInfoPage() {
     const profileHeaderData = {
         nickname: nickname || "로딩 중...",
         profileImage: profileImage || defaultProfileImageFromMyInfoPage,
-        diceCount: totalDice || 0,
-        isInChat: isInChat || false,
+        diceCount: Number(totalDice || 0),
+        isInChat: !!(isInChat || false),
     };
 
     const [showTossAuth, setShowTossAuth] = useState(false);
@@ -213,7 +213,7 @@ export default function MyInfoPage() {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles.pageContainer}>
             {showTossAuth && (
                 <TossAuth 
                     onAuthSuccess={handleAuthSuccess} 
@@ -225,18 +225,34 @@ export default function MyInfoPage() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.headerContainer}>
-                    <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                        <Ionicons name="chevron-back" size={28} color="rgba(0, 0, 0, 0.4)" />
-                    </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>나의 정보</Text>
-                    </View>
+            {/* GradientBackground가 헤더보다 먼저 렌더링되도록 순서 변경 */}
+            <GradientBackground>
+                <ProfileHeader {...profileHeaderData} mode="myInfo" />
+            </GradientBackground>
+
+            {/* 고정 헤더: GradientBackground 위에 위치 */}
+            <View style={styles.fixedHeaderContainer}>
+                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                    <Ionicons name="chevron-back" size={28} color="rgba(0, 0, 0, 0.4)" />
+                </TouchableOpacity>
+                <View style={styles.headerTitleContainer}>
+                    <Text style={styles.headerTitle}>나의 정보</Text>
                 </View>
-                <GradientBackground>
-                    <ProfileHeader {...profileHeaderData} mode="myInfo" />
-                </GradientBackground>
-                <View style={[styles.contentContainer, { marginTop: height * 0.33 }]}>
+            </View>
+                {/* 
+                    컨텐츠 컨테이너의 marginTop 조정 필요. 
+                    기존에는 ProfileHeader 아래부터 컨텐츠가 시작되었으므로, 
+                    GradientBackground의 높이 + fixedHeader의 높이를 고려해야 함.
+                    정확한 값은 ProfileHeader와 fixedHeaderContainer의 실제 렌더링 높이에 따라 달라짐.
+                    여기서는 우선 ProfileHeader의 대략적인 높이(예: height * 0.25 또는 0.3)와 
+                    fixedHeader의 높이(예: 60-80px)를 감안하여 marginTop을 설정.
+                    ProfileHeader가 약 25%~30% 정도 차지하고, fixedHeader는 그 위에 오버레이되므로,
+                    ScrollView의 시작점은 GradientBackground (ProfileHeader)의 높이만큼 내려와야 함.
+                    fixedHeaderContainer는 absolute이므로 레이아웃 흐름에 영향을 주지 않지만, 
+                    내용이 가려지지 않도록 ScrollView의 contentContainerStyle에 paddingTop을 주는 것이 더 적절할 수 있음.
+                    우선은 contentContainer의 marginTop으로 조정하고, 필요시 paddingTop로 변경.
+                */}
+                <View style={[styles.contentContainer]}>
                     <MyInfoField iconName="person-outline" label="이름" value={myDetailedInfo.name ?? ""} editable={false} />
                     <MyInfoField iconName="mail-outline" label="이메일" value={myDetailedInfo.email ?? ""} editable={false} />
                     <MyInfoField iconName="male-female-outline" label="성별" value={myDetailedInfo.gender === 'MALE' ? '남성' : myDetailedInfo.gender === 'FEMALE' ? '여성' : ""} editable={false} />
@@ -289,50 +305,64 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: "#FFFFFF",
     },
-    container: {
+    pageContainer: { // 기존 container -> pageContainer로 변경 (의미 명확화)
       flex: 1,
       backgroundColor: "#FFFFFF",
     },
     scrollContainer: {
         flex: 1,
-      },
-      scrollContent: {
+        // fixedHeaderContainer가 absolute이므로, ScrollView가 그 아래로 들어가도록 해야 함.
+        // ScrollView 자체가 GradientBackground 영역 아래에서 시작하도록 marginTop을 줄 수 있음.
+        // 또는 ScrollView는 전체를 차지하고, contentContainerStyle에 paddingTop을 줄 수 있음.
+        // 여기서는 ScrollView가 GradientBackground 높이 이후부터 시작하도록 marginTop 설정 시도.
+        // GradientBackground의 예상 높이만큼 marginTop을 주거나, 혹은 ProfileHeader의 높이를 가져와야 함.
+        // 대략적인 ProfileHeader 높이(화면 높이의 25~30%)를 임시로 설정.
+        // 이 값은 GradientBackground 내부의 ProfileHeader 높이에 따라 달라져야 함.
+        // ProfileHeader의 mode="myInfo" 일 때의 실제 높이를 확인하고 적용해야 함.
+        // 지금은 임시로 0으로 두고, contentContainer의 marginTop/paddingTop으로 조절
+    },
+    scrollContent: {
         paddingBottom: height * 0.1, 
-      },
-      headerContainer: {
+        // fixedHeaderContainer 높이만큼 paddingTop을 주어 내용이 가려지지 않도록 함.
+        // 대략적인 헤더 높이 (예: 60-80px). 여기서는 70으로 가정.
+        // 실제 fixedHeaderContainer 높이에 따라 조정 필요.
+    },
+    fixedHeaderContainer: { // 기존 headerContainer -> fixedHeaderContainer로 변경 및 스타일 수정
         width: "100%",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 20,
-        paddingVertical: 24,
-        position: "relative",
-        zIndex: 10,
-      },
-      backButton: {
-        position: "absolute",
+        paddingVertical: 15, // 기존 24에서 약간 줄임 (디자인에 따라 조절)
+        position: "absolute", // 화면 상단에 고정
+        top: 15,
+        left: 0,
+        right: 0,
+        zIndex: 10, // 다른 요소들 위에 보이도록
+        // backgroundColor: 'rgba(255, 255, 255, 0.3)', // 헤더 영역 확인용 (배경 투명도) - 필요시 사용
+    },
+    backButton: {
+        position: "absolute", // fixedHeaderContainer 내부에서 절대 위치
         left: 16,
-        top: 0, // backButton의 높이를 고려하여 조정 필요할 수 있음
+        // backButton의 높이는 paddingVertical과 아이콘 크기에 의해 결정됨
+        // top, bottom, justifyContent, alignItems를 통해 수직 중앙 정렬
+        top: 0, 
         bottom: 0,
         justifyContent: "center",
         alignItems: "center",
-        // backgroundColor: 'lightblue', // 영역 확인용
-      },
-      headerTitleContainer: {
+    },
+    headerTitleContainer: {
         flex: 1,
         alignItems: "center",
-        justifyContent: "center", // 타이틀 중앙 정렬
-        // backgroundColor: 'lightcoral', // 영역 확인용
-      },
-      headerTitle: {
+        justifyContent: "center",
+    },
+    headerTitle: {
         fontSize: 20,
         fontFamily: "Pretendard-Bold",
         color: "rgba(0, 0, 0, 0.4)",
-      },
-      contentContainer: {
+    },
+    contentContainer: {
         paddingHorizontal: 8, 
-        marginTop: height * 0.02 
-      },
-  });
-
-8
+        paddingTop: 10,
+    },
+});

@@ -143,8 +143,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* "이메일/비밀번호 찾기"는 요구사항에 따라 제거됨 */}
-
             <View style={styles.buttonWrapper}>
               <MediumButton
                 title="로그인"
@@ -158,6 +156,10 @@ export default function LoginScreen() {
                 )}
               </MediumButton> */}
             </View>
+
+            <TouchableOpacity style={styles.findInfoContainer} onPress={() => router.push('/(onBoard)/FindInfo')}>
+              <Text style={styles.findInfoText}>이메일/비밀번호를 잊으셨나요?</Text>
+            </TouchableOpacity>
 
             {/* 회원가입 버튼 (선택 사항) */}
             <View style={styles.signupContainer}>
@@ -232,17 +234,25 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     width: '100%',
-    marginTop: 20, // 버튼 위 간격
   },
   buttonText: {
     color: "white", //[cite: 3]
     fontSize: 18, // 버튼 텍스트 크기 증가
     fontWeight: '600',
   },
+  findInfoContainer: {
+    marginTop: 30, // 로그인 버튼과의 간격
+    alignItems: 'center',
+  },
+  findInfoText: {
+    fontSize: 14,
+    color: '#666',
+    textDecorationLine: 'underline',
+  },
   // disabledButton 스타일은 LongButton 내부에서 disabled prop에 따라 처리되도록 가정
   signupContainer: {
     flexDirection: 'row',
-    marginTop: 30, // 로그인 버튼과의 간격
+    marginTop: 25, // 로그인 버튼과의 간격
     alignItems: 'center',
   },
   signupText: {
