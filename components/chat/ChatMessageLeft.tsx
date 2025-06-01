@@ -29,11 +29,20 @@ const ChatMessageLeft = ({
 }: ChatMessageProps) => {
   const ProfileImage = profileImage as ProfileImageType;
   
-  const nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
-  const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
-  const bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
-  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D4B6D4";
-  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  // 특정 닉네임 목록
+  const specialNicknames = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
+
+  let nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
+  let timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
+  let bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
+  let profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D4B6D4";
+  let profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+
+  // 요청된 조건: themeId가 1이고, 닉네임이 specialNicknames에 포함될 경우
+  if (themeId === 1 && specialNicknames.includes(nickname)) {
+    profileBorderColor = "#9FC9FF";
+    profileIconColor = "#9FC9FF";
+  }
   
   return (
     <View style={[

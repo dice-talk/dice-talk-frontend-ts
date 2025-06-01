@@ -1,10 +1,15 @@
-import HanaSvg from '@/assets/images/dice/hana.svg';
-import Nemo from '@/assets/images/dice/nemo.svg';
+import useChatRoomStore, { ChatParticipant } from '@/zustand/stores/ChatRoomStore'; // ChatRoomStore 임포트
+import Hana from '@/assets/images/dice/hana.svg';
+import Nemo from '@/assets/images/dice/nemo.svg'; // 명확성을 위해 NemoSvg로 변경
+import Dori from '@/assets/images/dice/dori.svg';
+import Sezzi from '@/assets/images/dice/sezzi.svg';
+import Dao from '@/assets/images/dice/dao.svg';
+import Yukdaeng from '@/assets/images/dice/yukdaeng.svg';
 import SidebarClose from '@/assets/images/chat/sidebarClose.svg';
 import ActiveUser from '@/components/chat/ActiveUser';
 import ChatEventNotice from "@/components/chat/ChatEventNotice";
 import ChatFooter from "@/components/chat/ChatFooter";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react"; // useMemo와 React 임포트
 import { Animated, Dimensions, Pressable, StyleSheet, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
@@ -19,27 +24,52 @@ interface SideBarProps {
 interface UserData {
   id: string;
   name: string;
-  color: string;
   profileSvg: React.FC<SvgProps>;
 }
+
+// chatRoomDetails.chatParts 내부 아이템의 예상 구조
+// 실제 구조와 다를 경우 수정해주세요.
+
+const svgMap: Record<string, React.FC<SvgProps>> = {
+  Hana,
+  Nemo,
+  Dori,
+  Sezzi,
+  Dao,
+  Yukdaeng,
+};
 
 const { width } = Dimensions.get("window");
 
 const SideBar = ({ visible, onClose, onSirenPress, onProfilePress, themeId = 1 }: SideBarProps) => {
   console.log('SideBar themeId:', themeId);
   const translateX = useRef(new Animated.Value(width)).current;
-  const sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const bottomLineColor = themeId === 2 ? "#6DA0E1" : "#F3D4EE";
 
-  // 유저 데이터 정의
-  const [users] = useState<UserData[]>([
-    { id: '1', name: '두 얼굴의 매력 두리', color: '#F3D4EE', profileSvg: HanaSvg },
-    { id: '2', name: '한가로운 하나', color: '#D4E6F3', profileSvg: HanaSvg },
-    { id: '3', name: '세침한 세찌', color: '#D4E6F3', profileSvg: HanaSvg },
-    { id: '4', name: '네모지만 부드러운 네몽', color: '#F3D4EE', profileSvg: Nemo },
-    { id: '5', name: '단호하데 다정한 다오', color: '#D4E6F3', profileSvg: Nemo },
-    { id: '6', name: '육감적인 직감파 육땡', color: '#F3D4EE', profileSvg: Nemo },
-  ]);
+  const chatParts = useChatRoomStore((state) => state.chatParts);
+
+  // 기본 색상 설정
+  let sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  let bottomLineColor = themeId === 2 ? "#6DA0E1" : "#F3D4EE";
+
+  const usersToDisplay = useMemo((): UserData[] => {
+    if (!chatParts || chatParts.length === 0) {
+      return [];
+    }
+
+    // part의 타입을 ChatParticipant로 명시하고, id 필드를 사용합니다.
+    return chatParts.map((part: ChatParticipant, index: number) => {
+      const SvgComponent = svgMap[part.profile as string] || Hana;
+      // 이제 part.memberId를 직접 사용할 수 있습니다.
+      console.log(`SideBar - chatPart[${index}].memberId:`, part.memberId, `(Type: ${typeof part.memberId})`);
+      console.log(`SideBar - chatPart[${index}].partId (used for UserData.id):`, part.partId, `(Type: ${typeof part.partId})`);
+      return {
+        id: String(part.partId), // UserData의 id는 문자열이어야 하므로 변환
+        name: part.nickname,     // UserData의 이름으로 nickname 사용
+        profileSvg: SvgComponent,
+        // 필요하다면 UserData 인터페이스에 memberId: number; 를 추가하고 여기서 part.memberId를 할당할 수 있습니다.
+      };
+    });
+  }, [chatParts]);
 
   // 프로필 클릭 핸들러
   const handleProfilePress = (user: UserData) => {
@@ -78,7 +108,7 @@ const SideBar = ({ visible, onClose, onSirenPress, onProfilePress, themeId = 1 }
           </View>
           <View style={styles.bottomSection}>
             <View style={{ flex: 1, width: '100%' }}>
-              <ActiveUser users={users} onProfilePress={handleProfilePress} themeId={themeId} />
+              <ActiveUser users={usersToDisplay} onProfilePress={handleProfilePress} themeId={themeId} />
             </View>
             <View style={{height: height * 0.05, justifyContent: 'center', width: '100%'}}>
             <View style={[styles.bottomLine, { backgroundColor: bottomLineColor }]} />
