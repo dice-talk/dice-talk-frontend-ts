@@ -3,9 +3,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from "react-native";
 import { TouchableOpacity } from "react-native";
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 스토어 임포트
 import CountdownTimer from "../common/CountdownTimer";
 
 const ChatMain = () => {
+  // 스토어에서 remainingTimeForTimer 값을 가져옵니다.
+  const remainingTimeForTimer = useChatRoomStore((state) => state.remainingTimeForTimer);
+
   const handleEnterChat = (themeId: number) => {
     router.push({
       pathname: "/chat/ChatRoom",
@@ -34,7 +38,10 @@ const ChatMain = () => {
         style={styles.separator}
       />
       <View style={styles.timerWrapper}>
-        <CountdownTimer initialSeconds={48 * 60 * 60} fontFamily="digital" />
+        {/* 스토어에서 가져온 remainingTimeForTimer 값을 사용합니다.
+            null일 경우 (아직 로드되지 않았거나, 유효한 시간이 없을 때) 기본값으로 0을 주거나,
+            로딩 상태를 표시할 수도 있습니다. 여기서는 0으로 설정합니다. */}
+        <CountdownTimer initialSeconds={remainingTimeForTimer ?? 0} fontFamily="digital" />
       </View>
       <TouchableOpacity onPress={() => handleEnterChat(1)} style={styles.button}>
         <Text style={styles.buttonText}>입장 (테마 1)</Text>
