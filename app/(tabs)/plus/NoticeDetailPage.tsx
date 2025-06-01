@@ -41,6 +41,11 @@ export default function NoticeDetailPage() {
         setSelectedImageUri(null);
     };
 
+    // NoticePage로 이동하는 함수
+    const navigateToNoticePage = () => {
+        router.push('/(tabs)/plus/NoticePage');
+    }
+
     useEffect(() => {
         if (noticeIdParam) {
             const id = parseInt(noticeIdParam, 10);
@@ -81,7 +86,7 @@ export default function NoticeDetailPage() {
     if (loading) {
         return (
             <View style={[styles.container, styles.centered]}>
-                <GradientHeader title="로딩 중..." showBackButton={true} />
+                <GradientHeader title="로딩 중..." showBackButton={true} onBackPress={navigateToNoticePage} />
                 <ActivityIndicator size="large" color="#B28EF8" style={{marginTop: 20}} />
             </View>
         );
@@ -90,7 +95,7 @@ export default function NoticeDetailPage() {
     if (error || !noticeDetail) {
         return (
             <View style={[styles.container, styles.centered]}>
-                <GradientHeader title="오류" showBackButton={true} />
+                <GradientHeader title="오류" showBackButton={true} onBackPress={navigateToNoticePage} />
                 <Text style={styles.errorText}>{error || "공지사항 정보를 불러올 수 없습니다."}</Text>
             </View>
         );
@@ -106,7 +111,7 @@ export default function NoticeDetailPage() {
 
     return (
         <View style={styles.container}>
-            <GradientHeader title="공지사항 / 이벤트" showBackButton={true} />  
+            <GradientHeader title="공지사항 / 이벤트" showBackButton={true} onBackPress={navigateToNoticePage} />
             <ScrollView 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContentContainer}

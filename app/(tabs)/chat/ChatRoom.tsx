@@ -7,7 +7,7 @@ import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import ChatProfile from "@/components/chat/ChatProfile";
 import GptNotice from "@/components/chat/GptNotice";
-import MessageCheckReport from "@/components/chat/MessageCheckReport";
+import MessageCheckReport from "@/app/(tabs)/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
 import ReportModal from "@/components/chat/ReportModal";
 import CustomCostModal from "@/components/common/CustomCostModal";
@@ -190,14 +190,21 @@ const ChatRoom = () => {
     setHasCheckedMessage(false); // 체크 상태 초기화
   };
   
-  const handleReportModalClose = () => {
-    // ReportModal 닫은 후 일반 채팅 화면으로 돌아가기
+  // ReportModal에서 "확인" (신고 제출) 시 호출될 함수
+  const handleReportSubmitted = (reasons: string[]) => {
+    console.log('신고 제출됨:', reasons);
+    // ReportModal 닫고, MessageCheckReport도 닫고, 일반 채팅 화면으로 돌아가기
     setShowReportModal(false);
-    setShowMessageCheckReport(false);
+    setShowMessageCheckReport(false); // 일반 채팅 화면으로
     setShowReadingTag(true);
     setHasCheckedMessage(false); // 체크 상태 초기화
   };
 
+  // ReportModal에서 "취소" 시 호출될 함수
+  const handleReportDismissed = () => {
+    setShowReportModal(false); // ReportModal만 닫음
+    // setShowMessageCheckReport(false)를 호출하지 않으므로 MessageCheckReport는 유지됨
+  };
   // MessageCheckReport에서 체크 상태 변경 시 호출되는 함수
   const handleCheckedChange = (checked: boolean) => {
     setHasCheckedMessage(checked);
@@ -478,7 +485,8 @@ const ChatRoom = () => {
         {/* 신고 모달 */}
         <ReportModal 
           visible={showReportModal} 
-          onClose={handleReportModalClose}
+          onSubmitReport={handleReportSubmitted} // "확인" 시 호출
+          onDismiss={handleReportDismissed}     // "취소" 시 호출
           themeId={themeId}
         />
         

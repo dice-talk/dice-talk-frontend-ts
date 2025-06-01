@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   consecutiveMessageWrapper: {
     maxWidth: SCREEN_WIDTH * 0.7,
-    marginLeft: SCREEN_WIDTH * 0.17, // 프로필 이미지와 체크박스 공간 유지
+    marginLeft: SCREEN_WIDTH * 0.11, // 프로필 이미지와 체크박스 공간 유지
   },
   nickname: {
     fontSize: SCREEN_WIDTH * 0.034,
