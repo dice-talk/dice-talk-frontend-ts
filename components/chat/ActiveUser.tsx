@@ -17,22 +17,34 @@ interface ActiveUserProps {
 }
 
 const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => {
-  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#DEC2DB";
-  const userNameColor = themeId === 2 ? "#5C5279" : "#7c4762";
-  
+  // 특정 닉네임 목록
+  const specialNicknames = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
+
   // 개별 유저 렌더링 함수
-  const renderUser = ({ item }: { item: User }) => (
-    <View style={styles.userItem}>
-      <TouchableOpacity 
-        style={[styles.profileCircle, { borderColor: profileBorderColor }]}
-        onPress={() => onProfilePress && onProfilePress(item)}
-      >
-        <item.profileSvg width={24} height={24} color={profileIconColor} />
-      </TouchableOpacity>
-      <Text style={[styles.userName, { color: userNameColor }]}>{item.name}</Text>
-    </View>
-  );
+  const renderUser = ({ item }: { item: User }) => {
+    let currentProfileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+    let currentProfileBorderColor = themeId === 2 ? "#9FC9FF" : "#DEC2DB";
+    let currentUserNameColor = themeId === 2 ? "#5C5279" : "#7c4762";
+
+    // 요청된 조건: themeId가 1이고, 닉네임이 specialNicknames에 포함될 경우
+    if (themeId === 1 && specialNicknames.includes(item.name)) {
+      currentProfileIconColor = "#9FC9FF";
+      currentProfileBorderColor = "#9FC9FF";
+      currentUserNameColor = "#5C5279";
+    }
+
+    return (
+      <View style={styles.userItem}>
+        <TouchableOpacity
+          style={[styles.profileCircle, { borderColor: currentProfileBorderColor }]}
+          onPress={() => onProfilePress && onProfilePress(item)}
+        >
+          <item.profileSvg width={24} height={24} color={currentProfileIconColor} />
+        </TouchableOpacity>
+        <Text style={[styles.userName, { color: currentUserNameColor }]}>{item.name}</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
