@@ -215,12 +215,6 @@ export default function SignupInput() {
                     </Text>
                 )}
 
-                <Text style={styles.label}>휴대폰 번호</Text>
-                <TextInput
-                    style={[styles.input, styles.disabledInput]}
-                    editable={false}
-                />
-
                 <Text style={styles.label}>이름</Text>
                 <TextInput style={[styles.input, styles.disabledInput]} value={nameFromStore} editable={false} />
 
