@@ -22,6 +22,7 @@ interface SideBarProps {
 interface UserData {
   id: string;
   name: string;
+  memberId: number; // 사용자 고유 memberId 추가
   profileSvg: React.FC<SvgProps>;
 }
 
@@ -62,13 +63,13 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
     return chatParts.map((part: ChatParticipant, index: number) => {
       const SvgComponent = svgMap[part.profile as string] || Hana;
       // 이제 part.memberId를 직접 사용할 수 있습니다.
-      console.log(`SideBar - chatPart[${index}].memberId:`, part.memberId, `(Type: ${typeof part.memberId})`);
-      console.log(`SideBar - chatPart[${index}].partId (used for UserData.id):`, part.partId, `(Type: ${typeof part.partId})`);
+      // console.log(`SideBar - chatPart[${index}].memberId:`, part.memberId, `(Type: ${typeof part.memberId})`);
+      // console.log(`SideBar - chatPart[${index}].partId (used for UserData.id):`, part.partId, `(Type: ${typeof part.partId})`);
       return {
         id: String(part.partId), // UserData의 id는 문자열이어야 하므로 변환
         name: part.nickname,     // UserData의 이름으로 nickname 사용
+        memberId: part.memberId, // 실제 사용자 memberId
         profileSvg: SvgComponent,
-        // 필요하다면 UserData 인터페이스에 memberId: number; 를 추가하고 여기서 part.memberId를 할당할 수 있습니다.
       };
     });
   }, [chatParts]);
