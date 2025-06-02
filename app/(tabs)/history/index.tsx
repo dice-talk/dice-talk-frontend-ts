@@ -56,6 +56,7 @@ export default function HistoryScreen() {
           id: notice.noticeId,
           imageUrl: thumbnailImage!.imageUrl,
           title: notice.title,
+          content: notice.content || '',
         };
       });
   }, [noticesFromStore]);
