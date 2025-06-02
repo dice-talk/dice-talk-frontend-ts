@@ -8,7 +8,7 @@ export const getHomeApi = async () => {
     return response; // 전체 response 객체 반환
 
   } catch (error) {
-    console.error("🚨 알림 삭제 실패:", error);
+    console.error("🚨 홈 API 조회 실패:", error);
     throw error;
   }
 };

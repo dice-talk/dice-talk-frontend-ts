@@ -31,7 +31,8 @@ export interface Notice {
   modifiedAt: string;
 }
 
-// 아이템 타입 정의 (제공해주신 정보 기반)
+// <<<<<<< HEAD
+// // 아이템 타입 정의 (제공해주신 정보 기반)
 export interface Item {
   itemId: number;
   itemName: string;
@@ -39,6 +40,15 @@ export interface Item {
   itemImage: string;
   dicePrice: number;
 }
+// =======
+// interface HomeState {
+//   initialHomeApiCalled: boolean;
+//   themes: Theme[] | null;
+//   notices: Notice[] | null;
+//   hasNewNotifications: boolean | null;
+//   chatRoomId: number | null; // 추가: 홈 화면 관련 채팅방 ID
+// >>>>>>> 48bf35c (사이드바 다음 이벤트 시간 계산이후 출력까지 성공)
+// }
 
 export interface HomeState {
   themes: Theme[];
@@ -46,6 +56,7 @@ export interface HomeState {
   hasNewNotifications: boolean;
   initialHomeApiCalled: boolean;
   items: Item[]; // ✅ 아이템 목록 상태 추가
+  chatRoomId: number | null; // 추가: 홈 화면 관련 채팅방 ID
   // ... 기타 상태들 ...
 }
 
@@ -56,6 +67,8 @@ export interface HomeActions {
   setInitialHomeApiCalled: (called: boolean) => void;
   setItems: (items: Item[]) => void; // ✅ 아이템 설정 액션 추가
   // ... 기타 액션들 ...
+  setChatRoomId: (chatRoomId: number | null) => void; // 추가: chatRoomId 설정 액션
+  clearHomeData: () => void; // 필요시 홈 데이터 초기화 액션
 }
 
 export interface HomeStore extends HomeState {
@@ -67,14 +80,36 @@ const useHomeStore = create<HomeStore>((set) => ({
   notices: [],
   hasNewNotifications: false,
   initialHomeApiCalled: false,
+  chatRoomId: null, // 추가: chatRoomId 초기값
   items: [], // ✅ 아이템 초기 상태
   actions: {
-    setThemes: (themes) => set({ themes }),
-    setNotices: (notices) => set({ notices }),
-    setHasNewNotifications: (hasNew) => set({ hasNewNotifications: hasNew }),
-    setInitialHomeApiCalled: (called) => set({ initialHomeApiCalled: called }),
-    setItems: (items) => set({ items }), // ✅ 아이템 설정 액션 구현
-    clearHomeData: () => set({ themes: [], notices: [], hasNewNotifications: false, initialHomeApiCalled: false, items: [] }),
+    
+    setInitialHomeApiCalled: (called) => {
+      console.log('HomeStore: setInitialHomeApiCalled', called);
+      set({ initialHomeApiCalled: called });
+    },
+    setThemes: (themes) => {
+      console.log('HomeStore: setThemes', themes);
+      set({ themes });
+    },
+    setNotices: (notices) => {
+      console.log('HomeStore: setNotices', notices);
+      set({ notices });
+    },
+    setHasNewNotifications: (hasNew) => {
+      console.log('HomeStore: setHasNewNotifications', hasNew);
+      set({ hasNewNotifications: hasNew });
+    },
+    setChatRoomId: (chatRoomId) => { // 추가: setChatRoomId 액션 구현
+      console.log('HomeStore: setChatRoomId', chatRoomId);
+      set({ chatRoomId });
+    },
+    setItems: (items) => { // ✅ 아이템 설정 액션 구현
+      console.log('HomeStore: setItems', items);
+      set({ items });
+    },
+    clearHomeData: () => set({ themes: [], notices: [], hasNewNotifications: false, initialHomeApiCalled: false, chatRoomId: null }), // chatRoomId 초기화 추가
+
   },
 }));
 

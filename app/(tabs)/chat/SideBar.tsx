@@ -46,6 +46,10 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
   const themeId = useChatRoomStore((state) => state.themeId) || 1;
   const chatParts = useChatRoomStore((state) => state.chatParts);
 
+  const createdAtFromStore = useChatRoomStore((state) => state.createdAt); // createdAt 가져오기
+  console.log(createdAtFromStore);
+  // 기본 색상 설정
+
   let sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   let bottomLineColor = themeId === 2 ? "#6DA0E1" : "#F3D4EE";
 
@@ -102,7 +106,7 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
         </View>
         <View style={styles.content}>
           <View style={styles.topSection}>
-            <ChatEventNotice themeId={themeId} />
+            <ChatEventNotice themeId={themeId} createdAt={createdAtFromStore} />
           </View>
           <View style={styles.bottomSection}>
             <View style={{ flex: 1, width: '100%' }}>
