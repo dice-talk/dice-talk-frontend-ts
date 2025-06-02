@@ -113,7 +113,13 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={DefaultTheme}>
-      <Stack>
+      <Stack
+        screenOptions={{
+          animation: 'fade', // 화면 전환 시 페이드 효과
+          animationDuration: 250, // 애니메이션 지속 시간 (0.2초)
+          headerShown: false, // 기본적으로 헤더 숨김 (필요시 각 화면에서 제어)
+        }}
+      >
         <Stack.Screen name="(onBoard)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="Loading" options={{ headerShown: false }} /> 

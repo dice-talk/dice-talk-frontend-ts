@@ -5,7 +5,7 @@ export default function ChatLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="ChatRoom" />
-        <Stack.Screen name="report/[id]" />
+        <Stack.Screen name="report/_layout" />
       </Stack>
     );
 }
