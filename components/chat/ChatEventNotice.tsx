@@ -89,22 +89,25 @@ const ChatEventNotice = ({
         targetTimestamp = creationTimestamp + SECRET_MESSAGE_END_OFFSET * 1000;
         newPhase = "SECRET";
       } else if (elapsedSeconds < CUPID_INTERIM_END_OFFSET) {
-        newTitle = "큐피드의 짝대기";
-        newNoticeText = "큐피드의 짝대기 (1단계) 종료까지";
+        newTitle = themeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
+        newNoticeText = themeId === 2 ? "우정의 짝대기 (1단계) 종료까지" : "큐피드의 짝대기 (1단계) 종료까지";
         targetTimestamp = creationTimestamp + CUPID_INTERIM_END_OFFSET * 1000;
         newPhase = "CUPID_INTERIM";
       } else if (elapsedSeconds < CUPID_MAIN_EVENT_START_OFFSET) {
-        newTitle = "큐피드의 짝대기";
-        newNoticeText = "큐피드의 짝대기 (2단계) 시작까지";
+        newTitle = themeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
+        newNoticeText = themeId === 2 ? "우정의 짝대기 (2단계) 시작까지" : "큐피드의 짝대기 (2단계) 시작까지";
         targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_START_OFFSET * 1000;
         newPhase = "PRE_CUPID_MAIN";
       } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) {
-        newTitle = "큐피드의 짝대기";
-        newNoticeText = "큐피드의 짝대기 (2단계) 종료까지";
+        newTitle = themeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
+        newNoticeText = themeId === 2 ? "우정의 짝대기 (2단계) 종료까지" : "큐피드의 짝대기 (2단계) 종료까지";
         targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_END_OFFSET * 1000;
         newPhase = "CUPID_MAIN";
       } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) {
-        newTitle = "채팅방 종료";
+        // 채팅방 종료 문구는 테마에 따라 변경할 필요가 없어 보이지만,
+        // 만약 필요하다면 여기도 themeId 조건을 추가할 수 있습니다.
+        // 예: newTitle = themeId === 2 ? "우정 채팅 종료" : "채팅방 종료";
+        newTitle = "채팅방 종료"; 
         newNoticeText = "채팅방 종료까지";
         targetTimestamp = creationTimestamp + CHAT_ROOM_END_OFFSET * 1000;
         newPhase = "COUNTDOWN_TO_END";
