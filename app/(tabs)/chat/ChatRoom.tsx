@@ -267,8 +267,7 @@ const ChatRoom = () => {
           />
         )}
         <View style={[styles.headerContainer, { zIndex: sidebarOpen ? 2 : 3 }]}>
-            {/* showMessageCheckReport가 false일 때만 ChatHeader 표시 */}
-            {!showMessageCheckReport && (
+            {/* ChatHeader 표시 */}
         <ChatHeader
             title="하트시그널"
             fontColor="#A45C73"
@@ -276,8 +275,7 @@ const ChatRoom = () => {
                   onToggleSidebar={() => setSidebarOpen(true)}
                   themeId={themeId}
               />
-            )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 시크릿 메시지 이벤트가 시작되었습니다."
                 onHide={hideNotice}
@@ -286,7 +284,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
                 onHide={hideNotice}
@@ -295,7 +293,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 사랑의 짝대기 결과를 확인해주세요!!"
                 onHide={hideNotice}
@@ -304,7 +302,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 이벤트 수정은 돈을 주세요!!"
                 onHide={hideNotice}
@@ -313,7 +311,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-             {showNotice && !showMessageCheckReport && (
+             {showNotice && (
               <GptNotice 
                 text="[시스템] 매칭에 실패하였습니다!!"
                 onHide={hideNotice}
@@ -336,37 +334,11 @@ const ChatRoom = () => {
             visible={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             onProfilePress={handleSidebarProfilePress}
-            themeId={themeId}
         />
-        {/* 하단 영역: 신고 중이면 취소/확인 버튼, 아니면 ChatInput */}
-        {showMessageCheckReport ? (
-          <View style={styles.buttonsContainer}>
-            <TouchableOpacity 
-              style={[styles.button, styles.cancelButton]} 
-              onPress={handleReportCancel}
-            >
-              <Text style={styles.cancelButtonText}>취소</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[
-                styles.button, 
-                styles.confirmButton,
-                !hasCheckedMessage && styles.disabledButton
-              ]} 
-              onPress={handleReportConfirm}
-              disabled={!hasCheckedMessage}
-            >
-              <Text style={[
-                styles.confirmButtonText,
-                !hasCheckedMessage && styles.disabledText
-              ]}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+        {/* 하단 영역: ChatInput */}
           <View style={styles.inputContainer}>
             <ChatInput themeId={themeId} />
           </View>
-        )}
         {/* 프로필 팝업 - z-index를 높게 설정하여 최상위에 표시 */}
         {selectedProfile && (
           <View style={styles.profileOverlay}>
@@ -379,14 +351,6 @@ const ChatRoom = () => {
           </View>
         )}
 
-        {/* 신고 모달 */}
-        <ReportModal 
-          visible={showReportModal} 
-          onSubmitReport={handleReportSubmitted} // "확인" 시 호출
-          onDismiss={handleReportDismissed}     // "취소" 시 호출
-          themeId={themeId}
-        />
-        
         {/* 러브레터 선택 모달 */}
         <LoveLetterSelect
           visible={showLoveLetterSelect}
