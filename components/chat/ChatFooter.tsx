@@ -58,7 +58,7 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
     }
     if (chatRoomId) {
       router.push({
-        pathname: "/chat/report/[id]",
+        pathname: "/chat/report/[id]" as any,
         params: { id: chatRoomId.toString() },
       });
     } else {
