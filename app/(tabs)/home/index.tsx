@@ -16,11 +16,6 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-
-// 실제 앱에서는 API 응답이나 전역 상태(Zustand 등)를 통해 받아올 값입니다.
-//const MOCK_USER_STATUS = 'MEMBER_BANNED'; // 테스트를 위해 'MEMBER_BANNED' 또는 다른 값으로 변경
-const MOCK_USER_STATUS = 'ACTIVE'; 
-
 // const TAB_BAR_HEIGHT_APPROX = Platform.OS === 'ios' ? 80 : 0; // 이 상수는 MainBackground 전체 화면 설정에는 직접 사용되지 않음
 
 const HomeScreen = () => {
@@ -58,7 +53,9 @@ const HomeScreen = () => {
     const fetchHomeDataOnceOnAppLaunch = async () => {
       const store = useHomeStore.getState();
       const { initialHomeApiCalled } = store;
-      const { setInitialHomeApiCalled, setThemes, setNotices, setHasNewNotifications, setItems } = store.actions;
+
+      const { setInitialHomeApiCalled, setThemes, setNotices, setHasNewNotifications, setChatRoomId, setItems } = store.actions;
+
 
       if (!initialHomeApiCalled) {
         try {
@@ -77,7 +74,12 @@ const HomeScreen = () => {
             console.log('ℹ️ Home API: 응답에 아이템 목록이 없거나 형식이 올바르지 않습니다. (home/index.tsx)');
             setItems([]);
           }
-
+          // API 응답에서 curChatRoomId를 가져와 HomeStore에 저장
+          if (homeDataResponse.data.curChatRoomId !== undefined) {
+            setChatRoomId(homeDataResponse.data.curChatRoomId);
+          } else {
+            setChatRoomId(null); // curChatRoomId가 없으면 null로 설정
+          }
           setInitialHomeApiCalled(true);
         } catch (error) {
           console.error("🔴 Home API 최초 호출 실패 (home/index.tsx):", error);
@@ -113,12 +115,6 @@ const HomeScreen = () => {
   // 화면이 포커스될 때마다 memberStatus를 확인 (실제로는 로그인 시 또는 앱 시작 시 1회 확인)
   useFocusEffect(
     useCallback(() => {
-      // TODO: 실제 memberStatus 확인 로직 (예: API 호출 또는 전역 상태 조회)
-      // if (MOCK_USER_STATUS === 'MEMBER_BANNED') {
-      //   setIsBannedModalVisible(true);
-      // } else {
-      //   setIsBannedModalVisible(false); // 다른 상태일 경우 모달 숨김 (선택적)
-      // }
       
       // cleanup 함수 (선택적)
       return () => {

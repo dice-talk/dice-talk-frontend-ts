@@ -1,7 +1,7 @@
 import ChatCustomButton from "@/components/chat/ChatCustomButton";
 import ChatMain from "@/components/chat/ChatMain";
-import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent";
-import useHomeStore from "@/zustand/stores/HomeStore";
+import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent"; // HomeStore는 이미 아래에서 chatRoomIdFromHomeStore로 사용됩니다.
+import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore"; // useHomeActions 추가
 import { useRouter, useFocusEffect } from "expo-router"; // useFocusEffect 임포트
 import React, { useMemo, useState, useCallback } from "react";
 import { Dimensions, StyleSheet, View, ActivityIndicator, Text } from "react-native";
@@ -11,14 +11,16 @@ import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStor
 export default function Chat() {
   const router = useRouter();
   const noticesFromStore = useHomeStore((state) => state.notices);
+  // HomeStore에서 chatRoomId를 가져옵니다.
+  const chatRoomIdFromHomeStore = useHomeStore((state) => state.chatRoomId);
+  const { setChatRoomId: setHomeChatRoomId } = useHomeActions(); // HomeStore의 chatRoomId를 설정하는 액션
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { actions } = useChatRoomStore();
-  // 스토어에서 chatRoomId를 가져와서 렌더링 조건에 사용
-  const chatRoomIdFromStore = useChatRoomStore((state) => state.chatRoomId);
+
+  // ChatRoomStore의 상태 및 액션은 채팅방 상세 정보(테마, 남은 시간 등) 관리에 계속 사용됩니다.
   const themeIdFromStore = useChatRoomStore((state) => state.themeId);
-  const { setChatRoomDetails, setRemainingTimeForTimer } = actions;
+  const { setChatRoomDetails, setRemainingTimeForTimer } = useChatRoomStore((state) => state.actions);
 
   const CHAT_ROOM_VALID_DURATION_SECONDS = 48 * 60 * 60; // 채팅방 유효 기간 (48시간)
 
@@ -37,6 +39,7 @@ export default function Chat() {
           id: notice.noticeId,
           imageUrl: thumbnailImage!.imageUrl,
           title: notice.title,
+          content: notice.content, // EventBannerData에 필요한 content 속성 추가
         };
       });
   }, [noticesFromStore]);
@@ -49,9 +52,11 @@ export default function Chat() {
       const fetchChatStatusAndRoomInfo = async () => {
         setIsLoading(true);
         setError(null);
-        // 스토어 상태 초기화
+        // ChatRoomStore 상태 초기화 (HomeStore의 chatRoomId는 유지)
         setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
         setRemainingTimeForTimer(null);
+        // HomeStore의 chatRoomId도 여기서 초기화할지 여부는 앱 전체 로직에 따라 결정
+        // 만약 /home API 호출 시점에 HomeStore.chatRoomId가 설정되고, 그 이후 변경되지 않는다면 여기서 초기화 불필요.
 
         try {
           const result = await getIsPossible(); // 이 호출이 성공하면 HTTP 200 상태로 간주
@@ -61,10 +66,15 @@ export default function Chat() {
           if (result) {
             if (result.canJoinNew === true) {
               // 새로운 방 참여 가능: 스토어는 이미 초기화된 상태.
-              // "참여중인 채팅방이 없습니다"는 렌더링 로직에서 chatRoomIdFromStore === null로 판단.
+              // HomeStore의 chatRoomId도 null로 설정하여 "참여중인 채팅방 없음" 상태를 명확히 합니다.
+              if (chatRoomIdFromHomeStore !== null) { // 불필요한 업데이트 방지
+                setHomeChatRoomId(null);
+              }
             } else if (result.canJoinNew === false) {
-              // canJoinNew가 false이면 항상 getChatRoomInfo(1)을 호출합니다.
-              const detailedRoomInfo = await getChatRoomInfo(1); // chatRoomId를 1로 하드코딩
+              // canJoinNew가 false이면 HomeStore에 chatRoomId가 있어야 합니다.
+              // getChatRoomInfo는 내부적으로 HomeStore.chatRoomId를 사용합니다.
+              if (chatRoomIdFromHomeStore) { // HomeStore에 ID가 있을 때만 상세 정보 요청
+                const detailedRoomInfo = await getChatRoomInfo();
                 if (!isActive) return;
                 if (detailedRoomInfo && typeof detailedRoomInfo.createdAt === 'string') {
                   setChatRoomDetails(detailedRoomInfo as ChatRoomDetails); // 스토어에 방 정보 저장
@@ -80,9 +90,14 @@ export default function Chat() {
                   timeLeftSeconds = Math.max(0, timeLeftSeconds); // 0 미만이면 0으로
                   setRemainingTimeForTimer(timeLeftSeconds); // 스토어에 남은 시간 저장
                 } else {
-                  // detailedRoomInfo가 없거나 createdAt이 유효하지 않은 경우
-                  setError("채팅방 상세 정보(ID: 1)를 가져오거나 생성 시간을 확인하는 데 실패했습니다.");
-                  // 스토어는 이미 초기화되어 chatRoomId가 null일 것이므로, 에러 메시지 또는 "참여중인 방 없음"이 표시됨
+                  setError(`채팅방 상세 정보(ID: ${chatRoomIdFromHomeStore})를 가져오거나 생성 시간을 확인하는 데 실패했습니다.`);
+                  // HomeStore의 chatRoomId를 null로 설정하여 오류 상태를 명확히 할 수 있습니다.
+                  setHomeChatRoomId(null);
+                }
+              } else {
+                // isPossible API는 참여 불가를 반환했지만, HomeStore에 chatRoomId가 없는 경우
+                setError("참여 중인 채팅방 정보를 찾을 수 없습니다. (HomeStore ID 없음)");
+                if (isActive) setHomeChatRoomId(null); // 상태 일관성 유지
                 }
             }
           } else { // getIsPossible() 결과가 null 또는 undefined인 경우
@@ -101,7 +116,7 @@ export default function Chat() {
       fetchChatStatusAndRoomInfo();
 
       return () => { isActive = false; }; // 클린업 함수
-    }, [setChatRoomDetails, setRemainingTimeForTimer]) // CHAT_ROOM_VALID_DURATION_SECONDS는 상수이므로 제거 가능
+    }, [setChatRoomDetails, setRemainingTimeForTimer, chatRoomIdFromHomeStore, setHomeChatRoomId])
   );
   return (
     <View style={styles.container}>
@@ -119,7 +134,7 @@ export default function Chat() {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>오류: {error}</Text>
         </View>
-      ) : chatRoomIdFromStore === null ? ( // 스토어의 chatRoomId가 null이면 참여 중인 방이 없음
+      ) : chatRoomIdFromHomeStore === null ? ( // HomeStore의 chatRoomId가 null이면 참여 중인 방이 없음
         <View style={styles.noChatRoomContainer}>
           <Text style={styles.noChatRoomText}>참여중인 채팅방이 없습니다.</Text>
           <ChatCustomButton
@@ -132,7 +147,7 @@ export default function Chat() {
             textStyle={{ fontSize: 18 }}
           />
         </View>
-      ) : ( // chatRoomIdFromStore에 값이 있으면 기존 방 정보가 로드된 것
+      ) : ( // chatRoomIdFromHomeStore에 값이 있으면 기존 방 정보가 로드된 것
         <>
           <View style={styles.chatMainContainer}>
             <ChatMain />
@@ -141,12 +156,12 @@ export default function Chat() {
           <ChatCustomButton
             label="입장"
             onPress={() => {
-              if (chatRoomIdFromStore) { // 이 시점에는 항상 유효한 ID가 있어야 함
+              if (chatRoomIdFromHomeStore) { // HomeStore의 ID 사용
                 router.push({
                   pathname: '/chat/ChatRoom',
                   params: {
-                    chatRoomId: String(chatRoomIdFromStore),
-                    themeId: String(themeIdFromStore || 1), // themeId가 없으면 기본값 1
+                    chatRoomId: String(chatRoomIdFromHomeStore), // HomeStore ID 사용
+                    themeId: String(themeIdFromStore || 1), // ChatRoomStore의 themeId 또는 기본값
                   },
                 });
               } else if (!error) { // 기존 방이 없고, API 호출 중 오류도 없었다면 새 방 참여 시도
