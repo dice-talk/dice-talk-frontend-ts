@@ -1,14 +1,14 @@
-import useChatRoomStore, { ChatParticipant } from '@/zustand/stores/ChatRoomStore'; // ChatRoomStore 임포트
+import SidebarClose from '@/assets/images/chat/sidebarClose.svg';
+import Dao from '@/assets/images/dice/dao.svg';
+import Dori from '@/assets/images/dice/dori.svg';
 import Hana from '@/assets/images/dice/hana.svg';
 import Nemo from '@/assets/images/dice/nemo.svg'; // 명확성을 위해 NemoSvg로 변경
-import Dori from '@/assets/images/dice/dori.svg';
 import Sezzi from '@/assets/images/dice/sezzi.svg';
-import Dao from '@/assets/images/dice/dao.svg';
 import Yukdaeng from '@/assets/images/dice/yukdaeng.svg';
-import SidebarClose from '@/assets/images/chat/sidebarClose.svg';
 import ActiveUser from '@/components/chat/ActiveUser';
 import ChatEventNotice from "@/components/chat/ChatEventNotice";
 import ChatFooter from "@/components/chat/ChatFooter";
+import useChatRoomStore, { ChatParticipant } from '@/zustand/stores/ChatRoomStore'; // ChatRoomStore 임포트
 import React, { useEffect, useMemo, useRef } from "react"; // useMemo와 React 임포트
 import { Animated, Dimensions, Pressable, StyleSheet, View } from "react-native";
 import { SvgProps } from "react-native-svg";
@@ -16,9 +16,7 @@ import { SvgProps } from "react-native-svg";
 interface SideBarProps {
   visible: boolean;
   onClose: () => void;
-  onSirenPress?: () => void;
   onProfilePress?: (nickname: string, SvgComponent: React.FC<SvgProps>) => void;
-  themeId?: number;
 }
 
 interface UserData {
@@ -41,13 +39,13 @@ const svgMap: Record<string, React.FC<SvgProps>> = {
 
 const { width } = Dimensions.get("window");
 
-const SideBar = ({ visible, onClose, onSirenPress, onProfilePress, themeId = 1 }: SideBarProps) => {
-  console.log('SideBar themeId:', themeId);
+const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
   const translateX = useRef(new Animated.Value(width)).current;
 
+  // SideBar가 직접 themeId를 스토어에서 가져옴 (스타일링 목적)
+  const themeId = useChatRoomStore((state) => state.themeId) || 1;
   const chatParts = useChatRoomStore((state) => state.chatParts);
 
-  // 기본 색상 설정
   let sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   let bottomLineColor = themeId === 2 ? "#6DA0E1" : "#F3D4EE";
 
@@ -114,7 +112,7 @@ const SideBar = ({ visible, onClose, onSirenPress, onProfilePress, themeId = 1 }
             <View style={[styles.bottomLine, { backgroundColor: bottomLineColor }]} />
             </View>
             <View style={{height: height * 0.05, justifyContent: 'center', width: '100%'}}>
-              <ChatFooter onClose={onClose} onSirenPress={onSirenPress} themeId={themeId} />
+              <ChatFooter onClose={onClose} />
             </View>
           </View>
         </View>
