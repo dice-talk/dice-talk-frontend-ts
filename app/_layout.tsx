@@ -3,13 +3,39 @@ import { attemptAutoLogin } from '@/api/authApi'; // 자동 로그인 함수 임
 import useAuthStore from '@/zustand/stores/authStore'; // 새로운 authStore 임포트
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import * as Notifications from 'expo-notifications'; // <<<<<< [추가]
 import { SplashScreen, Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native'; // <<<<<< [추가]
 import 'react-native-reanimated';
 
 // 앱 초기 스플래시 화면을 숨기지 않도록 설정
 SplashScreen.preventAutoHideAsync();
+
+// #############################################################################
+// 앱 전역 알림 핸들러 설정 (컴포넌트 외부 또는 최상단)
+// #############################################################################
+Notifications.setNotificationHandler({
+  handleNotification: async (): Promise<Notifications.NotificationBehavior> => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true, // 채팅 알림은 소리가 나는 것이 좋을 수 있습니다.
+    shouldSetBadge: true, // 안 읽은 메시지 수 등을 표시할 때 유용
+    shouldShowBanner: true, // iOS foreground 알림 배너 표시 (일반적으로 true)
+    shouldShowList: true,   // Android foreground 알림 리스트 표시 (일반적으로 true)
+  }),
+});
+
+// Android 알림 채널 설정 (앱 시작 시 한 번)
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: '채팅 알림', // 채널 이름 (사용자에게 보일 수 있음)
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250], // 기본 진동 패턴
+    lightColor: '#FF231F7C', // 알림 LED 색상 (지원 기기에서)
+  }).catch(err => console.log('Failed to set notification channel:', err));
+}
+// #############################################################################
 
 // #############################################################################
 // 앱 초기화 로직 (컴포넌트 외부 또는 최상단에서 한 번만 실행되도록 시도)
@@ -95,10 +121,30 @@ export default function RootLayout() {
         }
     });
 
-    return () => {
-    };
-}, [fontsLoaded, fontError, router, setAppInitialized, isAppInitialized, accessToken]); // isAutoLoginAttempted를 의존성 배열에서 제거하고, accessToken으로 로그인 상태 변화를 감지
+    // 알림 탭 시 반응 리스너 (앱 전역에서 관리)
+    const notificationResponseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification Response Received (RootLayout):', JSON.stringify(response, null, 2));
+      const data = response.notification.request.content.data;
+      if (data && typeof data === 'object' && data.chatRoomId) {
+        const chatRoomIdValue = String(data.chatRoomId); // chatRoomId 값을 문자열로 확실히 변환
+        if (isAppInitialized && accessToken) {
+          router.push({
+            pathname: '/(tabs)/chat/ChatRoom', // ChatRoom.tsx 파일에 해당
+            params: { chatRoomId: chatRoomIdValue }, // 쿼리 파라미터로 chatRoomId 전달
+          }); 
+          console.log('알림 탭: ChatRoom으로 이동 시도 -> chatRoomId:', chatRoomIdValue);
+        } else {
+          console.log('알림 탭: 앱 미준비 또는 미로그인 상태로 ChatRoom(chatRoomId:'+chatRoomIdValue+') 이동 불가');
+        }
+      } else {
+        console.log('알림 탭: chatRoomId 데이터 없음 또는 data 형식이 올바르지 않음.', data);
+      }
+    });
 
+    return () => {
+      Notifications.removeNotificationSubscription(notificationResponseListener);
+    };
+  }, [fontsLoaded, fontError, router, setAppInitialized, isAppInitialized, accessToken]);
 
   if (!fontsLoaded && !fontError) {
     return null;

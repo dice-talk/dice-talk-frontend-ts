@@ -39,9 +39,10 @@ interface ChatMessage {
 
 const ChatRoom = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const chatRoomIdFromParams = params.id ? parseInt(params.id as string) : null; // URL에서 chatRoomId 가져오기 (경로가 /chat/[id] 형태라고 가정)
-  
+  //const params = useLocalSearchParams();
+  //const chatRoomIdFromParams = params.id ? parseInt(params.id as string) : null; // URL에서 chatRoomId 가져오기 (경로가 /chat/[id] 형태라고 가정)
+  const { chatRoomId } = useLocalSearchParams<{ chatRoomId?: string }>();
+
   const { setChatRoomDetails, clearChatRoomDetails } = useChatRoomStore((state) => state.actions);
   const themeId = useChatRoomStore((state) => state.themeId) || 1; // 스토어에서 themeId 가져오기
   const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
@@ -69,12 +70,12 @@ const ChatRoom = () => {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   useEffect(() => {
-    if (chatRoomIdFromParams) {
-      console.log("ChatRoom.tsx: Mounting with chatRoomId from params:", chatRoomIdFromParams);
+    if (chatRoomId) {
+      console.log("ChatRoom.tsx: Mounting with chatRoomId from params:", chatRoomId);
       // 스토어에 chatRoomId와 themeId 설정 (themeId도 params로 받거나, chatRoomId 기반으로 서버에서 받아올 수 있음)
       // 여기서는 params.themeId가 있다고 가정하고, 없다면 기본값 또는 스토어 현재값 사용
-      const themeIdFromParamsOrDefault = params.themeId ? parseInt(params.themeId as string) : themeId;
-      setChatRoomDetails({ chatRoomId: chatRoomIdFromParams, themeId: themeIdFromParamsOrDefault });
+      const themeIdFromParamsOrDefault = chatRoomId ? parseInt(chatRoomId as string) : themeId;
+      setChatRoomDetails({ chatRoomId: Number(chatRoomId), themeId: themeIdFromParamsOrDefault });
     } else {
       console.warn("ChatRoom.tsx: chatRoomId not found in params. Navigating back or showing error.");
       // router.back(); 또는 에러 처리
@@ -84,7 +85,7 @@ const ChatRoom = () => {
       // clearChatRoomDetails(); 
       // console.log("ChatRoom.tsx: Unmounted, chatRoomId:", chatRoomIdFromParams);
     };
-  }, [chatRoomIdFromParams, params.themeId, setChatRoomDetails, clearChatRoomDetails, themeId, router]);
+  }, [chatRoomId, setChatRoomDetails, clearChatRoomDetails/*, themeId*/, router]);
 
   useEffect(() => {
     if (showNotice) { // GptNotice 표시 여부에 따라 스크롤뷰 마진 조정
