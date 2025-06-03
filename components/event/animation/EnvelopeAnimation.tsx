@@ -240,7 +240,7 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
 
     try {
       // 2. API 호출 (sendRoomEvent)
-      const apiResponse = await sendRoomEvent();
+      const apiResponse = await sendRoomEvent(currentState.currentEventMessage); // 스토어에서 가져온 EventMessageData 객체를 인자로 전달
     } catch (error) {
       console.error("시크릿 메시지 전송 API 호출 중 오류 발생:", error);
       // Toast.show({ type: 'error', text1: '오류', text2: '시크릿 메시지 전송에 실패했습니다. 다시 시도해주세요.' });

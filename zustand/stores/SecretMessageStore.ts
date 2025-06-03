@@ -6,7 +6,7 @@ export interface EventMessageData { // export 키워드 추가
   senderId: number | null;
   eventId: number | null;
   chatRoomId: number | null;
-  message: string;
+  message: string | null; // message가 null 값을 가질 수 있도록 수정
   roomEventType: string; // 필요에 따라 더 구체적인 타입 (예: "PICK_MESSAGE" | "OTHER_TYPE")으로 변경 가능
 }
 

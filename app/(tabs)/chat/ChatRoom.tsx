@@ -1,7 +1,7 @@
 import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
-import HanaSvg from '@/assets/images/dice/hana.svg';
-import { getFilteredRoomEvents, RoomEventFromApi } from "@/api/EventApi"; // API 함수 및 타입 임포트
+import { getFilteredRoomEvents, RoomEventFromApi } from "@/api/EventApi"; // getAllRoomEvents는 Result 컴포넌트에서 호출하므로 여기서 제거
 import Nemo from '@/assets/images/dice/nemo.svg';
+import Hana from '@/assets/images/dice/hana.svg';
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
@@ -18,7 +18,10 @@ import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/heartSignal/ResultLoveArrow";
 import UnmatchedModal from "@/components/event/heartSignal/UnmatchedModal";
-import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 스토어 import 추가
+
+// import useArrowEventStore from "@/zustand/stores/ArrowEventStore"; // Result 컴포넌트가 스토어를 직접 사용하지 않으므로 주석 처리 또는 제거 가능
+import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
+
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
 import React, { useEffect, useState } from "react"; // React, useCallback 추가
@@ -37,6 +40,7 @@ interface ChatMessage {
   isMe?: boolean; // 내가 보낸 메시지인지 여부
   memberId: number; // memberId 추가
 }
+
 
 const ChatRoom = () => {
   const router = useRouter();
@@ -67,6 +71,9 @@ const ChatRoom = () => {
   const [isEnvelopeReadOnly, setIsEnvelopeReadOnly] = useState(false); // EnvelopeAnimation 읽기 전용 상태
   const [readOnlyEnvelopeMessages, setReadOnlyEnvelopeMessages] = useState<string[]>([]); // 읽기 전용 편지 메시지
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
+
+  // const setSelectionsForAnimation = useArrowEventStore((state) => state.setSelectionsForAnimation); // Result 컴포넌트에서 직접 API 호출하므로 제거
+  // const chatParts = useChatRoomStore((state) => state.chatParts); // Result 컴포넌트에서 직접 스토어 사용
   
   // 채팅 메시지 상태 (실제 API 연동 시 변경)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); 
@@ -100,12 +107,22 @@ const ChatRoom = () => {
   
   const sampleMessages: ChatMessage[] = [ // API 연동 전까지 사용할 샘플 메시지
     {
-      id: 1, profileImage: HanaSvg, nickname: "한가로운 하나", memberId: 101,
-      message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?", time: "오후 6:58", isMe: false
+      id: 1,
+      profileImage: Hana,
+      nickname: "한가로운 하나",
+      message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?",
+      time: "오후 6:58",
+      isMe: false,
+      memberId: 21,
     },
     {
-      id: 2, profileImage: HanaSvg, nickname: "한가로운 하나", memberId: 101,
-      message: "정말 재밌어서 추천드려요", time: "오후 6:58", isMe: false
+      id: 2,
+      profileImage: Hana,
+      nickname: "한가로운 하나",
+      message: "정말 재밌어서 추천드려요",
+      time: "오후 6:58",
+      isMe: false,
+      memberId:22
     },
     {
       id: 3, profileImage: Nemo, nickname: "네모지만 부드러운 네모", memberId: 102,
@@ -160,7 +177,8 @@ const ChatRoom = () => {
   
   // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러 (바로 결과 표시)
   const handleLoveArrowResultCheck = () => {
-    setShowResultLoveArrow(true); // 바로 ResultLoveArrow/ResultFriendArrow 모달 표시
+    console.log('사랑의 짝대기 결과 확인 모달 표시 요청');
+    setShowResultLoveArrow(true); // ResultLoveArrow/ResultFriendArrow 모달 표시
   };
 
   // 이벤트 수정 버튼 클릭 핸들러 (아이템 필요)
@@ -328,7 +346,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
                 onHide={hideNotice}
@@ -449,29 +467,14 @@ const ChatRoom = () => {
         >
           <View style={styles.modalContainer}>
             {themeId === 2 ? (
-              <ResultFriendArrow 
-                selections={[
-                  { from: 1, to: 2 },
-                  { from: 3, to: 1 },
-                  { from: 6, to: 3 },
-                  { from: 5, to: 4 },
-                  { from: 2, to: 3 }
-                ]}
+              <ResultFriendArrow
                 onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
                 themeId={themeId}
               />
             ) : (
-              <ResultLoveArrow 
-                selections={[
-                  { from: 1, to: 2 },
-                  { from: 3, to: 5 },
-                  { from: 5, to: 2 },
-                  { from: 2, to: 3 },
-                  { from: 4, to: 1 },
-                  { from: 6, to: 3 }
-                ]}
-                onClose={() => setShowResultLoveArrow(false)}
+              <ResultLoveArrow
+                // onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
               />
             )}

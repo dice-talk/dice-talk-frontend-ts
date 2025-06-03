@@ -15,26 +15,26 @@ interface SendRoomEventResponse {
 }
 
 
+
 export interface RoomEventFromApi {
-  eventType: string; 
-  memberId: number; 
-  [key: string]: any;
+  roomEventType: string; // "PICK", "PICK_MESSAGE" 등 이벤트 타입
+  senderId: number;      // 이벤트를 보낸 사람의 memberId
+  receiverId: number;    // 이벤트를 받은 사람의 memberId (PICK 이벤트의 경우 선택된 대상)
+  memberId?: number;     // 기존 호환성을 위해 유지 (또는 senderId/receiverId로 대체 고려)
+  [key: string]: any;    // 그 외 추가적인 필드들
 }
 
 
-export const sendRoomEvent = async (): Promise<SendRoomEventResponse> => { // eventData 매개변수 제거
-  // SecretMessageStore에서 현재 이벤트 메시지 데이터를 가져옵니다.
-  const { currentEventMessage } = useEventMessageStore.getState();
-
-  if (!currentEventMessage) {
-    const errorMessage = "룸 이벤트를 보낼 데이터가 스토어에 없습니다. 메시지 전송을 진행할 수 없습니다.";
+export const sendRoomEvent = async (eventData: EventMessageData): Promise<SendRoomEventResponse> => {
+  if (!eventData) {
+    const errorMessage = "룸 이벤트를 보낼 데이터가 제공되지 않았습니다. 메시지 전송을 진행할 수 없습니다.";
     console.error(`🚨 sendRoomEvent: ${errorMessage}`);
     // 호출하는 쪽에서 이 에러를 잡아서 사용자에게 알릴 수 있도록 에러를 throw 합니다.
     throw new Error(errorMessage);
   }
 
-  // currentEventMessage가 null이 아님을 위에서 확인했으므로, API 요청의 본문으로 사용합니다.
-  const payload: EventMessageData = currentEventMessage;
+  // 전달받은 eventData를 API 요청의 본문으로 사용합니다.
+  const payload: EventMessageData = eventData;
 
   try {
     
@@ -56,11 +56,10 @@ export const sendRoomEvent = async (): Promise<SendRoomEventResponse> => { // ev
   }
 };
 
-/**
+// 기존 getFilteredRoomEvents 함수 (특정 eventType 및 receiverId로 필터링)
+// 이 함수는 그대로 유지됩니다.
 
- * @param eventTypeFilter
- * @returns
- */
+
 export const getFilteredRoomEvents = async (eventTypeFilter: string): Promise<RoomEventFromApi[]> => {
   const { chatRoomId } = useChatRoomStore.getState();
   const { memberId: currentMemberId } = useAuthStore.getState();
@@ -76,13 +75,13 @@ export const getFilteredRoomEvents = async (eventTypeFilter: string): Promise<Ro
   }
 
   try {
-
-    const response = await axiosWithToken.get<{ data: { roomEvents?: RoomEventFromApi[] } }>(
+    // 제네릭 타입을 API 응답 구조에 맞게 수정: response.data.data가 이벤트 배열이라고 가정
+    const response = await axiosWithToken.get<{ data: RoomEventFromApi[] }>(
       `/room-event/chat-room/${chatRoomId}`
     );
 
-    // 1. response.data.data가 이미 이벤트 배열이므로 직접 사용합니다.
-    const allEvents = (response.data.data ?? []) as RoomEventFromApi[];
+    // response.data.data가 이벤트 배열이므로 직접 사용
+    const allEvents = response.data.data ?? [];
     console.log('올바르게 가져온 이벤트 목록:', allEvents); // 수정된 allEvents 확인용 로그
 
     if (!Array.isArray(allEvents)) {
@@ -95,7 +94,7 @@ export const getFilteredRoomEvents = async (eventTypeFilter: string): Promise<Ro
 
     const filteredEvents = allEvents.filter(event => {
       console.log('단일 이벤트',event)
-      // 2. 실제 데이터 필드명인 event.roomEventType를 사용하고, receiverId 존재 여부 확인
+      // event.eventType 대신 event.roomEventType 사용
       if (event && event.roomEventType && event.receiverId !== undefined) {
         // event.eventType 대신 event.roomEventType 사용
         return event.roomEventType === eventTypeFilter && event.receiverId === currentMemberId;
@@ -115,5 +114,100 @@ export const getFilteredRoomEvents = async (eventTypeFilter: string): Promise<Ro
     }
 
     return [];
+  }
+};
+
+// getAllRoomEvents 함수의 반환 타입을 위한 인터페이스 정의
+export interface FormattedSelection {
+  from: number;
+  to: number;
+}
+
+export interface AllRoomEventsResult {
+  allEvents: RoomEventFromApi[];
+  pickSelections: FormattedSelection[];
+}
+
+// 새로 추가된 getAllRoomEvents 함수 (필터링 없이 모든 이벤트 반환)
+/**
+ * 특정 채팅방의 모든 룸 이벤트를 가져오는 API 함수.
+ * 모든 이벤트와 함께 "PICK" 타입 이벤트를 `ResultLoveArrow`의 `selections` 프롭 형식에 맞게 가공하여 반환합니다.
+ * ChatRoomStore에서 현재 chatRoomId를 가져와 사용합니다.
+ * @returns 모든 이벤트와 가공된 "PICK" 선택 정보를 담은 객체. 에러 발생 시 빈 배열들을 담은 객체 반환.
+ */
+export const getAllRoomEvents = async (): Promise<AllRoomEventsResult> => {
+  const { chatRoomId } = useChatRoomStore.getState();
+
+  if (chatRoomId === null || chatRoomId === undefined) {
+    console.error("🚨 getAllRoomEvents: ChatRoomStore에 chatRoomId가 없습니다. 이벤트를 가져올 수 없습니다.");
+    return { allEvents: [], pickSelections: [] };
+  }
+
+  try {
+    // API 엔드포인트는 getFilteredRoomEvents와 동일하지만, 필터링 로직은 클라이언트에서 수행하지 않습니다.
+    // 제네릭 타입을 API 응답 구조에 맞게 수정: response.data.data가 이벤트 배열이라고 가정
+    const response = await axiosWithToken.get<{ data: RoomEventFromApi[] }>(
+      `/room-event/chat-room/${chatRoomId}`
+    );
+
+    const eventsFromApi = response.data.data ?? []; // response.data.data가 이벤트 배열이므로 직접 사용
+    console.log(`🔍 getAllRoomEvents: chatRoomId ${chatRoomId}에 대해 ${eventsFromApi.length}개의 이벤트를 가져왔습니다.`, eventsFromApi);
+
+    // "PICK" 타입 이벤트만 필터링하여 selections 형식으로 변환
+    const pickSelections: FormattedSelection[] = eventsFromApi
+      .filter(event => event.roomEventType === "PICK")
+      .map(event => ({
+        from: event.senderId,
+        to: event.receiverId,
+      }));
+    
+    console.log(`🔍 getAllRoomEvents: 추출된 PICK 선택 정보 (${pickSelections.length}개):`, pickSelections);
+
+    return { allEvents: eventsFromApi, pickSelections };
+
+  } catch (error) {
+    console.error(`🚨 getAllRoomEvents: chatRoomId ${chatRoomId}에 대한 채팅방 이벤트를 가져오는 데 실패했습니다:`, error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("🚨 API 오류 응답:", { status: error.response.status, data: error.response.data });
+    }
+    return { allEvents: [], pickSelections: [] }; // 에러 발생 시 빈 배열들을 담은 객체 반환
+  }
+};
+
+/**
+ * 특정 채팅방의 모든 "PICK" 타입 룸 이벤트를 가져오는 API 함수.
+ * ChatRoomStore에서 현재 chatRoomId를 가져와 사용하고, 클라이언트에서 필터링합니다.
+ * @returns 해당 채팅방의 "PICK" 이벤트 배열 또는 에러 발생 시 빈 배열
+ */
+export const getPickEventsForRoom = async (): Promise<RoomEventFromApi[]> => {
+  const { chatRoomId } = useChatRoomStore.getState();
+
+  if (chatRoomId === null || chatRoomId === undefined) {
+    console.error("🚨 getPickEventsForRoom: ChatRoomStore에 chatRoomId가 없습니다. 이벤트를 가져올 수 없습니다.");
+    return [];
+  }
+
+  try {
+    // 제네릭 타입을 API 응답 구조에 맞게 수정: response.data.data가 이벤트 배열이라고 가정
+    const response = await axiosWithToken.get<{ data: RoomEventFromApi[] }>(
+      `/room-event/chat-room/${chatRoomId}`
+    );
+
+    const allEvents = response.data.data ?? []; // response.data.data가 이벤트 배열이므로 직접 사용
+    console.log('필터링 전 데이터', allEvents);
+    // "PICK" 타입 이벤트만 필터링
+    const pickEvents = allEvents.filter(event => event.roomEventType === "PICK");
+
+    console.log(`🔍 getPickEventsForRoom: chatRoomId ${chatRoomId}에 대해 ${allEvents.length}개의 전체 이벤트 중 ${pickEvents.length}개의 "PICK" 이벤트를 가져왔습니다.`);
+    console.log("✅ getPickEventsForRoom 최종 반환 값 (pickEvents):", pickEvents); // 최종 반환 값 로깅
+
+    return pickEvents;
+
+  } catch (error) {
+    console.error(`🚨 getPickEventsForRoom: chatRoomId ${chatRoomId}에 대한 "PICK" 이벤트를 가져오는 데 실패했습니다:`, error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("🚨 API 오류 응답:", { status: error.response.status, data: error.response.data });
+    }
+    return []; // 에러 발생 시 빈 배열 반환
   }
 };
