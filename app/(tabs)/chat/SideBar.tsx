@@ -40,7 +40,9 @@ const svgMap: Record<string, React.FC<SvgProps>> = {
 
 const { width } = Dimensions.get("window");
 
+
 const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
+
   const translateX = useRef(new Animated.Value(width)).current;
 
   // SideBar가 직접 themeId를 스토어에서 가져옴 (스타일링 목적)
@@ -48,7 +50,7 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
   const chatParts = useChatRoomStore((state) => state.chatParts);
 
   const createdAtFromStore = useChatRoomStore((state) => state.createdAt); // createdAt 가져오기
-  console.log(createdAtFromStore);
+
   // 기본 색상 설정
 
   let sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
@@ -59,12 +61,36 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
       return [];
     }
 
-    // part의 타입을 ChatParticipant로 명시하고, id 필드를 사용합니다.
-    return chatParts.map((part: ChatParticipant, index: number) => {
-      const SvgComponent = svgMap[part.profile as string] || Hana;
-      // 이제 part.memberId를 직접 사용할 수 있습니다.
-      // console.log(`SideBar - chatPart[${index}].memberId:`, part.memberId, `(Type: ${typeof part.memberId})`);
-      // console.log(`SideBar - chatPart[${index}].partId (used for UserData.id):`, part.partId, `(Type: ${typeof part.partId})`);
+    return chatParts.map((part: ChatParticipant) => {
+      let SvgComponent: React.FC<SvgProps>;
+
+      switch (part.nickname) {
+        case "한가로운 하나":
+          SvgComponent = Hana;
+          break;
+        case "두 얼굴의 매력 두리":
+          SvgComponent = Dori;
+          break;
+        case "세침한 세찌":
+          SvgComponent = Sezzi;
+          break;
+        case "네모지만 부드러운 네몽":
+          SvgComponent = Nemo;
+          break;
+        case "단호한데 다정한 다오":
+          SvgComponent = Dao;
+          break;
+        case "육감적인 직감파 육땡": // "육땡"을 "육댕"으로 가정 (Yukdaeng SVG)
+          SvgComponent = Yukdaeng;
+          break;
+        default:
+          // 이전 로직: part.profile 필드를 사용하여 svgMap에서 찾거나 Hana를 기본값으로 사용
+          // SvgComponent = svgMap[part.profile as string] || Hana;
+          // 요청에 따라 nickname 기반 매칭이 우선이며, 해당 없을 시 Hana를 기본값으로 사용
+          SvgComponent = Hana;
+          break;
+      }
+
       return {
         id: String(part.partId), // UserData의 id는 문자열이어야 하므로 변환
         name: part.nickname,     // UserData의 이름으로 nickname 사용

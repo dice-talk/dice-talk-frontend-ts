@@ -9,8 +9,8 @@ export const getNotifications = async (page: number, size: number) => {
     
     // API 응답 구조: {data: [...], pageInfo: {...}}
     // 실제 알림 배열만 추출해서 반환
-    console.log("🔍 API 전체 응답:", response.data);
-    console.log("🔍 추출된 알림 배열:", response.data.data);
+    console.log(" API 전체 응답:", response.data);
+    console.log(" 추출된 알림 배열:", response.data.data);
     
     return response.data.data || []; // data 필드만 반환, 없으면 빈 배열
 
@@ -23,7 +23,7 @@ export const getNotifications = async (page: number, size: number) => {
 export const deleteNotification = async (notificationId: number) => {
   try {
     const response = await axiosWithToken.delete(`/notifications/${notificationId}`);
-    console.log(`🔍 단일 삭제 응답:`, { status: response.status, data: response.data });
+    console.log(` 단일 삭제 응답:`, { status: response.status, data: response.data });
     return response; // 전체 response 객체 반환
 
   } catch (error) {
@@ -36,7 +36,7 @@ export const deleteNotification = async (notificationId: number) => {
 export const deleteAllNotifications = async () => {
   try {
     const response = await axiosWithToken.delete("/notifications");
-    console.log(`🔍 전체 삭제 응답:`, { status: response.status, data: response.data });
+    console.log(` 전체 삭제 응답:`, { status: response.status, data: response.data });
     return response; // 전체 response 객체 반환
 
   } catch (error) {
@@ -49,7 +49,7 @@ export const deleteAllNotifications = async () => {
 export const readAllNotifications = async () => {
   try {
     const response = await axiosWithToken.patch("/notifications/read-all");
-    console.log(`🔍 전체 읽음 처리 응답:`, { status: response.status, data: response.data });
+    console.log(` 전체 읽음 처리 응답:`, { status: response.status, data: response.data });
     return response;
 
   } catch (error) {
@@ -62,7 +62,7 @@ export const readAllNotifications = async () => {
 export const getUnreadNotificationCount = async () => {
   try {
     const response = await axiosWithToken.get("/notifications/unread-count");
-    console.log(`🔍 안읽은 알림 개수 조회 응답:`, { status: response.status, data: response.data });
+    console.log(` 안읽은 알림 개수 조회 응답:`, { status: response.status, data: response.data });
     return response;
 
   } catch (error) {

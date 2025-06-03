@@ -15,7 +15,7 @@ const ExitCostModal: React.FC<ExitCostModalProps> = ({
   visible,
   onClose,
   onConfirm,
-  message = "하루에 최대 2번 채팅방을 \n 나갈 수 있습니다.",
+  message = "하루에 최대 1번 무료로 채팅방을 \n 나갈 수 있습니다.",
   subMessage = "나가시겠습니까?",
   confirmButtonColor = "#D9B2D3",
   textColor = "#8A5A7A"
@@ -43,9 +43,7 @@ const ExitCostModal: React.FC<ExitCostModalProps> = ({
                 {subMessage}
               </Text>
             </View>
-            
             <View style={styles.spacer} />
-            
             <View style={styles.buttonContainer}>
               <Pressable
                 style={[styles.button, styles.cancelButton]}

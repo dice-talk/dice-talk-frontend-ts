@@ -85,23 +85,23 @@ const useHomeStore = create<HomeStore>((set) => ({
   actions: {
     
     setInitialHomeApiCalled: (called) => {
-      console.log('HomeStore: setInitialHomeApiCalled', called);
+      console.log(' setInitialHomeApiCalled', called);
       set({ initialHomeApiCalled: called });
     },
     setThemes: (themes) => {
-      console.log('HomeStore: setThemes', themes);
+      console.log(' setThemes', themes);
       set({ themes });
     },
     setNotices: (notices) => {
-      console.log('HomeStore: setNotices', notices);
+      console.log(' setNotices', notices);
       set({ notices });
     },
     setHasNewNotifications: (hasNew) => {
-      console.log('HomeStore: setHasNewNotifications', hasNew);
+      console.log(' setHasNewNotifications', hasNew);
       set({ hasNewNotifications: hasNew });
     },
     setChatRoomId: (chatRoomId) => { // 추가: setChatRoomId 액션 구현
-      console.log('HomeStore: setChatRoomId', chatRoomId);
+      console.log(' setChatRoomId', chatRoomId);
       set({ chatRoomId });
     },
     setItems: (items) => { // ✅ 아이템 설정 액션 구현

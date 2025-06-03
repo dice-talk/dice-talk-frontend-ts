@@ -53,9 +53,9 @@ const AlertsModal = ({ visible, onClose, notifications, onReadComplete }: Alerts
   }, [notifications]);
 
   // 디버깅용 로그 추가
-  console.log('🔍 AlertsModal - visible:', visible);
-  console.log('🔍 AlertsModal - localNotifications:', localNotifications);
-  console.log('🔍 AlertsModal - localNotifications.length:', localNotifications?.length || 0);
+  console.log(' AlertsModal - visible:', visible);
+  console.log(' AlertsModal - localNotifications:', localNotifications);
+  console.log(' AlertsModal - localNotifications.length:', localNotifications?.length || 0);
 
   const showToast = (message: string) => {
     Alert.alert("알림", message, [{ text: "확인" }]);
@@ -188,7 +188,7 @@ const AlertsModal = ({ visible, onClose, notifications, onReadComplete }: Alerts
             >
               {localNotifications.length > 0 ? (
                 localNotifications.map((alert, index) => {
-                  console.log(`🔍 Rendering AlertBox ${index}:`, {
+                  console.log(` Rendering AlertBox ${index}:`, {
                     category: alert.type,
                     text: alert.content,
                     read: alert.read,
