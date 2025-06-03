@@ -1,6 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react'; // useState 임포트
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRouter } from 'expo-router'; // useRouter 임포트
+
+// SharedProfileStore에서 totalDice를 가져오기 위한 임포트 (경로는 실제 프로젝트 구조에 맞게 조정 필요)
+import useSharedProfileStore from '@/zustand/stores/sharedProfileStore';
+
+import InsufficientItemModal from './DiceRechargeModal'; // 다이스 부족 시 사용할 모달
+import Toast from './Toast'; // 토스트 메시지 표시용 컴포넌트
 
 interface CustomCostModalProps {
   visible: boolean;
@@ -16,8 +23,8 @@ interface CustomCostModalProps {
 const CustomCostModal: React.FC<CustomCostModalProps> = ({
   visible,
   onClose,
-  onConfirm,
-  content = "하루에 2번 이상\n채팅방을 나가셨습니다.",
+  onConfirm: originalOnConfirm, // 내부 로직과의 충돌을 피하기 위해 이름 변경
+  content = "하루에 1번 이상\n채팅방을 나가셨습니다.", // 기본 컨텐츠
   diceCount = 7,
   textColor = "#8A5A7A",
   diceButtonColor = "#D9B2D3",
@@ -25,7 +32,40 @@ const CustomCostModal: React.FC<CustomCostModalProps> = ({
 }) => {
   // 모달 닫기 요청 처리
   const handleRequestClose = () => {
-    onClose();
+    onClose(); // 메인 CustomCostModal을 닫기 위한 prop
+  };
+
+  const router = useRouter();
+  const totalDice = useSharedProfileStore((state) => state.totalDice); // Zustand 스토어에서 totalDice 가져오기
+
+  const [
+    isInsufficientDiceModalVisible,
+    setIsInsufficientDiceModalVisible,
+  ] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  const handleDiceButtonPress = () => {
+    if (diceCount > totalDice) {
+      // 다이스 부족, 다이스 부족 모달 표시
+      setIsInsufficientDiceModalVisible(true);
+    } else {
+      // 다이스 충분, 원래의 onConfirm 액션 실행
+      originalOnConfirm();
+    }
+  };
+
+  const handleGoToStore = () => {
+    setIsInsufficientDiceModalVisible(false);
+    router.push('/profile/ChargePage'); // ChargePage로 이동 (경로 확인 필요)
+  };
+
+  const handleInsufficientDiceModalClose = () => {
+    // 다이스 부족 모달에서 "취소" 버튼 클릭 시
+    setIsInsufficientDiceModalVisible(false);
+    setToastMessage("나가기 횟수를 초과하여 결제가 필요합니다");
+    onClose(); // 메인 CustomCostModal도 닫습니다.
+    setToastVisible(true);
   };
 
   return (
@@ -45,7 +85,7 @@ const CustomCostModal: React.FC<CustomCostModalProps> = ({
             <View style={styles.spacer} />
             <Pressable
               style={[styles.diceButton, { backgroundColor: diceButtonColor }]}
-              onPress={onConfirm}
+              onPress={handleDiceButtonPress} // onPress 핸들러 업데이트
             >
               <View style={styles.diceButtonContent}>
                 <Ionicons name="dice-outline" size={24} color="white" style={styles.diceIcon} />
@@ -54,13 +94,26 @@ const CustomCostModal: React.FC<CustomCostModalProps> = ({
             </Pressable>
             <Pressable
               style={[styles.cancelButton, { backgroundColor: cancelButtonColor }]}
-              onPress={onClose}
+              onPress={onClose} // 이 버튼은 메인 모달의 "취소" 버튼입니다.
             >
               <Text style={styles.cancelButtonText}>취소</Text>
             </Pressable>
           </View>
         </View>
       </View>
+      {/* 다이스가 부족할 때 표시될 모달 */}
+      <InsufficientItemModal
+        visible={isInsufficientDiceModalVisible}
+        onClose={handleInsufficientDiceModalClose} // "취소" 액션
+        onGoToStore={handleGoToStore} // "상점으로 이동하기" 액션
+      />
+
+      {/* 토스트 메시지 표시 */}
+      <Toast
+        message={toastMessage}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
     </Modal>
   );
 };
