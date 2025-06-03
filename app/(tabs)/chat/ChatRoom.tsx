@@ -1,5 +1,6 @@
 import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
 import HanaSvg from '@/assets/images/dice/hana.svg';
+import { getFilteredRoomEvents, RoomEventFromApi } from "@/api/EventApi"; // API 함수 및 타입 임포트
 import Nemo from '@/assets/images/dice/nemo.svg';
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
@@ -63,6 +64,8 @@ const ChatRoom = () => {
   const [showLoveArrowMatch, setShowLoveArrowMatch] = useState(false);
   const [showCustomCostModal, setShowCustomCostModal] = useState(false);
   const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
+  const [isEnvelopeReadOnly, setIsEnvelopeReadOnly] = useState(false); // EnvelopeAnimation 읽기 전용 상태
+  const [readOnlyEnvelopeMessages, setReadOnlyEnvelopeMessages] = useState<string[]>([]); // 읽기 전용 편지 메시지
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
   
   // 채팅 메시지 상태 (실제 API 연동 시 변경)
@@ -120,6 +123,35 @@ const ChatRoom = () => {
     setShowLoveLetterSelect(true);
   };
   
+  // 시크릿 메시지 결과 확인 버튼 클릭 핸들러
+  const handleSecretMessageResultCheck = async () => {
+    console.log('시크릿 메시지 결과 확인!');
+    try {
+      // TODO: "SECRET_MESSAGE_RESULT"를 실제 시크릿 메시지 결과 확인을 위한 eventType으로 변경해주세요.
+      // TODO: event 객체에서 실제 메시지 내용이 담긴 필드명 (예: event.messageContent)으로 접근 경로를 수정해주세요.
+      const eventTypeForSecretMessageResults = "PICK_MESSAGE"; // 예시: 실제 API와 일치하는 이벤트 타입 사용
+      const fetchedEvents: RoomEventFromApi[] = await getFilteredRoomEvents(eventTypeForSecretMessageResults);
+      
+      // RoomEventFromApi에서 메시지 내용을 추출 (예: event.messageContent)
+      const messages = fetchedEvents.map(event =>
+        String(event.message || "메시지 내용을 불러올 수 없습니다.") // 실제 필드명인 'message' 사용
+      );
+
+      if (messages.length > 0) {
+        setReadOnlyEnvelopeMessages(messages);
+      } else {
+        setReadOnlyEnvelopeMessages(["확인할 수 있는 메시지가 없습니다."]);
+      }
+      setIsEnvelopeReadOnly(true); // 읽기 전용 모드 활성화
+      setShowEnvelope(true); // EnvelopeAnimation 표시
+    } catch (error) {
+      console.error("시크릿 메시지 결과 로딩 중 오류:", error);
+      setReadOnlyEnvelopeMessages(["오류: 메시지를 불러오는 데 실패했습니다."]);
+      setIsEnvelopeReadOnly(true); // 오류 시에도 읽기 전용으로 봉투 표시
+      setShowEnvelope(true);
+    }
+  };
+
   // 사랑의 짝대기 이벤트 참여하기 버튼 클릭 핸들러
   const handleLoveArrowParticipate = () => {
     console.log('사랑의 짝대기 이벤트 참여!');
@@ -170,6 +202,8 @@ const ChatRoom = () => {
   const handleEnvelopeAnimationComplete = () => {
     console.log('편지 애니메이션 완료!');
     setShowEnvelope(false);
+    setIsEnvelopeReadOnly(false); // 읽기 전용 상태 초기화
+    setReadOnlyEnvelopeMessages([]); // 메시지 목록 초기화
   };
   
   // 매칭 결과 보기 버튼 클릭 핸들러
@@ -286,6 +320,15 @@ const ChatRoom = () => {
               />
             )}
             {showNotice && (
+              <GptNotice 
+                text="[시스템] 시크릿 메시지 결과를 확인해주세요!!"
+                onHide={hideNotice}
+                onParticipate={handleSecretMessageResultCheck} // 결과 확인 핸들러로 변경
+                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+                themeId={themeId}
+              />
+            )}
+            {showNotice && !showMessageCheckReport && (
               <GptNotice 
                 text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
                 onHide={hideNotice}
@@ -442,6 +485,8 @@ const ChatRoom = () => {
               autoPlay={true}
               onAnimationComplete={handleEnvelopeAnimationComplete}
               themeId={themeId}
+              isReadOnly={isEnvelopeReadOnly} // 읽기 전용 상태 전달
+              messages={readOnlyEnvelopeMessages} // 읽기 전용 메시지 전달
               content={
                 <View style={styles.envelopeContent}>
                   <Text style={styles.envelopeTitle}>큐피트의 짝대기 이벤트</Text>
