@@ -9,6 +9,11 @@ import CountPlusSvg from "@/assets/images/event/countPlus.svg";
 import FriendLetterForm from "@/assets/images/event/friend_letterForm.svg";
 import LetterForm from "@/assets/images/event/LetterForm.svg";
 import ToastMessage from "@/components/common/ToastMessage";
+import { sendRoomEvent } from "@/api/EventApi"; // sendRoomEvent 임포트
+import { EventMessageData } from "@/zustand/stores/SecretMessageStore"; // EventMessageData 타입 임포트
+import useArrowEventStore from "@/zustand/stores/ArrowEventStore"; // ArrowEventStore 임포트
+import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
+import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import React, { useState } from "react";
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
@@ -31,6 +36,11 @@ interface CharacterInfo {
 const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE", remainingCount, themeId = 1 }) => {
   const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
+  // 스토어 훅 사용
+  const chatParts = useChatRoomStore((state) => state.chatParts);
+  const currentAuthMemberId = useAuthStore((state) => state.memberId);
+  const setArrowEventDetails = useArrowEventStore((state) => state.setArrowEventDetails);
+  const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
 
   const handleIncrement = () => {
     // TODO: 필요 시 기능 구현
@@ -49,26 +59,73 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
 
   const characters: CharacterInfo[] = gender === "MALE" 
     ? [
-        { name: "두 얼굴의 매력 두리", ColoredSvgComponent: DoriSvg },
-        { name: "네모지만 부드러운 네몽", ColoredSvgComponent: NemoSvg },
-        { name: "육감적인 직감파 육댕", ColoredSvgComponent: YukdaengSvg },
-      ] 
-    : [
         { name: "한가로운 하나", ColoredSvgComponent: HanaSvg },
         { name: "세침한 세찌", ColoredSvgComponent: SezziSvg },
         { name: "단호한데 다정한 다오", ColoredSvgComponent: DaoSvg },
+      ] 
+    : [
+         { name: "두 얼굴의 매력 두리", ColoredSvgComponent: DoriSvg },
+        { name: "네모지만 부드러운 네몽", ColoredSvgComponent: NemoSvg },
+        { name: "육감적인 직감파 육땡", ColoredSvgComponent: YukdaengSvg },
       ];
 
   const handleSelectCharacter = (index: number) => {
     setSelectedCharacterIndex(index === selectedCharacterIndex ? null : index);
   };
 
-  const handleConfirm = () => {
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
+  const handleConfirm = async () => { // async로 변경
+    if (selectedCharacterIndex !== null) {
+      const selectedCharacter = characters[selectedCharacterIndex];
+      const targetParticipant = chatParts.find(
+        (participant: ChatParticipant) => participant.nickname === selectedCharacter.name
+      );
+
+      if (targetParticipant && targetParticipant.memberId && currentAuthMemberId && currentChatRoomId) {
+        // API로 전송할 데이터 객체 (EventMessageData 타입)
+        const eventDetailsForApi: EventMessageData = {
+          receiverId: targetParticipant.memberId,
+          senderId: currentAuthMemberId,
+          chatRoomId: currentChatRoomId,
+          eventId: 2, // 요청하신대로 하드코딩
+          roomEventType: "PICK", // 요청하신대로 하드코딩
+          message: null, // message 필드를 null로 설정
+        };
+
+        // ArrowEventStore 업데이트 (message 필드는 ArrowEventStore의 상태에 없으므로 제외하고 전달)
+        setArrowEventDetails({
+          receiverId: eventDetailsForApi.receiverId,
+          senderId: eventDetailsForApi.senderId,
+          chatRoomId: eventDetailsForApi.chatRoomId,
+          eventId: eventDetailsForApi.eventId,
+          roomEventType: eventDetailsForApi.roomEventType,
+        });
+        console.log(`ArrowEventStore 업데이트: receiverId=${eventDetailsForApi.receiverId}, senderId=${eventDetailsForApi.senderId}, chatRoomId=${eventDetailsForApi.chatRoomId}, eventId=${eventDetailsForApi.eventId}, roomEventType=${eventDetailsForApi.roomEventType}`);
+        
+        try {
+          await sendRoomEvent(eventDetailsForApi); // 수정된 sendRoomEvent 호출하여 API로 데이터 전송
+          console.log("LoveArrow 이벤트 전송 성공");
+          setShowToast(true);
+          setTimeout(() => {
+            setShowToast(false);
+            onClose(); 
+          }, 1500);
+        } catch (error) {
+          console.error("LoveArrow 이벤트 전송 실패:", error);
+          // 사용자에게 오류 알림 (예: 다른 Toast 메시지)
+          onClose(); // 오류 발생 시에도 모달은 닫음
+        }
+      } else {
+        console.warn(
+          `선택된 캐릭터(${selectedCharacter.name})의 정보를 찾을 수 없거나, 현재 사용자 ID 또는 채팅방 ID가 없습니다.`
+        );
+        // 사용자에게 오류 알림 (예: Toast 메시지)
+        onClose(); // 오류 발생 시에도 모달은 닫음
+      }
+    } else {
+      // 선택된 캐릭터가 없을 경우
+      console.log("선택된 캐릭터가 없습니다.");
       onClose();
-    }, 1500);
+    }
   };
   const width = SCREEN_WIDTH * 0.95;
   const height = SCREEN_WIDTH * 0.95;
