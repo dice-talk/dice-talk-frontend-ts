@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // SharedProfileStore 임포트
 import SelectableOption from "./SelectableOption";
+import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트 (경로 가정)
+import useEventMessageStore from "@/zustand/stores/SecretMessageStore"; // EventMessageStore 임포트
+import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 임포트
 
 // SVG 파일 import
 import DaoSvg from '@/assets/images/dice/dao.svg';
@@ -12,16 +16,16 @@ import YukdaengSvg from '@/assets/images/dice/yukdaeng.svg';
 
 // 조건에 따라 표시될 여성 캐릭터 옵션
 const FEMALE_TARGET_OPTIONS = [
-  { label: "한가로운 하나", svgComponent: HanaSvg },
-  { label: "세침한 세찌", svgComponent: SezziSvg },
-  { label: "단호한데 다정한 다오", svgComponent: DaoSvg },
+  { label: "한가로운 하나", svgComponent: HanaSvg }, // memberId 제거
+  { label: "세침한 세찌", svgComponent: SezziSvg },   // memberId 제거
+  { label: "단호한데 다정한 다오", svgComponent: DaoSvg }, // memberId 제거
 ];
 
 // 조건에 따라 표시될 남성 캐릭터 옵션
 const MALE_TARGET_OPTIONS = [
-  { label: "두 얼굴의 매력 두리", svgComponent: DoriSvg },
-  { label: "네모지만 부드러운 네몽", svgComponent: NemoSvg },
-  { label: "육감적인 직감파 육댕", svgComponent: YukdaengSvg },
+  { label: "두 얼굴의 매력 두리", svgComponent: DoriSvg },    // memberId 제거
+  { label: "네모지만 부드러운 네몽", svgComponent: NemoSvg },    // memberId 제거
+  { label: "육감적인 직감파 육댕", svgComponent: YukdaengSvg }, // memberId 제거
 ];
 
 // 남성 캐릭터 옵션을 보여줄 트리거가 되는 닉네임 목록
@@ -32,7 +36,6 @@ interface LoveLetterSelectProps {
   onClose: () => void;
   onConfirm: (selectedIndex: number) => void;
   themeId?: number;
-  nickname?: string; // 현재 사용자의 닉네임 또는 상대방의 닉네임
 }
 
 const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
@@ -40,16 +43,44 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
   onClose,
   onConfirm,
   themeId = 1,
-  nickname,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  // SharedProfileStore에서 nickname 가져오기
+  const nickname = useSharedProfileStore((state) => state.nickname);
+  const authMemberId = useAuthStore((state) => state.memberId); // AuthStore에서 memberId 가져오기
+  const { setCurrentEventMessage } = useEventMessageStore((state) => state); // updateEventMessage 대신 setCurrentEventMessage 사용
+  const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId); // ChatRoomStore에서 chatRoomId 가져오기
+  const chatParts = useChatRoomStore((state) => state.chatParts); // ChatRoomStore에서 chatParts 가져오기
 
-  const optionsToDisplay = useMemo(() => {
+  // 옵션 목록 결정 로직 수정
+  const baseOptions = useMemo(() => {
+    if (themeId === 2) {
+      // themeId가 2이면 모든 캐릭터 옵션을 합쳐서 반환
+      return [...FEMALE_TARGET_OPTIONS, ...MALE_TARGET_OPTIONS];
+    }
+    // themeId가 2가 아닐 경우, 기존 로직 (닉네임 기반으로 성별 그룹 결정)
     if (nickname && TRIGGER_NICKNAMES.includes(nickname)) {
       return MALE_TARGET_OPTIONS;
     }
     return FEMALE_TARGET_OPTIONS;
-  }, [nickname]);
+  }, [nickname, themeId]); // themeId를 의존성 배열에 추가
+
+  // 자신의 닉네임이 있다면 목록에서 제외
+  const optionsToDisplay = useMemo(() => {
+    console.log("[LoveLetterSelect] nickname prop:", nickname);
+    if (nickname) { // nickname prop이 존재하면 해당 닉네임 제외
+      const filtered = baseOptions.filter(option => {
+        const isMatch = option.label === nickname;
+        console.log(`[LoveLetterSelect] Comparing: option.label="${option.label}" vs nickname="${nickname}". Match: ${isMatch}`);
+        return !isMatch; // 일치하지 않는 것만 포함 (즉, 일치하는 것은 제외)
+      });
+      console.log("[LoveLetterSelect] baseOptions:", baseOptions);
+      console.log("[LoveLetterSelect] filteredOptions:", filtered);
+      return filtered;
+    }
+    console.log("[LoveLetterSelect] nickname not provided or falsy, returning baseOptions.");
+    return baseOptions;
+  }, [baseOptions, nickname]);
 
 
   // 테마별 색상 설정
@@ -57,14 +88,21 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
   const dividerColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const confirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FEBFC8";
   const confirmButtonBorderColor = themeId === 2 ? "#6DA0E1" : "#FFD9DF";
-
-  // 요청에 따라 nickname이 TRIGGER_NICKNAMES에 포함되는지 여부로 SVG 색상 결정
-  const shouldUseSpecialNicknameColor = nickname && TRIGGER_NICKNAMES.includes(nickname);
-  const svgColor = shouldUseSpecialNicknameColor ? "#9FC9FF" : "#F9BCC1";
-  const selectedSvgColor = shouldUseSpecialNicknameColor ? "#9FC9FF" : "#F9BCC1";
   const textColor = themeId === 2 ? "#879FC0" : "#A45C73";
   const radioColor = themeId === 2 ? "#879FC0" : "#D6A0B1";
   const checkmarkColor = themeId === 2 ? "#879FC0" : "#E04C65";
+  // SVG 색상 결정 로직 수정
+  let svgColor: string;
+  let selectedSvgColor: string;
+
+  if (themeId === 2) {
+    svgColor = "#9FC9FF";
+    selectedSvgColor = "#9FC9FF";
+  } else {
+    const shouldUseSpecialNicknameColor = nickname && TRIGGER_NICKNAMES.includes(nickname);
+    svgColor = shouldUseSpecialNicknameColor ? "#9FC9FF" : "#F9BCC1";
+    selectedSvgColor = shouldUseSpecialNicknameColor ? "#9FC9FF" : "#F9BCC1";
+  }
 
   useEffect(() => {
     // 옵션 목록이 변경되면 선택 상태 초기화
@@ -84,7 +122,32 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
 
   const handleConfirm = () => {
     if (selectedIndex !== null) {
-      onConfirm(selectedIndex);
+      const selectedOption = optionsToDisplay[selectedIndex];
+      // ChatRoomStore의 chatParts에서 선택된 캐릭터의 memberId 찾기
+      const selectedParticipant = chatParts.find(
+        (participant: ChatParticipant) => participant.nickname === selectedOption.label
+      );
+
+      if (selectedParticipant && selectedParticipant.memberId && authMemberId && currentChatRoomId) {
+        // setCurrentEventMessage를 사용하여 전체 EventMessageData 객체를 설정합니다.
+        setCurrentEventMessage({
+          senderId: authMemberId,
+          receiverId: selectedParticipant.memberId, // ChatRoomStore에서 가져온 memberId 사용
+          chatRoomId: currentChatRoomId, // 현재 채팅방 ID 설정
+          eventId: 1, // eventId를 1로 설정
+          roomEventType: "PICK_MESSAGE", // roomEventType을 "PICK_MESSAGE"으로 설정
+          message: "", // 초기 메시지는 비워둡니다. EventMessageData 인터페이스에 따라 필수입니다.
+        });
+        console.log(
+          `선택된 사용자 memberId: ${selectedParticipant.memberId}, chatRoomId: ${currentChatRoomId}, eventId: 1, roomEventType: PICK_MESSAGE`
+        );
+        onConfirm(selectedIndex); // 기존 onConfirm 로직 호출
+      } else {
+        console.warn(
+          `선택된 옵션(${selectedOption.label})에 해당하는 참가자를 chatParts에서 찾을 수 없거나, memberId, authMemberId 또는 chatRoomId가 유효하지 않습니다.`
+        );
+        onClose(); // 문제가 있으면 모달만 닫기
+      }
     } else {
       // 아무것도 선택하지 않았다면 모달창만 닫기
       onClose();
