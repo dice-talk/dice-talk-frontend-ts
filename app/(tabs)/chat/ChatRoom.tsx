@@ -9,8 +9,7 @@ import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import ChatProfile from "@/components/chat/ChatProfile";
 import GptNotice from "@/components/chat/GptNotice";
 import ReadingTag from "@/components/chat/ReadingTag";
-import CustomCostModal from "@/components/common/CustomCostModal";
-import InsufficientItemModal from "@/components/common/DiceRechargeModal";
+
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
@@ -89,8 +88,6 @@ const ChatRoom = () => {
   const [showResultLoveArrow, setShowResultLoveArrow] = useState(false);
   const [showResultAlertModal, setShowResultAlertModal] = useState(false);
   const [showLoveArrowMatch, setShowLoveArrowMatch] = useState(false);
-  const [showCustomCostModal, setShowCustomCostModal] = useState(false);
-  const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
   const [isEnvelopeReadOnly, setIsEnvelopeReadOnly] = useState(false); // EnvelopeAnimation 읽기 전용 상태
   const [readOnlyEnvelopeMessages, setReadOnlyEnvelopeMessages] = useState<string[]>([]); // 읽기 전용 편지 메시지
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
@@ -207,7 +204,10 @@ const ChatRoom = () => {
 
   // 이벤트 수정 버튼 클릭 핸들러 (아이템 필요)
   const handleEventModify = () => {
-    setShowCustomCostModal(true); // CustomCostModal을 표시
+    // LoveArrow 컴포넌트가 자체적으로 CustomCostModal을 관리하므로,
+    // ChatRoom.tsx에서 직접 setShowCustomCostModal(true)를 호출할 필요가 없습니다.
+    // 필요하다면 LoveArrow를 표시하는 로직을 여기에 추가할 수 있습니다.
+    console.log("GptNotice에서 이벤트 수정 요청. LoveArrow 컴포넌트 내부에서 처리됩니다.");
   };
   
   const handleLoveLetterSelectClose = () => {
@@ -307,29 +307,6 @@ const ChatRoom = () => {
       console.error("매칭 결과 확인 중 오류 발생:", error);
       setShowUnmatchedModal(true);
     }
-  };
-
-  // CustomCostModal 확인 버튼 클릭 핸들러
-  const handleCustomCostConfirm = () => {
-    setShowCustomCostModal(false); // CustomCostModal 닫기
-    setShowInsufficientItemModal(true); // InsufficientItemModal 표시 (아이템 부족)
-  };
-
-  // CustomCostModal 취소 버튼 클릭 핸들러
-  const handleCustomCostCancel = () => {
-    setShowCustomCostModal(false); // CustomCostModal 닫기
-  };
-
-  // InsufficientItemModal 상점으로 이동 버튼 클릭 핸들러
-  const handleGoToStore = () => {
-    setShowInsufficientItemModal(false); // InsufficientItemModal 닫기
-    // TODO: 상점 페이지로 이동하는 로직 추가
-    console.log('상점으로 이동');
-  };
-
-  // InsufficientItemModal 취소 버튼 클릭 핸들러
-  const handleInsufficientItemCancel = () => {
-    setShowInsufficientItemModal(false); // InsufficientItemModal 닫기
   };
   
   const handleUnmatched = () => {
@@ -443,24 +420,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && (
-              <GptNotice 
-                text="[시스템] 이벤트 수정은 돈을 주세요!!"
-                onHide={hideNotice}
-                onParticipate={handleEventModify}
-                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
-              />
-            )}
-             {showNotice && (
-              <GptNotice 
-                text="[시스템] 매칭에 실패하였습니다!!"
-                onHide={hideNotice}
-                onParticipate={handleUnmatched}
-                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
-              />
-            )}
+
         </View>
         <ScrollView 
             style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
@@ -597,28 +557,6 @@ const ChatRoom = () => {
             partnerProfile={matchedPair.partnerProfile}
           />
         )}
-
-        {/* CustomCostModal */}
-        <CustomCostModal
-          visible={showCustomCostModal}
-          onClose={handleCustomCostCancel}
-          onConfirm={handleCustomCostConfirm}
-          content="이벤트 수정은 아이템이 필요합니다"
-          diceCount={5}
-          textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
-          diceButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
-          cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
-        />
-
-        {/* InsufficientItemModal */}
-        <InsufficientItemModal
-          visible={showInsufficientItemModal}
-          onClose={handleInsufficientItemCancel}
-          onGoToStore={handleGoToStore}
-          textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
-          storeButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
-          cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
-        />
 
         {/* UnmatchedModal */}
         <UnmatchedModal
