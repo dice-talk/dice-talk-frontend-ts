@@ -57,7 +57,8 @@ export interface HomeState {
   initialHomeApiCalled: boolean;
   items: Item[]; // ✅ 아이템 목록 상태 추가
   chatRoomId: number | null; // 추가: 홈 화면 관련 채팅방 ID
-  // ... 기타 상태들 ...
+  curThemeId: number | null; // 추가: 현재 선택된 또는 API로부터 받은 테마 ID
+
 }
 
 export interface HomeActions {
@@ -68,6 +69,7 @@ export interface HomeActions {
   setItems: (items: Item[]) => void; // ✅ 아이템 설정 액션 추가
   // ... 기타 액션들 ...
   setChatRoomId: (chatRoomId: number | null) => void; // 추가: chatRoomId 설정 액션
+  setCurThemeId: (themeId: number | null) => void; // 추가: curThemeId 설정 액션
   clearHomeData: () => void; // 필요시 홈 데이터 초기화 액션
 }
 
@@ -81,7 +83,11 @@ const useHomeStore = create<HomeStore>((set) => ({
   hasNewNotifications: false,
   initialHomeApiCalled: false,
   chatRoomId: null, // 추가: chatRoomId 초기값
+
   items: [], // ✅ 아이템 초기 상태
+
+  curThemeId: null, // 추가: curThemeId 초기값
+
   actions: {
     
     setInitialHomeApiCalled: (called) => {
@@ -104,6 +110,11 @@ const useHomeStore = create<HomeStore>((set) => ({
       console.log(' setChatRoomId', chatRoomId);
       set({ chatRoomId });
     },
+    setCurThemeId: (themeId) => { // 추가: setCurThemeId 액션 구현
+      console.log(' setCurThemeId', themeId);
+      set({ curThemeId: themeId });
+    },
+
     setItems: (items) => { // ✅ 아이템 설정 액션 구현
       console.log('HomeStore: setItems', items);
       set({ items });
