@@ -1,7 +1,7 @@
 import DiceLogo from '@/assets/images/profile/dice.svg';
 import { Ionicons } from '@expo/vector-icons'; // Ionicons import
 import React from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 
 // 아이콘 타입 - 실제 아이콘 SVG 컴포넌트를 직접 매핑하거나 prop으로 받을 수 있습니다.
 // 예시 SVG 아이콘 import (실제 경로와 파일명에 맞게 수정해야 합니다)
@@ -9,7 +9,7 @@ import { Dimensions, StyleSheet, Text, View } from 'react-native';
 // import EditChoiceIcon from '@/assets/images/icons/EditChoiceIcon.svg';
 
 interface PurchasableFunctionItemProps {
-  iconName?: 'doorExit' | 'pencilEdit' | string; // 아이콘 식별자 타입 확장
+  iconName?: string; // URL 또는 Ionicons 이름
   title: string;
   diceCost: number;
   // onPress?: () => void; // 클릭 기능 제거
@@ -26,8 +26,12 @@ const CARD_ASPECT_RATIO = 0.65; // 비율 조정으로 높이 약간 늘림
 const IconDisplay: React.FC<{ iconName?: string }> = ({ iconName }) => {
   let iconElement = null;
   const iconSize = 20; // 아이콘 크기 통일
+  const imageSize = 22; // Image 컴포넌트용 크기
 
-  if (iconName === 'doorExit') {
+  if (iconName && (iconName.startsWith('http') || iconName.startsWith('https'))) {
+    // URL인 경우 Image 컴포넌트 사용
+    iconElement = <Image source={{ uri: iconName }} style={{ width: imageSize, height: imageSize, borderRadius: 4 }} />;
+  } else if (iconName === 'doorExit') {
     iconElement = <Ionicons name="log-out-outline" size={iconSize} color="#006400" />;
   } else if (iconName === 'pencilEdit') {
     iconElement = <Ionicons name="create-outline" size={iconSize} color="#FF69B4" />; // HotPink, 좀 더 밝은 핑크
