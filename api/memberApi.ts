@@ -113,36 +113,35 @@ export const getMemberDetailsForMyInfoPage = async (memberId: number | null) => 
 // 로그아웃 (토큰 제거 및 상태 초기화)
 export const logoutMember = async () => {
     try {
-        console.log("로그아웃 시작: AsyncStorage에서 토큰 제거 중...");
+        console.log("로그아웃/탈퇴 후 데이터 정리 시작: AsyncStorage에서 토큰 제거 중..."); // 메시지 수정
         await AsyncStorage.removeItem("accessToken");
         await AsyncStorage.removeItem("refreshToken");
-        await AsyncStorage.removeItem("memberId"); // memberId도 AsyncStorage에서 관리했다면 제거
+        await AsyncStorage.removeItem("memberId"); 
         console.log("AsyncStorage 토큰 제거 완료.");
         
         console.log("Zustand 스토어 클리어 중...");
         useAuthStore.getState().actions.clearAuthInfo(); 
         useSharedProfileStore.getState().actions.clearSharedProfile(); 
-        useSignupProgressStore.getState().actions.clearSignupData(); // 회원가입 진행 중 데이터도 클리어
+        useSignupProgressStore.getState().actions.clearSignupData(); 
+        // 다른 사용자 특정 스토어가 있다면 여기서 추가로 클리어
         console.log("Zustand 스토어 클리어 완료.");
         
-        console.log("✅ 로그아웃 성공");
+        console.log("✅ 로그아웃/탈퇴 후 데이터 정리 성공"); // 메시지 수정
         return true;
     } catch (error) {
-        console.error("🚨 로그아웃 실패:", error);
-        // 실패 시에도 로컬 데이터는 최대한 정리 시도
+        console.error("🚨 로그아웃/탈퇴 중 데이터 정리 실패:", error); // 메시지 수정
         await AsyncStorage.removeItem("accessToken").catch(e => console.error("Failed to remove accessToken on error", e));
         await AsyncStorage.removeItem("refreshToken").catch(e => console.error("Failed to remove refreshToken on error", e));
         await AsyncStorage.removeItem("memberId").catch(e => console.error("Failed to remove memberId on error", e));
         
-        // 스토어 클리어도 다시 시도
         try {
             useAuthStore.getState().actions.clearAuthInfo(); 
             useSharedProfileStore.getState().actions.clearSharedProfile(); 
             useSignupProgressStore.getState().actions.clearSignupData();
         } catch (storeError) {
-            console.error("🚨 로그아웃 실패 중 스토어 클리어 추가 오류:", storeError);
+            console.error("🚨 데이터 정리 실패 중 스토어 클리어 추가 오류:", storeError); // 메시지 수정
         }
-        throw error; // 원본 에러를 다시 throw
+        throw error; 
     }
 };
 
@@ -150,18 +149,45 @@ export const logoutMember = async () => {
 // 회원 탈퇴
 export const deleteMember = async (reason: string) => {
     try{
-        // const memberId = useMemberInfoStore.getState().memberId;
-        const memberId = 4;
+        const memberId = useAuthStore.getState().memberId;
+        if (!memberId) {
+            console.error("🚨 회원 탈퇴 실패: memberId를 찾을 수 없습니다.");
+            throw new Error("Member ID not found for deletion.");
+        }
+
+        // API 명세서에 따르면 request body에 reason을 JSON 형태로 전달해야 합니다.
         const response = await axiosWithToken.delete(`/my-info/${memberId}`, {
-            data: reason,
-            headers: {
-                'Content-Type': 'text/plain'
-            }
+            data: { reason }, // { "reason": "원하는 서비스가 아니예요." } 형태
         });
-        return response.data;
-    } catch (error) {
-        console.error("🚨 회원 탈퇴 실패:", error);
-        throw error;
+
+        // HTTP 204 No Content 응답을 성공으로 간주
+        if (response.status === 204) {
+            console.log("✅ 회원 탈퇴 API 호출 성공");
+            // 탈퇴 성공 후 로컬 데이터 및 스토어 정리
+            await logoutMember(); // logoutMember 함수를 호출하여 데이터 정리
+            return true; // 또는 API 응답이 있다면 그대로 반환
+        } else {
+            // 204가 아닌 다른 성공 응답 코드가 있을 경우 (명세서에는 없지만 만약을 위해)
+            console.warn("🚨 회원 탈퇴 API는 성공했으나 예상치 못한 상태 코드:", response.status, response.data);
+            // 이 경우에도 데이터는 정리하는 것이 안전할 수 있음
+            await logoutMember();
+            return response.data; // 또는 true
+        }
+
+    } catch (error: any) {
+        // Axios 에러 객체에서 실제 HTTP 응답 상태 코드와 데이터를 확인
+        if (error.response) {
+            console.error(`🚨 회원 탈퇴 실패: 서버 응답 상태 ${error.response.status}`, error.response.data);
+        } else if (error.request) {
+            // 요청은 이루어졌으나 응답을 받지 못한 경우
+            console.error("🚨 회원 탈퇴 실패: 서버에서 응답이 없습니다.", error.request);
+        } else {
+            // 요청 설정 중 오류가 발생한 경우
+            console.error("🚨 회원 탈퇴 실패: 요청 설정 오류", error.message);
+        }
+        // 탈퇴 실패 시에는 로컬 데이터를 유지할 수도 있고, 상황에 따라 정리할 수도 있습니다.
+        // 여기서는 우선 실패 시 로컬 데이터를 건드리지 않는 것으로 가정합니다.
+        throw error; // 원본 에러를 다시 throw
     }
 };
 
