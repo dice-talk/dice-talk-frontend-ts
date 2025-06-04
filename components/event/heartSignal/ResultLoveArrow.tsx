@@ -107,8 +107,8 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
         {rightUserIds.map((id) => {
           const SvgComponent = diceCharacterMap[id];
           return SvgComponent ? (
-            <View style={styles.diceContainer} key={`right-${id}`}>
-              <SvgComponent width={25} height={25} color="#F9BCC1" />
+            <View style={[styles.diceContainer, themeId === 2 && { borderColor: "#9FC9FF" }]} key={`right-${id}`}>
+              <SvgComponent width={25} height={25} color={themeId === 2 ? "#9FC9FF" : "#F9BCC1"} />
             </View>
           ) : null;
         })}
@@ -117,8 +117,8 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
         {leftUserIds.map((id) => {
           const SvgComponent = diceCharacterMap[id];
           return SvgComponent ? (
-            <View style={styles.diceContainer} key={`left-${id}`}>
-              <SvgComponent width={25} height={25} color="#9FC9FF" />
+            <View style={[styles.diceContainer, themeId === 2 && { borderColor: "#9FC9FF" }]} key={`left-${id}`}>
+              <SvgComponent width={25} height={25} color={themeId === 2 ? "#9FC9FF" : "#9FC9FF"} />
             </View>
           ) : null;
         })}

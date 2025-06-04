@@ -35,23 +35,26 @@ const LoveArrowMatch = ({ isVisible, onClose, themeId = 1, myProfile, partnerPro
   const textColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const buttonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
   const buttonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
-  // 테마별 프로필 아이콘 SVG 기본 색상 설정 (nicknameToIconColorMap에 없을 경우 사용)
-  const profileColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
-  // themeId가 2일 때의 기본 프로필 테두리 색상
-  const defaultProfileBorderColorForTheme2 = "#9FC9FF";
 
   if (!myProfile || !partnerProfile) return null; // 또는 로딩/에러 상태 표시
 
   // 각 프로필의 아이콘 색상 결정
-  const myIconColor = nicknameToIconColorMap[myProfile.nickname] || profileColor; // 맵에 없으면 테마 기본색 사용
-  const partnerIconColor = nicknameToIconColorMap[partnerProfile.nickname] || profileColor; // 맵에 없으면 테마 기본색 사용
-
-  // 각 프로필의 테두리 색상 결정
+  let myIconColor: string;
+  let partnerIconColor: string;
   let myProfileBorderColor: string;
   let partnerProfileBorderColor: string;
 
-  myProfileBorderColor = themeId === 2 ? defaultProfileBorderColorForTheme2 : myIconColor;
-  partnerProfileBorderColor = themeId === 2 ? defaultProfileBorderColorForTheme2 : partnerIconColor;
+  if (themeId === 2) {
+    myIconColor = "#9FC9FF";
+    partnerIconColor = "#9FC9FF";
+    myProfileBorderColor = "#9FC9FF";
+    partnerProfileBorderColor = "#9FC9FF";
+  } else {
+    myIconColor = nicknameToIconColorMap[myProfile.nickname] || "#FFB6C1";
+    partnerIconColor = nicknameToIconColorMap[partnerProfile.nickname] || "#FFB6C1";
+    myProfileBorderColor = myIconColor;
+    partnerProfileBorderColor = partnerIconColor;
+  }
 
   return (
     <Modal
