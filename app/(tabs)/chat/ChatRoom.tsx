@@ -1,6 +1,7 @@
 import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
-import HanaSvg from '@/assets/images/dice/hana.svg';
+import { getFilteredRoomEvents, getPickEventsForRoom, RoomEventFromApi } from "@/api/EventApi"; // getPickEventsForRoom 추가
 import Nemo from '@/assets/images/dice/nemo.svg';
+import Hana from '@/assets/images/dice/hana.svg'; // HanaSvg로 명확하게
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
@@ -8,8 +9,7 @@ import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import ChatProfile from "@/components/chat/ChatProfile";
 import GptNotice from "@/components/chat/GptNotice";
 import ReadingTag from "@/components/chat/ReadingTag";
-import CustomCostModal from "@/components/common/CustomCostModal";
-import InsufficientItemModal from "@/components/common/DiceRechargeModal";
+
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
@@ -17,12 +17,38 @@ import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/heartSignal/ResultLoveArrow";
 import UnmatchedModal from "@/components/event/heartSignal/UnmatchedModal";
-import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 스토어 import 추가
+
+// import useArrowEventStore from "@/zustand/stores/ArrowEventStore"; // Result 컴포넌트가 스토어를 직접 사용하지 않으므로 주석 처리 또는 제거 가능
+import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
+import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
+
+
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
 import React, { useEffect, useState } from "react"; // React, useCallback 추가
 import { ActivityIndicator, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // ActivityIndicator 추가
 import { SvgProps } from "react-native-svg";
+
+
+
+// LoveArrowMatch에 필요한 ProfileInfo 타입 (LoveArrowMatch.tsx와 동일하게)
+import { ProfileInfo } from "@/components/event/heartSignal/LoveArrowMatch";
+
+// ResultLoveArrow.tsx의 diceCharacterMap과 유사하게, 또는 닉네임으로 SVG를 매핑하는 맵
+// 실제 프로젝트에서는 이 맵을 공통 파일로 옮기거나, ResultLoveArrow에서 export하여 사용하는 것이 좋습니다.
+import DaoSvg from "@/assets/images/dice/dao.svg";
+import DoriSvg from "@/assets/images/dice/dori.svg";
+import NemoSvg from '@/assets/images/dice/nemo.svg';
+import SezziSvg from "@/assets/images/dice/sezzi.svg";
+import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
+
+const nicknameToSvgMap: Record<string, React.FC<SvgProps>> = {
+  "한가로운 하나": Hana, "두 얼굴의 매력 두리": DoriSvg, "세침한 세찌": SezziSvg,
+  "네모지만 부드러운 네몽": NemoSvg, "단호한데 다정한 다오": DaoSvg, "육감적인 직감파 육땡": YukdaengSvg,
+};
+
+
+
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -36,6 +62,7 @@ interface ChatMessage {
   isMe?: boolean; // 내가 보낸 메시지인지 여부
   memberId: number; // memberId 추가
 }
+
 
 const ChatRoom = () => {
   const router = useRouter();
@@ -61,9 +88,13 @@ const ChatRoom = () => {
   const [showResultLoveArrow, setShowResultLoveArrow] = useState(false);
   const [showResultAlertModal, setShowResultAlertModal] = useState(false);
   const [showLoveArrowMatch, setShowLoveArrowMatch] = useState(false);
-  const [showCustomCostModal, setShowCustomCostModal] = useState(false);
-  const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
+  const [isEnvelopeReadOnly, setIsEnvelopeReadOnly] = useState(false); // EnvelopeAnimation 읽기 전용 상태
+  const [readOnlyEnvelopeMessages, setReadOnlyEnvelopeMessages] = useState<string[]>([]); // 읽기 전용 편지 메시지
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
+  const [matchedPair, setMatchedPair] = useState<{ myProfile?: ProfileInfo; partnerProfile?: ProfileInfo } | null>(null);
+
+  // const setSelectionsForAnimation = useArrowEventStore((state) => state.setSelectionsForAnimation); // Result 컴포넌트에서 직접 API 호출하므로 제거
+  // const chatParts = useChatRoomStore((state) => state.chatParts); // Result 컴포넌트에서 직접 스토어 사용
   
   // 채팅 메시지 상태 (실제 API 연동 시 변경)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); 
@@ -97,12 +128,22 @@ const ChatRoom = () => {
   
   const sampleMessages: ChatMessage[] = [ // API 연동 전까지 사용할 샘플 메시지
     {
-      id: 1, profileImage: HanaSvg, nickname: "한가로운 하나", memberId: 101,
-      message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?", time: "오후 6:58", isMe: false
+      id: 1,
+      profileImage: Hana,
+      nickname: "한가로운 하나",
+      message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?",
+      time: "오후 6:58",
+      isMe: false,
+      memberId: 21,
     },
     {
-      id: 2, profileImage: HanaSvg, nickname: "한가로운 하나", memberId: 101,
-      message: "정말 재밌어서 추천드려요", time: "오후 6:58", isMe: false
+      id: 2,
+      profileImage: Hana,
+      nickname: "한가로운 하나", // 이전 메시지와 동일한 닉네임
+      message: "정말 재밌어서 추천드려요",
+      time: "오후 6:58",
+      isMe: false,
+      memberId:22
     },
     {
       id: 3, profileImage: Nemo, nickname: "네모지만 부드러운 네모", memberId: 102,
@@ -120,6 +161,35 @@ const ChatRoom = () => {
     setShowLoveLetterSelect(true);
   };
   
+  // 시크릿 메시지 결과 확인 버튼 클릭 핸들러
+  const handleSecretMessageResultCheck = async () => {
+    console.log('시크릿 메시지 결과 확인!');
+    try {
+      // TODO: "SECRET_MESSAGE_RESULT"를 실제 시크릿 메시지 결과 확인을 위한 eventType으로 변경해주세요.
+      // TODO: event 객체에서 실제 메시지 내용이 담긴 필드명 (예: event.messageContent)으로 접근 경로를 수정해주세요.
+      const eventTypeForSecretMessageResults = "PICK_MESSAGE"; // 예시: 실제 API와 일치하는 이벤트 타입 사용
+      const fetchedEvents: RoomEventFromApi[] = await getFilteredRoomEvents(eventTypeForSecretMessageResults);
+      
+      // RoomEventFromApi에서 메시지 내용을 추출 (예: event.messageContent)
+      const messages = fetchedEvents.map(event =>
+        String(event.message || "메시지 내용을 불러올 수 없습니다.") // 실제 필드명인 'message' 사용
+      );
+
+      if (messages.length > 0) {
+        setReadOnlyEnvelopeMessages(messages);
+      } else {
+        setReadOnlyEnvelopeMessages(["확인할 수 있는 메시지가 없습니다."]);
+      }
+      setIsEnvelopeReadOnly(true); // 읽기 전용 모드 활성화
+      setShowEnvelope(true); // EnvelopeAnimation 표시
+    } catch (error) {
+      console.error("시크릿 메시지 결과 로딩 중 오류:", error);
+      setReadOnlyEnvelopeMessages(["오류: 메시지를 불러오는 데 실패했습니다."]);
+      setIsEnvelopeReadOnly(true); // 오류 시에도 읽기 전용으로 봉투 표시
+      setShowEnvelope(true);
+    }
+  };
+
   // 사랑의 짝대기 이벤트 참여하기 버튼 클릭 핸들러
   const handleLoveArrowParticipate = () => {
     console.log('사랑의 짝대기 이벤트 참여!');
@@ -128,12 +198,16 @@ const ChatRoom = () => {
   
   // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러 (바로 결과 표시)
   const handleLoveArrowResultCheck = () => {
-    setShowResultLoveArrow(true); // 바로 ResultLoveArrow/ResultFriendArrow 모달 표시
+    console.log('사랑의 짝대기 결과 확인 모달 표시 요청');
+    setShowResultLoveArrow(true); // ResultLoveArrow/ResultFriendArrow 모달 표시
   };
 
   // 이벤트 수정 버튼 클릭 핸들러 (아이템 필요)
   const handleEventModify = () => {
-    setShowCustomCostModal(true); // CustomCostModal을 표시
+    // LoveArrow 컴포넌트가 자체적으로 CustomCostModal을 관리하므로,
+    // ChatRoom.tsx에서 직접 setShowCustomCostModal(true)를 호출할 필요가 없습니다.
+    // 필요하다면 LoveArrow를 표시하는 로직을 여기에 추가할 수 있습니다.
+    console.log("GptNotice에서 이벤트 수정 요청. LoveArrow 컴포넌트 내부에서 처리됩니다.");
   };
   
   const handleLoveLetterSelectClose = () => {
@@ -170,35 +244,69 @@ const ChatRoom = () => {
   const handleEnvelopeAnimationComplete = () => {
     console.log('편지 애니메이션 완료!');
     setShowEnvelope(false);
+    setIsEnvelopeReadOnly(false); // 읽기 전용 상태 초기화
+    setReadOnlyEnvelopeMessages([]); // 메시지 목록 초기화
   };
   
   // 매칭 결과 보기 버튼 클릭 핸들러
-  const handleMatchPress = () => {
+  const handleMatchPress = async () => {
     setShowResultLoveArrow(false); // ResultLoveArrow 모달 닫기
-    setShowLoveArrowMatch(true); // LoveArrowMatch 모달 열기
-  };
 
-  // CustomCostModal 확인 버튼 클릭 핸들러
-  const handleCustomCostConfirm = () => {
-    setShowCustomCostModal(false); // CustomCostModal 닫기
-    setShowInsufficientItemModal(true); // InsufficientItemModal 표시 (아이템 부족)
-  };
+    const currentMemberId = useAuthStore.getState().memberId;
+    const participants = useChatRoomStore.getState().chatParts;
 
-  // CustomCostModal 취소 버튼 클릭 핸들러
-  const handleCustomCostCancel = () => {
-    setShowCustomCostModal(false); // CustomCostModal 닫기
-  };
+    if (!currentMemberId) {
+      console.error("현재 사용자 ID를 찾을 수 없습니다.");
+      setShowUnmatchedModal(true);
+      return;
+    }
 
-  // InsufficientItemModal 상점으로 이동 버튼 클릭 핸들러
-  const handleGoToStore = () => {
-    setShowInsufficientItemModal(false); // InsufficientItemModal 닫기
-    // TODO: 상점 페이지로 이동하는 로직 추가
-    console.log('상점으로 이동');
-  };
+    try {
+      const events: RoomEventFromApi[] = await getPickEventsForRoom();
 
-  // InsufficientItemModal 취소 버튼 클릭 핸들러
-  const handleInsufficientItemCancel = () => {
-    setShowInsufficientItemModal(false); // InsufficientItemModal 닫기
+      const myEvent = events.find(event => event.senderId === currentMemberId);
+      if (!myEvent) {
+        console.log("내가 선택한 이벤트가 없습니다.");
+        setShowUnmatchedModal(true);
+        return;
+      }
+
+      const partnerEvent = events.find(event => event.senderId === myEvent.receiverId && event.receiverId === currentMemberId);
+
+      if (partnerEvent) { // 상호 매칭 성공
+        const myParticipant = participants.find(p => p.memberId === currentMemberId);
+        const partnerParticipant = participants.find(p => p.memberId === myEvent.receiverId);
+
+        if (myParticipant?.nickname && partnerParticipant?.nickname) { // 닉네임 존재 확인
+          const mySvg = nicknameToSvgMap[myParticipant.nickname];
+          const partnerSvg = nicknameToSvgMap[partnerParticipant.nickname];
+
+          if (mySvg && partnerSvg) { // SVG 컴포넌트 존재 확인
+            const myProfileForMatch: ProfileInfo = {
+              nickname: myParticipant.nickname,
+              SvgComponent: mySvg 
+            };
+            const partnerProfileForMatch: ProfileInfo = {
+              nickname: partnerParticipant.nickname,
+              SvgComponent: partnerSvg 
+            };
+            setMatchedPair({ myProfile: myProfileForMatch, partnerProfile: partnerProfileForMatch });
+            setShowLoveArrowMatch(true);
+          } else {
+            console.error("매칭된 사용자의 프로필 SVG를 찾을 수 없습니다.", myParticipant.nickname, partnerParticipant.nickname);
+            setShowUnmatchedModal(true);
+          }
+        } else {
+          console.error("매칭된 사용자의 프로필 정보를 찾을 수 없습니다.");
+          setShowUnmatchedModal(true);
+        }
+      } else { // 매칭 실패
+        setShowUnmatchedModal(true);
+      }
+    } catch (error) {
+      console.error("매칭 결과 확인 중 오류 발생:", error);
+      setShowUnmatchedModal(true);
+    }
   };
   
   const handleUnmatched = () => {
@@ -287,6 +395,15 @@ const ChatRoom = () => {
             )}
             {showNotice && (
               <GptNotice 
+                text="[시스템] 시크릿 메시지 결과를 확인해주세요!!"
+                onHide={hideNotice}
+                onParticipate={handleSecretMessageResultCheck} // 결과 확인 핸들러로 변경
+                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
+                themeId={themeId}
+              />
+            )}
+            {showNotice && (
+              <GptNotice 
                 text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
                 onHide={hideNotice}
                 onParticipate={handleLoveArrowParticipate}
@@ -303,24 +420,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && (
-              <GptNotice 
-                text="[시스템] 이벤트 수정은 돈을 주세요!!"
-                onHide={hideNotice}
-                onParticipate={handleEventModify}
-                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
-              />
-            )}
-             {showNotice && (
-              <GptNotice 
-                text="[시스템] 매칭에 실패하였습니다!!"
-                onHide={hideNotice}
-                onParticipate={handleUnmatched}
-                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
-              />
-            )}
+
         </View>
         <ScrollView 
             style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
@@ -406,30 +506,16 @@ const ChatRoom = () => {
         >
           <View style={styles.modalContainer}>
             {themeId === 2 ? (
-              <ResultFriendArrow 
-                selections={[
-                  { from: 1, to: 2 },
-                  { from: 3, to: 1 },
-                  { from: 6, to: 3 },
-                  { from: 5, to: 4 },
-                  { from: 2, to: 3 }
-                ]}
+              <ResultFriendArrow
                 onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
                 themeId={themeId}
               />
             ) : (
-              <ResultLoveArrow 
-                selections={[
-                  { from: 1, to: 2 },
-                  { from: 3, to: 5 },
-                  { from: 5, to: 2 },
-                  { from: 2, to: 3 },
-                  { from: 4, to: 1 },
-                  { from: 6, to: 3 }
-                ]}
-                onClose={() => setShowResultLoveArrow(false)}
+              <ResultLoveArrow
+                // onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
+                themeId={themeId} // themeId 전달
               />
             )}
           </View>
@@ -442,6 +528,8 @@ const ChatRoom = () => {
               autoPlay={true}
               onAnimationComplete={handleEnvelopeAnimationComplete}
               themeId={themeId}
+              isReadOnly={isEnvelopeReadOnly} // 읽기 전용 상태 전달
+              messages={readOnlyEnvelopeMessages} // 읽기 전용 메시지 전달
               content={
                 <View style={styles.envelopeContent}>
                   <Text style={styles.envelopeTitle}>큐피트의 짝대기 이벤트</Text>
@@ -458,33 +546,18 @@ const ChatRoom = () => {
         )}
 
         {/* LoveArrowMatch 모달 */}
-        <LoveArrowMatch 
-          isVisible={showLoveArrowMatch}
-          onClose={() => setShowLoveArrowMatch(false)}
-          themeId={themeId}
-        />
-
-        {/* CustomCostModal */}
-        <CustomCostModal
-          visible={showCustomCostModal}
-          onClose={handleCustomCostCancel}
-          onConfirm={handleCustomCostConfirm}
-          content="이벤트 수정은 아이템이 필요합니다"
-          diceCount={5}
-          textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
-          diceButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
-          cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
-        />
-
-        {/* InsufficientItemModal */}
-        <InsufficientItemModal
-          visible={showInsufficientItemModal}
-          onClose={handleInsufficientItemCancel}
-          onGoToStore={handleGoToStore}
-          textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
-          storeButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
-          cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
-        />
+        {showLoveArrowMatch && matchedPair?.myProfile && matchedPair?.partnerProfile && (
+          <LoveArrowMatch
+            isVisible={showLoveArrowMatch}
+            onClose={() => {
+              setShowLoveArrowMatch(false);
+              setMatchedPair(null); // 상태 초기화
+            }}
+            themeId={themeId}
+            myProfile={matchedPair.myProfile}
+            partnerProfile={matchedPair.partnerProfile}
+          />
+        )}
 
         {/* UnmatchedModal */}
         <UnmatchedModal
