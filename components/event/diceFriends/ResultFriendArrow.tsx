@@ -1,5 +1,5 @@
 import DaoSvg from "@/assets/images/dice/dao.svg";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
@@ -14,6 +14,8 @@ import SezziSvg from "@/assets/images/dice/sezzi.svg";
 import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import DiceArrowAnimation from "../animation/DiceArrowAnimation";
 import DiceIconContainer from "./DiceIconContainer";
+import { getPickEventsForRoom } from "@/api/EventApi"; // API 호출 함수 임포트
+import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 임포트
 
 // 주사위 번호와 캐릭터 매핑
 const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
@@ -25,40 +27,56 @@ const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
   6: YukdaengSvg
 };
 
-// 닉네임과 ID를 매핑하는 객체 (DiceArrowAnimation의 nicknameToIdMap과 일치하거나, 여기서 ID를 닉네임으로 변환하기 위함)
-const idToNicknameMap: Record<number, string> = {
-  1: "한가로운 하나",
-  2: "두 얼굴의 매력 두리",
-  3: "세침한 세찌",
-  4: "네모지만 부드러운 네몽",
-  5: "단호한데 다정한 다오",
-  6: "육감적인 직감파 육땡",
-};
+// FetchedSelection 인터페이스 (ResultLoveArrow.tsx 참고)
+interface FetchedSelection {
+  fromId: number;
+  toId: number;
+  fromNickname?: string;
+  toNickname?: string;
+}
 
 interface ResultFriendArrowProps {
-  selections?: { fromNickname: string; toNickname: string }[]; // ID 대신 닉네임을 받도록 수정
+  // selections prop은 내부적으로 데이터를 가져오므로 제거
   onClose?: () => void;
   onMatchPress?: () => void;  // 매칭 결과 버튼 클릭 핸들러
   themeId?: number;
 }
 
-interface Position {
-  x: number;
-  y: number;
-}
-
 const ResultFriendArrow: React.FC<ResultFriendArrowProps> = ({
-  selections = [
-    // 예시: selections prop이 닉네임 기반으로 전달된다고 가정
-    { fromNickname: "한가로운 하나", toNickname: "두 얼굴의 매력 두리" },
-    { fromNickname: "한가로운 하나", toNickname: "세침한 세찌" },
-    // ... 나머지 기본값들도 닉네임으로 변경 필요
-    // 또는, selections prop이 ID 기반으로 온다면 내부에서 변환 로직 필요
-  ], // selections의 기본값도 닉네임 기반으로 변경하거나, 사용하는 곳에서 닉네임으로 전달해야 함
   onClose,
   onMatchPress,
-  themeId = 1
+  themeId = 2 // ResultFriendArrow는 themeId 2를 기본값으로 가정
 }) => {
+  const [fetchedSelections, setFetchedSelections] = useState<FetchedSelection[]>([]);
+  const chatParts = useChatRoomStore((state) => state.chatParts);
+
+  useEffect(() => {
+    const fetchSelectionsAndNicknames = async () => {
+      try {
+        const events = await getPickEventsForRoom(); // API 호출
+        const mappedSelections: FetchedSelection[] = events.map(event => {
+          const sender = chatParts.find((p: ChatParticipant) => p.memberId === event.senderId);
+          const receiver = chatParts.find((p: ChatParticipant) => p.memberId === event.receiverId);
+          return {
+            fromId: event.senderId,
+            toId: event.receiverId,
+            fromNickname: sender?.nickname,
+            toNickname: receiver?.nickname
+          };
+        });
+        setFetchedSelections(mappedSelections);
+      } catch (error) {
+        console.error("🔥 selections 불러오기 실패 (ResultFriendArrow):", error);
+        setFetchedSelections([]); // 오류 발생 시 빈 배열로 설정
+      }
+    };
+    if (chatParts && chatParts.length > 0) {
+      fetchSelectionsAndNicknames();
+    } else {
+      setFetchedSelections([]);
+    }
+  }, [chatParts]);
+
   // 테마별 색상 설정
   const matchButtonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
   const matchButtonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
@@ -70,15 +88,15 @@ const ResultFriendArrow: React.FC<ResultFriendArrowProps> = ({
         resizeMode="contain"
       />
 
-      {selections.map((selection, index) => {
+      {fetchedSelections.map((selection, index) => {
         // fromNickname과 toNickname이 모두 유효한 경우에만 렌더링
         if (selection.fromNickname && selection.toNickname) {
           return (
             <DiceArrowAnimation
-              key={`arrow-${index}-${selection.fromNickname}-${selection.toNickname}`}
+              key={`arrow-${index}-${selection.fromId}-${selection.toId}`}
               fromNickname={selection.fromNickname}
               toNickname={selection.toNickname}
-              useHexagonLayout={true} // 6각형 레이아웃 사용 명시
+              useHexagonLayout={themeId === 2} // themeId에 따라 육각형 레이아웃 사용 결정
             />
           );
         }

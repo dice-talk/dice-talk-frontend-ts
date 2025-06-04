@@ -46,9 +46,9 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
   rightUserIds = [2, 4, 6], // 기본값: 두리, 네몽, 육땡
   // selections, // prop을 사용하지 않는다면 제거
   // onClose,    // prop을 사용하지 않는다면 제거
-  onMatchPress
-  // themeId = 1 // themeId 기본값 설정
-}) => { // themeId prop 추가
+  onMatchPress,
+  themeId = 2 // themeId 기본값 설정
+}) => {
   const [fetchedSelections, setFetchedSelections] = useState<FetchedSelection[]>([]);
   const chatParts = useChatRoomStore((state) => state.chatParts);
 
@@ -96,6 +96,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
               key={`arrow-${index}-${selection.fromId}-${selection.toId}`} // 더 고유한 key 사용
               fromNickname={selection.fromNickname}
               toNickname={selection.toNickname}
+              useHexagonLayout={themeId === 2} // themeId가 2이면 true, 아니면 false
             />
           );
         }
