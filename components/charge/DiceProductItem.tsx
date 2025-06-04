@@ -4,8 +4,9 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 
 interface DiceProductItemProps {
   id: string | number; // FlatList key 용도
-  diceAmount: string; // 예: "10", "30 + 1"
+  diceAmount: string; // 예: "10", "30 + 1" 또는 "다이스 10개"
   price: number;
+  quantity: number; // 주문 시 필요할 수량
   onPress?: (id: string | number) => void;
   isSelected?: boolean; // 선택된 상태 표시용 (UX 개선 제안)
 }
@@ -16,6 +17,7 @@ const DiceProductItem: React.FC<DiceProductItemProps> = ({
   id,
   diceAmount,
   price,
+  quantity, // prop 받기
   onPress,
   isSelected,
 }) => {
@@ -27,6 +29,9 @@ const DiceProductItem: React.FC<DiceProductItemProps> = ({
 
   // formattedPrice는 더 이상 직접 사용하지 않음
   // const formattedPrice = `₩ ${price.toLocaleString()}`;
+
+  // quantity는 현재 UI에 표시되지 않지만, prop으로 받아둠
+  // console.log(`Product ID: ${id}, Quantity: ${quantity}`);
 
   return (
     <TouchableOpacity 

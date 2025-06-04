@@ -1,6 +1,5 @@
 import { getNotifications, getUnreadNotificationCount } from '@/api/AlertApi';
 import { getHomeApi } from '@/api/HomeApi';
-import useHomeStore, { Theme } from '@/zustand/stores/HomeStore'; // HomeStore 및 Theme 타입 임포트
 import AlertIcon from '@/assets/images/chat/chatNoticeOnOff.svg';
 import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
 import ExLoveIcon from '@/assets/images/home/exLoveIcon.svg';
@@ -10,10 +9,11 @@ import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
 import AccountBannedModal from '@/components/home/AccountBannedModal';
 import ThemeCarousel from "@/components/home/ThemeCarousel";
+import { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
+import useHomeStore, { Item, Theme } from '@/zustand/stores/HomeStore'; // HomeStore 및 Theme, Item 타입 임포트
 import { BlurView } from 'expo-blur';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
@@ -56,30 +56,31 @@ const HomeScreen = () => {
 
     // Home API는 앱 실행 후 최초 한 번만 호출
     const fetchHomeDataOnceOnAppLaunch = async () => {
-      // useHomeStore에서 상태와 액션을 가져옵니다.
-      // 컴포넌트 외부에서 getState를 사용하거나, 컴포넌트 내부에서 훅을 사용할 수 있습니다.
-      // useEffect 내에서는 getState가 더 간결할 수 있습니다.
       const store = useHomeStore.getState();
       const { initialHomeApiCalled } = store;
-      const { setInitialHomeApiCalled, setThemes, setNotices, setHasNewNotifications } = store.actions;
+      const { setInitialHomeApiCalled, setThemes, setNotices, setHasNewNotifications, setItems } = store.actions;
 
       if (!initialHomeApiCalled) {
         try {
           console.log("🚀 Home API 최초 호출 시도 (앱 실행 시 한 번, home/index.tsx)...");
           const homeDataResponse = await getHomeApi();
-          // console.log("🏠 Home API 전체 응답 (home/index.tsx - 최초 실행):", homeDataResponse); // 전체 응답 로깅은 필요시 활성화
           console.log("📊 Home API 실제 데이터 (home/index.tsx - 최초 실행):", homeDataResponse.data);
           
-          // HomeStore에 데이터 저장
           setThemes(homeDataResponse.data.themes || []);
           setNotices(homeDataResponse.data.notices || []);
           setHasNewNotifications(homeDataResponse.data.hasNewNotifications || false);
 
-          setInitialHomeApiCalled(true); // API 호출 후 플래그를 true로 설정
+          if (homeDataResponse.data.items && Array.isArray(homeDataResponse.data.items)) {
+            setItems(homeDataResponse.data.items as Item[]);
+            console.log('🛍️ Home API: 아이템 목록 저장 완료 (home/index.tsx)', homeDataResponse.data.items);
+          } else {
+            console.log('ℹ️ Home API: 응답에 아이템 목록이 없거나 형식이 올바르지 않습니다. (home/index.tsx)');
+            setItems([]);
+          }
+
+          setInitialHomeApiCalled(true);
         } catch (error) {
           console.error("🔴 Home API 최초 호출 실패 (home/index.tsx):", error);
-          // 실패 시에도 플래그를 true로 설정하여, 앱의 현재 세션에서 재시도를 방지합니다.
-          // 만약 실패 시 재시도 로직이 필요하다면 이 부분을 다르게 처리해야 합니다.
           setInitialHomeApiCalled(true);
         }
       } else {
