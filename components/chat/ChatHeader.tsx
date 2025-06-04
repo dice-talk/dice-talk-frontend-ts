@@ -4,13 +4,13 @@ import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 // 👉 아이콘은 SVG 또는 PNG로 대체 가능
 import BackIcon from "@/assets/images/chat/backArrow.svg";
 import MenuIcon from "@/assets/images/chat/sideBarButton.svg";
+import useHomeStore from "@/zustand/stores/HomeStore";
 
 interface ChatHeaderProps {
   title: string;
   onToggleSidebar?: () => void;
   fontColor?: string;
   backgroundColor?: string;
-  themeId?: number;
 }
 
 export default function ChatHeader({
@@ -18,14 +18,14 @@ export default function ChatHeader({
   onToggleSidebar,
   fontColor = "#A45C73",             // 기본값
   backgroundColor = "#ffffff",      // 기본값
-  themeId = 1,
 }: ChatHeaderProps) {
   const router = useRouter();
-  const backIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const curThemeId = useHomeStore((state) => state.curThemeId);
+  const backIconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
   
   // 테마에 따른 제목과 색상 설정
-  const displayTitle = themeId === 2 ? "다이스 프렌즈" : title;
-  const displayFontColor = themeId === 2 ? "#5C5279" : fontColor;
+  const displayTitle = curThemeId === 2 ? "다이스 프렌즈" : title;
+  const displayFontColor = curThemeId === 2 ? "#5C5279" : fontColor;
   
   return (
     <View style={[styles.container, { backgroundColor }]}>

@@ -15,7 +15,8 @@ import {
 } from "react-native";
 // ReportModal을 임시로 주석 처리 (다음 단계에서 생성 및 연동)
 // import ReportModal from "@/components/chat/ReportModal"; 
-import useChatRoomStore from "@/zustand/stores/ChatRoomStore";
+// import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 사용 제거
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore import 추가
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -37,7 +38,7 @@ const ChatReportPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const chatRoomId = params.id ? parseInt(params.id as string) : null;
-  const themeId = useChatRoomStore((state) => state.themeId) || 1; // Zustand 스토어에서 themeId 가져오기
+  const themeId = useHomeStore((state) => state.curThemeId) || 1; // HomeStore에서 curThemeId 가져오기
 
   const [messages, setMessages] = useState<ReportableChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);

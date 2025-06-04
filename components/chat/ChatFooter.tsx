@@ -7,6 +7,7 @@ import { getItemDetails } from "@/api/ItemApi"; // getItemDetails 임포트
 import CustomCostModal from "@/components/common/CustomCostModal";
 
 import { deleteChatRoomMember } from "@/api/ChatApi"; // API 함수 임포트
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import useAuthStore from "@/zustand/stores/authStore"; // 사용자 ID 가져오기
 import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 채팅방 ID 가져오기
 
@@ -20,12 +21,12 @@ interface ChatFooterProps {
 
 const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
   const chatRoomId = useChatRoomStore((state) => state.chatRoomId);
-  const themeId = useChatRoomStore((state) => state.themeId) || 1;
+  const curThemeId = useHomeStore((state) => state.curThemeId);
   const router = useRouter();
 
-  const iconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#D9B2D3";
-  const textColor = themeId === 2 ? "#5C5279" : "#8A5A7A";
+  const iconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const confirmButtonColor = curThemeId === 2 ? "#6DA0E1" : "#D9B2D3";
+  const textColor = curThemeId === 2 ? "#5C5279" : "#8A5A7A";
   
   const [isSilenced, setIsSilenced] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
@@ -171,7 +172,6 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
         onClose={handleExitCancel}
         onConfirm={handleExitConfirm}
         confirmButtonColor={confirmButtonColor}
-        textColor={textColor}
         // themeId={themeId} // 임시 주석 처리 (ExitCostModalProps에 themeId 추가 필요)
       />
 
@@ -183,7 +183,6 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
         content={modalContent} // API에서 가져온 content로 변경
         diceCount={modalDiceCount} // API에서 가져온 price로 변경
         textColor={textColor}
-        diceButtonColor={confirmButtonColor}
         cancelButtonColor={confirmButtonColor}
         // themeId={themeId} // 임시 주석 처리 (CustomCostModalProps에 themeId 추가 필요)
       />

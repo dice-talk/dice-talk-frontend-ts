@@ -2,11 +2,11 @@ import CountdownTimer from "@/components/common/CountdownTimer";
 import { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 import { SvgProps } from "react-native-svg";
+import useHomeStore from "@/zustand/stores/HomeStore";
 
 interface ChatEventNoticeProps {
   icon?: React.FC<SvgProps>;
   backgroundColor?: string;
-  themeId?: number;
   createdAt: string | null; // 스토어에서 ISO 문자열 또는 유사한 형식으로 예상
 }
 
@@ -32,7 +32,6 @@ const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURAT
 const ChatEventNotice = ({
   icon: Icon,
   backgroundColor,
-  themeId = 1,
   createdAt,
 }: ChatEventNoticeProps) => {
   const [currentTitle, setCurrentTitle] = useState("이벤트 정보 로딩 중...");
@@ -40,7 +39,8 @@ const ChatEventNotice = ({
   const [remainingSecondsForDisplay, setRemainingSecondsForDisplay] = useState(0);
   const [eventPhase, setEventPhase] = useState("LOADING"); // LOADING, PRE_SECRET, SECRET, CUPID_INTERIM, PRE_CUPID_MAIN, CUPID_MAIN, COUNTDOWN_TO_END, POST_EVENT, ERROR
   // console.log('createdAt:', createdAt); // 디버깅 완료 후 주석 처리 또는 삭제
-  const eventBackgroundColor = backgroundColor || (themeId === 2 ? "#9FC9FF" : "#F3D4EE");
+  const curThemeId = useHomeStore((state) => state.curThemeId);
+  const eventBackgroundColor = backgroundColor || (curThemeId === 2 ? "#9FC9FF" : "#F3D4EE");
 
   useEffect(() => {
     if (!createdAt) {
@@ -88,24 +88,24 @@ const ChatEventNotice = ({
         targetTimestamp = creationTimestamp + SECRET_MESSAGE_END_OFFSET * 1000;
         newPhase = "SECRET";
       } else if (elapsedSeconds < CUPID_INTERIM_END_OFFSET) {
-        newTitle = themeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
-        newNoticeText = themeId === 2 ? "우정의 짝대기 선택 종료까지" : "큐피드의 짝대기 선택 종료까지";
+        newTitle = curThemeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
+        newNoticeText = curThemeId === 2 ? "우정의 짝대기 이벤트 시작까지" : "큐피드의 짝대기 이벤트 시작까지";
         targetTimestamp = creationTimestamp + CUPID_INTERIM_END_OFFSET * 1000;
         newPhase = "CUPID_INTERIM";
       } else if (elapsedSeconds < CUPID_MAIN_EVENT_START_OFFSET) {
-        newTitle = themeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
-        newNoticeText = themeId === 2 ? "우정의 짝대기 결과 확인까지" : "큐피드의 짝대기 결과 확인까지";
+        newTitle = curThemeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
+        newNoticeText = curThemeId === 2 ? "우정의 짝대기 선택 종료까지" : "큐피드의 짝대기 선택 종료까지";
         targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_START_OFFSET * 1000;
         newPhase = "PRE_CUPID_MAIN";
       } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) {
-        newTitle = themeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
-        newNoticeText = themeId === 2 ? "우정의 짝대기 결과 확인 종료까지" : "큐피드의 짝대기 결과 확인 종료까지";
+        newTitle = curThemeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
+        newNoticeText = curThemeId === 2 ? "우정의 짝대기 결과 확인 종료까지" : "큐피드의 짝대기 결과 확인 종료까지";
         targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_END_OFFSET * 1000;
         newPhase = "CUPID_MAIN";
       } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) {
         // 채팅방 종료 문구는 테마에 따라 변경할 필요가 없어 보이지만,
         // 만약 필요하다면 여기도 themeId 조건을 추가할 수 있습니다.
-        // 예: newTitle = themeId === 2 ? "우정 채팅 종료" : "채팅방 종료";
+        // 예: newTitle = curThemeId === 2 ? "우정 채팅 종료" : "채팅방 종료";
         newTitle = "채팅방 종료"; 
         newNoticeText = "채팅방 종료까지";
         targetTimestamp = creationTimestamp + CHAT_ROOM_END_OFFSET * 1000;
@@ -127,7 +127,7 @@ const ChatEventNotice = ({
     const intervalId = setInterval(updateEventState, 1000);
 
     return () => clearInterval(intervalId);
-  }, [createdAt]);
+  }, [createdAt, curThemeId]);
 
   // 시간 형식을 00:00:00 형태로 변환
   const formatTime = (time: number) => {
