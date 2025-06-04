@@ -3,9 +3,9 @@ import GradientHeader from "@/components/common/GradientHeader";
 import Toast from "@/components/common/Toast";
 import QuestionSuccessModal from "@/components/login/QuestionSuccessModal";
 import MediumButton from "@/components/profile/myInfoPage/MediumButton";
-import FileButton from "@/components/profile/question/FileButton";
+import FileButton, { ExistingImage, ImageChangePayload } from "@/components/profile/question/FileButton";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Dimensions,
   Platform,
@@ -25,9 +25,11 @@ export default function QuestionRegisterPage() {
   const [charCount, setCharCount] = useState<number>(0);
   const [showToast, setShowToast] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string>("");
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImageUris, setSelectedImageUris] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const height = Dimensions.get("window").height;
+
+  const memoizedInitialExistingImages = useMemo<ExistingImage[]>(() => [], []);
 
   const handleContentChange = (text: string) => {
     if (text.length <= 500) {
@@ -36,9 +38,9 @@ export default function QuestionRegisterPage() {
     }
   };
 
-  const handleImageSelect = (images: string[]) => {
-    setSelectedImages(images);
-  };
+  const handleImagesChange = useCallback((payload: ImageChangePayload) => {
+    setSelectedImageUris(payload.newlyAddedUris);
+  }, []);
 
   const handlePostQuestion = async () => {
     if (!emailValue.trim()) {
@@ -64,16 +66,15 @@ export default function QuestionRegisterPage() {
 
     try {
       await createQuestion({
-        email: emailValue,
-        title: titleValue,
-        content: contentValue,
-        images: selectedImages,
+        email: emailValue.trim(),
+        title: titleValue.trim(),
+        content: contentValue.trim(),
+        imageUris: selectedImageUris,
       } as any);
       setShowSuccessModal(true);
     } catch (error) {
       console.error("문의 등록 실패:", error);
       setToastMessage("문의 등록에 실패했습니다.");
-      setShowSuccessModal(true);
       setShowToast(true);
     }
   };
@@ -123,7 +124,11 @@ export default function QuestionRegisterPage() {
           <Text style={styles.charCount}>{charCount}/500</Text>
         </View>
 
-        <FileButton onImageSelect={handleImageSelect} />
+        <FileButton 
+          onImagesChange={handleImagesChange}
+          initialExistingImages={memoizedInitialExistingImages}
+          maxImages={5}
+        />
 
         <View style={styles.saveButtonContainer}>
           <MediumButton title="등록" onPress={handlePostQuestion} />

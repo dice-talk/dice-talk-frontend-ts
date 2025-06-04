@@ -1,5 +1,5 @@
 import { deleteMember } from '@/api/memberApi';
-import { useAnonymousStore } from '@/zustand/stores/anonymous';
+//import { useAnonymousStore } from '@/zustand/stores/anonymous';
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
