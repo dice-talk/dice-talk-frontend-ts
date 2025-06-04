@@ -2,27 +2,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
-// UseageItemProps 타입 정의 개선
 export interface BaseUseageItemProps {
-  id: number | string;
-  createdAt: string;
+  id: number | string; // API의 logId를 사용
+  createdAt: string;   // API의 createdAt
+  logType: 'DICE_CHARGE' | 'DICE_USED'; // API의 logType
+  info: string;        // API의 info (상품명 또는 아이템명)
+  quantity: number;    // API의 quantity (충전/사용한 다이스 개수)
 }
 
-export interface ChargeItemProps extends BaseUseageItemProps {
-  type: 'charge';
-  quantity: number;
-  title?: never; // charge 타입일 때는 title 사용 안 함
-  description?: never; // charge 타입일 때는 description 사용 안 함
-}
-
-export interface UseItemProps extends BaseUseageItemProps {
-  type: 'use';
-  title: string; // 예: "DICE 4개"
-  description: string; // 예: "큐피트의 짝대기 수정 1회권"
-  quantity?: never; // use 타입일 때는 최상위 quantity 대신 title 내에 포함되거나 별도 관리
-}
-
-export type UseageItemProps = ChargeItemProps | UseItemProps;
+// 기존 ChargeItemProps와 UseItemProps는 BaseUseageItemProps 하나로 통합 가능하나,
+// 명시성을 위해 UseageItemProps를 BaseUseageItemProps로 사용하고, 컴포넌트 내부에서 logType에 따라 분기합니다.
+export type UseageItemProps = BaseUseageItemProps;
 
 const { width } = Dimensions.get('window');
 
@@ -41,7 +31,18 @@ const formatDate = (dateString: string) => {
 };
 
 const UseageItem: React.FC<UseageItemProps> = (props) => {
-  const { type, createdAt } = props;
+  const { logType, createdAt, info, quantity } = props;
+
+  let mainText = '';
+  let subText = '';
+
+  if (logType === 'DICE_CHARGE') {
+    mainText = info; // 예: "다이스 100개"
+    subText = `DICE 충전 ${quantity}개`;
+  } else if (logType === 'DICE_USED') {
+    mainText = info; // 예: "프로필 배경화면 1"
+    subText = `DICE ${quantity}개 사용`;
+  }
 
   return (
     <View style={styles.outerContainer}>
@@ -49,24 +50,15 @@ const UseageItem: React.FC<UseageItemProps> = (props) => {
       <View style={styles.container}>
         {/* 좌측 텍스트 영역 */}
         <View style={styles.leftContentContainer}>
-          {type === 'charge' ? (
-            <>
-              <Text style={styles.mainText}>충전일</Text>
-              <Text style={styles.subText}>DICE 충전 {props.quantity}개</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.mainText}>{props.title}</Text>
-              <Text style={styles.subText}>{props.description}</Text>
-            </>
-          )}
+          <Text style={styles.mainText}>{mainText}</Text>
+          <Text style={styles.subText}>{subText}</Text>
         </View>
 
         {/* 우측 날짜 영역 */}
         <View style={styles.rightDateContainer}>
           <Text style={styles.dateText}>{formatDate(createdAt)}</Text>
         </View>
-        </View>
+      </View>
       <LinearGradient
         colors={['#EAEAEA', '#EAEAEA']} // 이미지의 얇은 회색 선처럼 보이도록 단색 그라데이션
         start={{ x: 0, y: 0.5 }}
