@@ -7,9 +7,7 @@ import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import ChatProfile from "@/components/chat/ChatProfile";
 import GptNotice from "@/components/chat/GptNotice";
-import MessageCheckReport from "@/app/(tabs)/chat/MessageCheckReport";
 import ReadingTag from "@/components/chat/ReadingTag";
-import ReportModal from "@/components/chat/ReportModal";
 import CustomCostModal from "@/components/common/CustomCostModal";
 import InsufficientItemModal from "@/components/common/DiceRechargeModal";
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
@@ -19,12 +17,12 @@ import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/heartSignal/ResultLoveArrow";
 import UnmatchedModal from "@/components/event/heartSignal/UnmatchedModal";
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 스토어 import 추가
 import { BlurView } from 'expo-blur';
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
+import React, { useEffect, useState } from "react"; // React, useCallback 추가
+import { ActivityIndicator, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // ActivityIndicator 추가
 import { SvgProps } from "react-native-svg";
-
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -36,11 +34,18 @@ interface ChatMessage {
   message: string;
   time: string;
   isMe?: boolean; // 내가 보낸 메시지인지 여부
+  memberId: number; // memberId 추가
 }
 
 const ChatRoom = () => {
-  const params = useLocalSearchParams();
-  const themeId = parseInt(params.themeId as string) || 1;
+  const router = useRouter();
+  //const params = useLocalSearchParams();
+  //const chatRoomIdFromParams = params.id ? parseInt(params.id as string) : null; // URL에서 chatRoomId 가져오기 (경로가 /chat/[id] 형태라고 가정)
+  const { chatRoomId } = useLocalSearchParams<{ chatRoomId?: string }>();
+
+  const { setChatRoomDetails, clearChatRoomDetails } = useChatRoomStore((state) => state.actions);
+  const themeId = useChatRoomStore((state) => state.themeId) || 1; // 스토어에서 themeId 가져오기
+  const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
   
   // 테마별 색상 설정
   const alertModalTitleColor = themeId === 2 ? "#5C5279" : "#A45C73";
@@ -50,9 +55,6 @@ const ChatRoom = () => {
   const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
   const [selectedProfile, setSelectedProfile] = useState<{ nickname: string, SvgComponent: React.FC<SvgProps> } | null>(null);
   const [showReadingTag, setShowReadingTag] = useState(true);
-  const [showMessageCheckReport, setShowMessageCheckReport] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [hasCheckedMessage, setHasCheckedMessage] = useState(false);
   const [showEnvelope, setShowEnvelope] = useState(false);
   const [showLoveLetterSelect, setShowLoveLetterSelect] = useState(false);
   const [showLoveArrow, setShowLoveArrow] = useState(false);
@@ -63,61 +65,48 @@ const ChatRoom = () => {
   const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
   
-  // GptNotice의 표시 여부에 따라 ScrollView의 marginTop 조정
+  // 채팅 메시지 상태 (실제 API 연동 시 변경)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); 
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
   useEffect(() => {
-    if (showMessageCheckReport) {
-      // 신고 모드일 때는 헤더가 없으므로 상단 여백 줄임
-      setScrollViewMarginTop(SCREEN_HEIGHT * 0.02);
-    } else if (showNotice) {
-      // 헤더와 공지 모두 표시될 때
-      setScrollViewMarginTop(SCREEN_HEIGHT * 0.12);
+    if (chatRoomId) {
+      console.log("ChatRoom.tsx: Mounting with chatRoomId from params:", chatRoomId);
+      // 스토어에 chatRoomId와 themeId 설정 (themeId도 params로 받거나, chatRoomId 기반으로 서버에서 받아올 수 있음)
+      // 여기서는 params.themeId가 있다고 가정하고, 없다면 기본값 또는 스토어 현재값 사용
+      const themeIdFromParamsOrDefault = chatRoomId ? parseInt(chatRoomId as string) : themeId;
+      setChatRoomDetails({ chatRoomId: Number(chatRoomId), themeId: themeIdFromParamsOrDefault });
     } else {
-      // 헤더만 표시될 때
+      console.warn("ChatRoom.tsx: chatRoomId not found in params. Navigating back or showing error.");
+      // router.back(); 또는 에러 처리
+    }
+    return () => {
+      // 컴포넌트 언마운트 시 스토어의 채팅방 정보 클리어 (선택적)
+      // clearChatRoomDetails(); 
+      // console.log("ChatRoom.tsx: Unmounted, chatRoomId:", chatRoomIdFromParams);
+    };
+  }, [chatRoomId, setChatRoomDetails, clearChatRoomDetails/*, themeId*/, router]);
+
+  useEffect(() => {
+    if (showNotice) { // GptNotice 표시 여부에 따라 스크롤뷰 마진 조정
+      setScrollViewMarginTop(SCREEN_HEIGHT * 0.12); 
+    } else {
       setScrollViewMarginTop(SCREEN_HEIGHT * 0.075);
     }
-  }, [showNotice, showMessageCheckReport]);
+  }, [showNotice]);
   
-  // 샘플 메시지 데이터
-  const messages: ChatMessage[] = [
+  const sampleMessages: ChatMessage[] = [ // API 연동 전까지 사용할 샘플 메시지
     {
-      id: 1,
-      profileImage: HanaSvg,
-      nickname: "한가로운 하나",
-      message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?",
-      time: "오후 6:58",
-      isMe: false
+      id: 1, profileImage: HanaSvg, nickname: "한가로운 하나", memberId: 101,
+      message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?", time: "오후 6:58", isMe: false
     },
     {
-      id: 2,
-      profileImage: HanaSvg,
-      nickname: "한가로운 하나",
-      message: "정말 재밌어서 추천드려요",
-      time: "오후 6:58",
-      isMe: false
+      id: 2, profileImage: HanaSvg, nickname: "한가로운 하나", memberId: 101,
+      message: "정말 재밌어서 추천드려요", time: "오후 6:58", isMe: false
     },
     {
-      id: 3,
-      profileImage: Nemo,
-      nickname: "네모지만 부드러운 네모",
-      message: "와! 저도 어제 봤는데 사람이 많더라구요",
-      time: "오후 6:59",
-      isMe: true
-    },
-    {
-      id: 4,
-      profileImage: Nemo,
-      nickname: "네모지만 부드러운 네모",
-      message: "저는 펩시파에요",
-      time: "오후 6:59",
-      isMe: true
-    },
-    {
-      id: 5,
-      profileImage: Nemo,
-      nickname: "네모지만 부드러운 네모",
-      message: "다오님은요?",
-      time: "오후 6:59",
-      isMe: true
+      id: 3, profileImage: Nemo, nickname: "네모지만 부드러운 네모", memberId: 102,
+      message: "와! 저도 어제 봤는데 사람이 많더라구요", time: "오후 6:59", isMe: true
     },
   ];
   
@@ -170,132 +159,6 @@ const ChatRoom = () => {
     setShowResultLoveArrow(true); // ResultLoveArrow 모달 표시
   };
   
-  const handleSirenPress = () => {
-    setShowMessageCheckReport(true);
-    setShowReadingTag(false);
-    setSidebarOpen(false);
-    setHasCheckedMessage(false); // 신고 화면 진입 시 체크 상태 초기화
-  };
-  
-  const handleReportConfirm = () => {
-    // 신고 확인 로직 - ReportModal 표시
-    setShowReportModal(true);
-  };
-
-  const handleReportCancel = () => {
-    // 신고 취소 로직
-    console.log('신고가 취소되었습니다');
-    setShowMessageCheckReport(false);
-    setShowReadingTag(true);
-    setHasCheckedMessage(false); // 체크 상태 초기화
-  };
-  
-  // ReportModal에서 "확인" (신고 제출) 시 호출될 함수
-  const handleReportSubmitted = (reasons: string[]) => {
-    console.log('신고 제출됨:', reasons);
-    // ReportModal 닫고, MessageCheckReport도 닫고, 일반 채팅 화면으로 돌아가기
-    setShowReportModal(false);
-    setShowMessageCheckReport(false); // 일반 채팅 화면으로
-    setShowReadingTag(true);
-    setHasCheckedMessage(false); // 체크 상태 초기화
-  };
-
-  // ReportModal에서 "취소" 시 호출될 함수
-  const handleReportDismissed = () => {
-    setShowReportModal(false); // ReportModal만 닫음
-    // setShowMessageCheckReport(false)를 호출하지 않으므로 MessageCheckReport는 유지됨
-  };
-  // MessageCheckReport에서 체크 상태 변경 시 호출되는 함수
-  const handleCheckedChange = (checked: boolean) => {
-    setHasCheckedMessage(checked);
-  };
-  
-  // 메시지 렌더링 함수
-  const renderMessages = () => {
-    return messages.map((message, index) => {
-      // 이전 메시지가 같은 사람인지 확인
-      const isConsecutive = index > 0 && 
-        messages[index - 1].nickname === message.nickname &&
-        messages[index - 1].isMe === message.isMe;
-      // 이전 메시지와 시간 및 닉네임이 동일한지 확인 (시간 표시 여부 결정)
-      let showTime = true;
-      if (index < messages.length - 1) {
-        const nextMessage = messages[index + 1];
-        // 다음 메시지가 같은 사람이고 시간이 같으면 현재 메시지의 시간은 숨김
-        if (message.nickname === nextMessage.nickname && 
-            message.time === nextMessage.time &&
-            message.isMe === nextMessage.isMe) {
-          showTime = false;
-        }
-      }
-      // 내가 보낸 메시지면 오른쪽, 아니면 왼쪽에 표시
-      if (message.isMe) {
-        return (
-          <ChatMessageRight
-              key={message.id}
-              profileImage={message.profileImage}
-              nickname={message.nickname}
-              message={message.message}
-              time={message.time}
-              isConsecutive={isConsecutive}
-              showTime={showTime}
-              onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
-              themeId={themeId}
-          />
-        );
-      } else {
-        return (
-          <ChatMessageLeft
-              key={message.id}
-              profileImage={message.profileImage}
-              nickname={message.nickname}
-              message={message.message}
-              time={message.time}
-              isConsecutive={isConsecutive}
-              showTime={showTime}
-              onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
-              themeId={themeId}
-          />
-        );
-      }
-    });
-  };
-  
-  // 내가 보낸 메시지(ChatMessageRight)만 렌더링하는 함수
-  const renderMyMessages = () => {
-    return messages
-      .filter(message => message.isMe) // 내가 보낸 메시지만 필터링
-      .map((message, index) => {
-        // 이전 메시지가 같은 사람인지 확인 (필터링 후 인덱스가 달라지므로 재계산)
-        const prevMyMessages = messages.filter(msg => msg.isMe);
-        const isConsecutive = index > 0 && 
-          prevMyMessages[index - 1].nickname === message.nickname;
-        
-        // 시간 표시 여부 결정
-        let showTime = true;
-        if (index < prevMyMessages.length - 1) {
-          const nextMessage = prevMyMessages[index + 1];
-          if (message.time === nextMessage.time) {
-            showTime = false;
-          }
-        }
-        
-        return (
-          <ChatMessageRight
-              key={message.id}
-              profileImage={message.profileImage}
-              nickname={message.nickname}
-              message={message.message}
-              time={message.time}
-              isConsecutive={isConsecutive}
-              showTime={showTime}
-              onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
-              themeId={themeId}
-          />
-        );
-      });
-  };
-  
   // SideBar에서 프로필 클릭 시 처리 함수
   const handleSidebarProfilePress = (nickname: string, SvgComponent: React.FC<SvgProps>) => {
     setSelectedProfile({ nickname, SvgComponent });
@@ -341,7 +204,56 @@ const ChatRoom = () => {
   const handleUnmatched = () => {
     setShowUnmatchedModal(true);
   };
+  
+  const renderMessages = () => {
+    const displayMessages = chatMessages.length > 0 ? chatMessages : sampleMessages; // API 연동 후 sampleMessages 제거
+    if (isLoadingMessages) return <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#A45C73" />;
 
+    return displayMessages.map((message, index) => {
+      const isConsecutive = index > 0 && 
+        displayMessages[index - 1].nickname === message.nickname &&
+        displayMessages[index - 1].isMe === message.isMe;
+      let showTime = true;
+      if (index < displayMessages.length - 1) {
+        const nextMessage = displayMessages[index + 1];
+        if (message.nickname === nextMessage.nickname && 
+            message.time === nextMessage.time &&
+            message.isMe === nextMessage.isMe) {
+          showTime = false;
+        }
+      }
+      if (message.isMe) {
+        return (
+          <ChatMessageRight
+              key={message.id}
+              profileImage={message.profileImage}
+              nickname={message.nickname}
+              message={message.message}
+              time={message.time}
+              isConsecutive={isConsecutive}
+              showTime={showTime}
+              onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
+              themeId={themeId}
+          />
+        );
+      } else {
+        return (
+          <ChatMessageLeft
+              key={message.id}
+              profileImage={message.profileImage}
+              nickname={message.nickname}
+              message={message.message}
+              time={message.time}
+              isConsecutive={isConsecutive}
+              showTime={showTime}
+              onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
+              themeId={themeId}
+          />
+        );
+      }
+    });
+  };
+  
   return (
     <View style={styles.container}>
         {/* ChatHeader 블러 효과 */}
@@ -356,8 +268,7 @@ const ChatRoom = () => {
           />
         )}
         <View style={[styles.headerContainer, { zIndex: sidebarOpen ? 2 : 3 }]}>
-            {/* showMessageCheckReport가 false일 때만 ChatHeader 표시 */}
-            {!showMessageCheckReport && (
+            {/* ChatHeader 표시 */}
         <ChatHeader
             title="하트시그널"
             fontColor="#A45C73"
@@ -365,8 +276,7 @@ const ChatRoom = () => {
                   onToggleSidebar={() => setSidebarOpen(true)}
                   themeId={themeId}
               />
-            )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 시크릿 메시지 이벤트가 시작되었습니다."
                 onHide={hideNotice}
@@ -375,7 +285,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
                 onHide={hideNotice}
@@ -384,7 +294,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 사랑의 짝대기 결과를 확인해주세요!!"
                 onHide={hideNotice}
@@ -393,7 +303,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-            {showNotice && !showMessageCheckReport && (
+            {showNotice && (
               <GptNotice 
                 text="[시스템] 이벤트 수정은 돈을 주세요!!"
                 onHide={hideNotice}
@@ -402,7 +312,7 @@ const ChatRoom = () => {
                 themeId={themeId}
               />
             )}
-             {showNotice && !showMessageCheckReport && (
+             {showNotice && (
               <GptNotice 
                 text="[시스템] 매칭에 실패하였습니다!!"
                 onHide={hideNotice}
@@ -418,58 +328,18 @@ const ChatRoom = () => {
             showsVerticalScrollIndicator={false}
         >
           {showReadingTag && <ReadingTag themeId={themeId} />}
-          
-          {showMessageCheckReport ? (
-            <>
-              <MessageCheckReport 
-                onCheckedChange={handleCheckedChange} 
-                themeId={themeId}
-              />
-              {/* 신고 모드에서는 내가 보낸 메시지(ChatMessageRight)만 표시 */}
-              {renderMyMessages()}
-            </>
-          ) : (
-            /* 일반 모드에서 모든 메시지 렌더링 */
-            renderMessages()
-          )}
+          {renderMessages()}
         </ScrollView>
         {/* 사이드바 표시 */}
         <SideBar
             visible={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
-            onSirenPress={handleSirenPress}
             onProfilePress={handleSidebarProfilePress}
-            themeId={themeId}
         />
-        {/* 하단 영역: 신고 중이면 취소/확인 버튼, 아니면 ChatInput */}
-        {showMessageCheckReport ? (
-          <View style={styles.buttonsContainer}>
-            <TouchableOpacity 
-              style={[styles.button, styles.cancelButton]} 
-              onPress={handleReportCancel}
-            >
-              <Text style={styles.cancelButtonText}>취소</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[
-                styles.button, 
-                styles.confirmButton,
-                !hasCheckedMessage && styles.disabledButton
-              ]} 
-              onPress={handleReportConfirm}
-              disabled={!hasCheckedMessage}
-            >
-              <Text style={[
-                styles.confirmButtonText,
-                !hasCheckedMessage && styles.disabledText
-              ]}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+        {/* 하단 영역: ChatInput */}
           <View style={styles.inputContainer}>
             <ChatInput themeId={themeId} />
           </View>
-        )}
         {/* 프로필 팝업 - z-index를 높게 설정하여 최상위에 표시 */}
         {selectedProfile && (
           <View style={styles.profileOverlay}>
@@ -482,14 +352,6 @@ const ChatRoom = () => {
           </View>
         )}
 
-        {/* 신고 모달 */}
-        <ReportModal 
-          visible={showReportModal} 
-          onSubmitReport={handleReportSubmitted} // "확인" 시 호출
-          onDismiss={handleReportDismissed}     // "취소" 시 호출
-          themeId={themeId}
-        />
-        
         {/* 러브레터 선택 모달 */}
         <LoveLetterSelect
           visible={showLoveLetterSelect}

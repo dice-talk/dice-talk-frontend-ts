@@ -1,10 +1,13 @@
+import { DiceLog, getMemberDiceLogs } from "@/api/productApi"; // API 함수 및 타입 import
 import DiceLogo from "@/assets/images/profile/dice.svg";
 import GradientHeader from "@/components/common/GradientHeader";
 import Tab from "@/components/common/Tab";
 import UseageItem, { UseageItemProps } from "@/components/useage/UseageItem";
+import useAuthStore from "@/zustand/stores/authStore"; // AuthStore import
+import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // SharedProfileStore import
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from "react";
-import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react"; // useCallback 추가
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, View } from "react-native"; // ActivityIndicator 추가
 
 // memberInfoStore 또는 API 호출을 통해 가져올 사용자 정보 타입 (가정)
 // type MemberInfo = {
@@ -14,37 +17,71 @@ import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
 //   isInChat: boolean;
 // };
 
-// 더미 데이터 (충전 내역)
-const dummyChargeData: UseageItemProps[] = [
-  { id: 'charge1', type: 'charge', createdAt: '2025-03-13T13:04:45Z', quantity: 30 },
-  { id: 'charge2', type: 'charge', createdAt: '2025-03-13T13:04:45Z', quantity: 30 }, // 이미지 중복 데이터
-  { id: 'charge3', type: 'charge', createdAt: '2025-03-01T22:02:15Z', quantity: 10 },
-  { id: 'charge4', type: 'charge', createdAt: '2025-02-14T19:13:02Z', quantity: 10 },
-  { id: 'charge5', type: 'charge', createdAt: '2025-02-02T18:03:29Z', quantity: 10 },
-];
-
-// 더미 데이터 (사용 내역)
-const dummyUsageData: UseageItemProps[] = [
-  { id: 'use1', type: 'use', createdAt: '2025-03-19T10:00:00Z', title: 'DICE 4개', description: '큐피트의 짝대기 수정 1회권' },
-  { id: 'use2', type: 'use', createdAt: '2025-03-16T11:00:00Z', title: 'DICE 4개', description: '큐피트의 짝대기 수정 1회권' },
-  { id: 'use3', type: 'use', createdAt: '2025-03-16T12:00:00Z', title: 'DICE 4개', description: '큐피트의 짝대기 수정 1회권' }, // 이미지 중복 데이터
-  { id: 'use4', type: 'use', createdAt: '2025-03-10T14:00:00Z', title: 'DICE 7개', description: '채팅방 나가기 초과 횟수권' },
-  { id: 'use5', type: 'use', createdAt: '2025-02-28T15:00:00Z', title: 'DICE 4개', description: '큐피트의 짝대기 수정 1회권' },
-];
+// 더미 데이터 삭제 (API 연동으로 대체)
+// const dummyChargeData: UseageItemProps[] = [ ... ];
+// const dummyUsageData: UseageItemProps[] = [ ... ];
 
 export default function UsagePage() {
     // const router = useRouter(); // 현재 사용 안함
     const [activeTab, setActiveTab] = useState<'충전 내역' | '사용 내역'>('충전 내역');
-    const [currentDiceAmount] = useState<number>(34); // 이미지 기준 보유 다이스
-    const [displayData, setDisplayData] = useState<UseageItemProps[]>(dummyChargeData);
+    
+    // Zustand 스토어에서 memberId와 totalDice 가져오기
+    const memberId = useAuthStore(state => state.memberId);
+    const totalDice = useSharedProfileStore(state => state.totalDice);
+    const currentDiceAmount = totalDice !== null ? totalDice : 0; // null일 경우 0으로 기본값 설정
+    
+    const [allLogs, setAllLogs] = useState<DiceLog[]>([]);
+    const [displayData, setDisplayData] = useState<UseageItemProps[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    const fetchLogs = useCallback(async (fetchPage: number) => {
+        if (!memberId || (isLoading && fetchPage === page)) return;
+        setIsLoading(true);
+        try {
+            const response = await getMemberDiceLogs(memberId, fetchPage, 10);
+            if (response && response.data) {
+                setAllLogs(prevLogs => fetchPage === 1 ? response.data : [...prevLogs, ...response.data]);
+                if(response.pageInfo) {
+                  setTotalPages(response.pageInfo.totalPages || 1);
+                }
+                setPage(fetchPage);
+            }
+        } catch (error) {
+            console.error("Error fetching dice logs:", error);
+            // TODO: 사용자에게 에러 메시지 표시 (예: 토스트 메시지)
+        } finally {
+            setIsLoading(false);
+        }
+    }, [memberId, isLoading, page]);
 
     useEffect(() => {
-        if (activeTab === '충전 내역') {
-            setDisplayData(dummyChargeData);
+        if (memberId) { // memberId가 유효할 때만 로그를 가져옴
+            fetchLogs(1);
         } else {
-            setDisplayData(dummyUsageData);
+            // memberId가 없으면 (예: 로그아웃 상태) 로그 목록을 비우고 초기화
+            setAllLogs([]);
+            setDisplayData([]);
+            setPage(1);
+            setTotalPages(1);
         }
-    }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [memberId]); // memberId 변경 시 (로그인/로그아웃) 로그 다시 가져오기
+
+    useEffect(() => {
+        const filteredLogs = allLogs.filter(log => 
+            activeTab === '충전 내역' ? log.logType === 'DICE_CHARGE' : log.logType === 'DICE_USED'
+        );
+        const mappedData: UseageItemProps[] = filteredLogs.map(log => ({
+            id: log.logId,
+            createdAt: log.createdAt,
+            logType: log.logType,
+            info: log.info,
+            quantity: log.quantity,
+        }));
+        setDisplayData(mappedData);
+    }, [allLogs, activeTab]);
 
     const handleTabChange = (tab: string) => {
         if (tab === '충전 내역' || tab === '사용 내역') {
@@ -52,13 +89,26 @@ export default function UsagePage() {
         }
     };
 
+    const loadMoreLogs = () => {
+        if (page < totalPages && !isLoading && memberId) { // memberId 유효성 검사 추가
+            fetchLogs(page + 1);
+        }
+    };
+
     const renderEmptyListComponent = () => (
-        <View style={styles.emptyListContainer}>
-            <Text style={styles.emptyListText}>
-                {activeTab === '충전 내역' ? '충전 내역이 없습니다.' : '사용 내역이 없습니다.'}
-            </Text>
-        </View>
+        !isLoading && displayData.length === 0 && (
+            <View style={styles.emptyListContainer}>
+                <Text style={styles.emptyListText}>
+                    {!memberId ? "로그인이 필요합니다." : (activeTab === '충전 내역' ? '충전 내역이 없습니다.' : '사용 내역이 없습니다.')}
+                </Text>
+            </View>
+        )
     );
+
+    const renderFooter = () => {
+        if (!isLoading || page >= totalPages) return null;
+        return <ActivityIndicator style={{ marginVertical: 20 }} size="large" color="#8A2BE2" />;
+    };
 
   return (
     <View style={styles.container}>
@@ -77,7 +127,7 @@ export default function UsagePage() {
         />
         <View style={styles.currentDiceAmountContainer}>
             <Text style={styles.currentDiceText}>현재 보유 중인 나의 Dice</Text>
-            <Text style={styles.currentDiceCount}>{currentDiceAmount} 개</Text>
+            <Text style={styles.currentDiceCount}>{memberId ? currentDiceAmount : '-'} 개</Text>
         </View>
         <LinearGradient
             colors={['#EAEAEA', '#EAEAEA']}
@@ -94,12 +144,14 @@ export default function UsagePage() {
         
         <FlatList
             data={displayData}
-            renderItem={({ item }) => <UseageItem {...item} />}
+            renderItem={({ item }) => <UseageItem {...item} />} // UseageItemProps를 직접 전달
             keyExtractor={item => item.id.toString()}
             style={styles.flatListStyle}
             contentContainerStyle={styles.flatListContentContainer}
             ListEmptyComponent={renderEmptyListComponent}
-            // ItemSeparatorComponent={() => <View style={styles.itemSeparator} />} // UseageItem 자체 구분선 사용
+            onEndReached={loadMoreLogs} // 무한 스크롤을 위한 onEndReached 추가
+            onEndReachedThreshold={0.5} // 끝에서 얼마나 떨어졌을 때 loadMoreLogs를 호출할지 (0.1 = 10%)
+            ListFooterComponent={renderFooter} // 로딩 인디케이터 표시
         />
     </View>
   );

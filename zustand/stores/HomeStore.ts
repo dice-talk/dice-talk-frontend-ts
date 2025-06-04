@@ -31,49 +31,50 @@ export interface Notice {
   modifiedAt: string;
 }
 
-interface HomeState {
-  initialHomeApiCalled: boolean;
-  themes: Theme[] | null;
-  notices: Notice[] | null;
-  hasNewNotifications: boolean | null;
+// 아이템 타입 정의 (제공해주신 정보 기반)
+export interface Item {
+  itemId: number;
+  itemName: string;
+  description: string;
+  itemImage: string;
+  dicePrice: number;
 }
 
-interface HomeActions {
-  setInitialHomeApiCalled: (called: boolean) => void;
+export interface HomeState {
+  themes: Theme[];
+  notices: Notice[]; // Notice 타입이 이미 정의되어 있다고 가정
+  hasNewNotifications: boolean;
+  initialHomeApiCalled: boolean;
+  items: Item[]; // ✅ 아이템 목록 상태 추가
+  // ... 기타 상태들 ...
+}
+
+export interface HomeActions {
   setThemes: (themes: Theme[]) => void;
   setNotices: (notices: Notice[]) => void;
   setHasNewNotifications: (hasNew: boolean) => void;
-  clearHomeData: () => void; // 필요시 홈 데이터 초기화 액션
+  setInitialHomeApiCalled: (called: boolean) => void;
+  setItems: (items: Item[]) => void; // ✅ 아이템 설정 액션 추가
+  // ... 기타 액션들 ...
 }
 
-// 스토어의 전체 타입을 정의합니다 (상태 + 액션).
-type HomeStoreType = HomeState & {
+export interface HomeStore extends HomeState {
   actions: HomeActions;
-};
+}
 
-const useHomeStore = create<HomeStoreType>((set) => ({
-  initialHomeApiCalled: false, // 기본값은 false
-  themes: null,
-  notices: null,
-  hasNewNotifications: null,
+const useHomeStore = create<HomeStore>((set) => ({
+  themes: [],
+  notices: [],
+  hasNewNotifications: false,
+  initialHomeApiCalled: false,
+  items: [], // ✅ 아이템 초기 상태
   actions: {
-    setInitialHomeApiCalled: (called) => {
-      console.log('HomeStore: setInitialHomeApiCalled', called);
-      set({ initialHomeApiCalled: called });
-    },
-    setThemes: (themes) => {
-      console.log('HomeStore: setThemes', themes);
-      set({ themes });
-    },
-    setNotices: (notices) => {
-      console.log('HomeStore: setNotices', notices);
-      set({ notices });
-    },
-    setHasNewNotifications: (hasNew) => {
-      console.log('HomeStore: setHasNewNotifications', hasNew);
-      set({ hasNewNotifications: hasNew });
-    },
-    clearHomeData: () => set({ themes: null, notices: null, hasNewNotifications: null, initialHomeApiCalled: false }),
+    setThemes: (themes) => set({ themes }),
+    setNotices: (notices) => set({ notices }),
+    setHasNewNotifications: (hasNew) => set({ hasNewNotifications: hasNew }),
+    setInitialHomeApiCalled: (called) => set({ initialHomeApiCalled: called }),
+    setItems: (items) => set({ items }), // ✅ 아이템 설정 액션 구현
+    clearHomeData: () => set({ themes: [], notices: [], hasNewNotifications: false, initialHomeApiCalled: false, items: [] }),
   },
 }));
 

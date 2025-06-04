@@ -40,16 +40,15 @@ export default function NoticePage() {
     }
 
     try {
-      const params: Parameters<typeof getNotices>[0] = {
+      const apiParams: Parameters<typeof getNotices>[0] = {
         page: pageToFetch + 1, // API는 1-indexed page를 기대
         size: ITEMS_PER_PAGE,
         type: filter, // 'noticeType'을 'type'으로 변경
         keyword: keyword.trim() || undefined,
-        // sortBy, sortOrder는 api/noticeApi.ts에서 처리 (현재는 API 명세에 없어 주석처리됨)
       };
       
-      console.log(`🔄 Fetching notices with params: page=${params.page}, size=${params.size}, filter=${filter}, keyword='${keyword}'`);
-      const response = await getNotices(params);
+      console.log(`🔄 Fetching notices with apiParams:`, apiParams);
+      const response = await getNotices(apiParams);
       console.log("✅ Notices fetched successfully:", response);
 
       // 중요 공지는 noticeImportance 값으로 필터링 (백엔드 API 응답 필드명 기준)

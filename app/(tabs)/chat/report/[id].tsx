@@ -1,0 +1,411 @@
+import { createReport, getChatRoomDetailsForReport, ReportChatMessageDto, ReportCreationDto } from "@/api/reportApi";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+// ReportModal을 임시로 주석 처리 (다음 단계에서 생성 및 연동)
+// import ReportModal from "@/components/chat/ReportModal"; 
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// ReportModal props가 아직 없으므로 임시 타입 정의
+interface ReportModalProps {
+  visible: boolean;
+  onSubmitReport: (reason: string) => void;
+  onDismiss: () => void;
+  themeId?: number;
+}
+
+// 신고 페이지에서 사용할 메시지 타입 (isChecked와 memberId 포함)
+interface ReportableChatMessage extends ReportChatMessageDto {
+  isChecked: boolean;
+  profileImageUri?: string; // 프로필 이미지 URI (SVG 또는 일반 이미지)
+}
+
+const ChatReportPage = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const chatRoomId = params.id ? parseInt(params.id as string) : null;
+  const themeId = useChatRoomStore((state) => state.themeId) || 1; // Zustand 스토어에서 themeId 가져오기
+
+  const [messages, setMessages] = useState<ReportableChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  // API를 통해 채팅 메시지 로드
+  const fetchMessages = useCallback(async () => {
+    if (!chatRoomId) {
+      setError("채팅방 ID가 유효하지 않습니다.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      // TODO: 페이지네이션 구현 시 page, size 파라미터 추가 고려
+      const chatRoomData = await getChatRoomDetailsForReport({ chatRoomId });
+      const reportableMessages = chatRoomData.chats.map((chat) => ({
+        ...chat,
+        isChecked: false,
+        // profileImageUri: chat.member?.profileImageUrl, // 실제 프로필 이미지 경로로 수정 필요
+      }));
+      setMessages(reportableMessages);
+    } catch (err: any) {
+      console.error("Failed to fetch chat messages for report:", err);
+      setError(err.message || "메시지를 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [chatRoomId]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  // 메시지 체크 상태 토글 함수
+  const toggleCheck = (chatId: number) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((message) =>
+        message.chatId === chatId
+          ? { ...message, isChecked: !message.isChecked }
+          : message
+      )
+    );
+  };
+
+  const getSelectedMessages = () => messages.filter(msg => msg.isChecked);
+
+  const handleReportSubmit = async (reason: string) => {
+    const selectedMessages = getSelectedMessages();
+    if (selectedMessages.length === 0 || !chatRoomId) {
+      Alert.alert("오류", "신고할 메시지를 선택해주세요 또는 채팅방 ID가 유효하지 않습니다.");
+      return;
+    }
+
+    const reportData: ReportCreationDto = {
+      reason,
+      chatReports: selectedMessages.map(msg => ({ chatId: msg.chatId })),
+      reportedMemberIds: Array.from(new Set(selectedMessages.map(msg => msg.memberId))), // 중복 제거
+    };
+
+    console.log("Submitting report with data:", JSON.stringify(reportData, null, 2));
+    
+    try {
+      setIsLoading(true); // API 호출 중 로딩 상태 표시
+      await createReport(reportData);
+      Alert.alert("신고 완료", "신고가 성공적으로 접수되었습니다.", [
+        { text: "확인", onPress: () => router.back() },
+      ]);
+      setShowReportModal(false);
+    } catch (err: any) {
+      console.error("Error creating report:", err);
+      const errorMessage = err.fieldErrors 
+        ? Object.values(err.fieldErrors).join('\\n') 
+        : err.message || "신고 중 오류가 발생했습니다.";
+      Alert.alert("신고 실패", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleConfirmSelection = () => {
+    if (getSelectedMessages().length > 0) {
+      setShowReportModal(true);
+    } else {
+      Alert.alert("알림", "신고할 메시지를 하나 이상 선택해주세요.");
+    }
+  };
+
+  // 각 메시지 렌더링 함수
+  const renderMessageItem = (message: ReportableChatMessage) => {
+    // TODO: 실제 프로필 이미지 타입 및 경로에 따라 SvgUri 또는 Image 컴포넌트 사용 결정
+    // const ProfileComponent = message.profileImageUri && message.profileImageUri.endsWith('.svg') ? SvgUri : Image;
+    
+    // 임시 프로필 아이콘 스타일 (실제 프로필 이미지 핸들링 필요)
+    const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+    const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D4B6D4";
+    const bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
+    const nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
+    const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
+
+    return (
+      <View style={styles.messageItemContainer} key={message.chatId}>
+        <TouchableOpacity
+          style={styles.checkCircle}
+          onPress={() => toggleCheck(message.chatId)}
+        >
+          {message.isChecked ? (
+            <Ionicons name="checkmark-circle" size={SCREEN_WIDTH * 0.07} color="#EF5A52" />
+          ) : (
+            <Ionicons name="ellipse-outline" size={SCREEN_WIDTH * 0.07} color="#CCCCCC" />
+          )}
+        </TouchableOpacity>
+        <View style={[styles.profileImagePlaceholder, { borderColor: profileBorderColor, backgroundColor: profileIconColor }]} />
+        {/* 실제 프로필 이미지 예시 (주석 처리)
+        {message.profileImageUri ? (
+          <ProfileComponent
+            uri={message.profileImageUri} // SvgUri의 경우 uri prop 사용
+            // source={{ uri: message.profileImageUri }} // Image의 경우 source prop 사용
+            style={styles.profileImage}
+            width={SCREEN_WIDTH * 0.09} // SvgUri의 경우 width/height 직접 지정
+            height={SCREEN_WIDTH * 0.09}
+          />
+        ) : (
+          <View style={[styles.profileImagePlaceholder, { borderColor: profileBorderColor, backgroundColor: profileIconColor }]} />
+        )}
+        */}
+        <View style={styles.messageContent}>
+          <Text style={[styles.nickname, { color: nicknameColor }]}>{message.nickName || "알 수 없는 사용자"}</Text>
+          <View style={[styles.bubble, { backgroundColor: bubbleColor }]}>
+            <Text style={styles.messageText}>{message.message}</Text>
+          </View>
+        </View>
+        <Text style={[styles.timeText, { color: timeColor }]}>
+          {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+      </View>
+    );
+  };
+
+  if (isLoading && messages.length === 0) { // 첫 로딩 시 전체 화면 로딩 인디케이터
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} />
+        <Text style={styles.loadingText}>메시지를 불러오는 중...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>오류: {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchMessages}>
+            <Text style={styles.retryButtonText}>재시도</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!chatRoomId) {
+    return (
+        <View style={styles.centered}>
+            <Text style={styles.errorText}>채팅방 정보를 찾을 수 없습니다.</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+                <Text style={styles.retryButtonText}>뒤로가기</Text>
+            </TouchableOpacity>
+        </View>
+    );
+  }
+
+  const titleColor = themeId === 2 ? "#5C5279" : "#984A78";
+  const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#D9B2D3";
+  const cancelButtonColor = "#AAAAAA";
+  const hasCheckedMessages = getSelectedMessages().length > 0;
+
+  return (
+    <View style={styles.pageContainer}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={titleColor} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: titleColor }]}>신고할 메시지 선택</Text>
+        <View style={{ width: 24 }} />{/* 오른쪽 정렬을 위한 빈 공간 */}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {messages.length === 0 && !isLoading ? (
+          <Text style={styles.noMessagesText}>표시할 메시지가 없습니다.</Text>
+        ) : (
+          messages.map(renderMessageItem)
+        )}
+      </ScrollView>
+      
+      {isLoading && messages.length > 0 && ( // 메시지 로드 후 API 호출(신고) 시 로딩 인디케이터
+        <View style={styles.inlineLoadingContainer}>
+          <ActivityIndicator size="small" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} />
+          <Text style={styles.inlineLoadingText}>처리 중...</Text>
+        </View>
+      )}
+
+      <View style={styles.footer}>
+        <Pressable
+          style={[
+            styles.footerButton,
+            styles.confirmButton,
+            { backgroundColor: confirmButtonColor },
+            !hasCheckedMessages && styles.disabledButton,
+          ]}
+          onPress={handleConfirmSelection}
+          disabled={!hasCheckedMessages || isLoading}
+        >
+          <Text style={styles.footerButtonText}>신고하기</Text>
+        </Pressable>
+      </View>
+      
+      {/* ReportModal 임시 주석 처리
+      <ReportModal
+        visible={showReportModal}
+        onSubmitReport={handleReportSubmit}
+        onDismiss={() => setShowReportModal(false)}
+        themeId={themeId}
+      />
+      */}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  pageContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    height: SCREEN_HEIGHT * 0.08,
+  },
+  backButton: {
+    padding: 5,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "red",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 10,
+    color: '#555555',
+  },
+  scrollContainer: {
+    paddingVertical: 10,
+  },
+  noMessagesText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#888888',
+  },
+  messageItemContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: SCREEN_WIDTH * 0.03,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  checkCircle: {
+    paddingRight: SCREEN_WIDTH * 0.03, // 체크박스와 프로필 이미지 사이 간격
+  },
+  profileImage: { // SvgUri, Image 공통 스타일
+    width: SCREEN_WIDTH * 0.09,
+    height: SCREEN_WIDTH * 0.09,
+    borderRadius: SCREEN_WIDTH * 0.045,
+    marginRight: SCREEN_WIDTH * 0.02,
+  },
+  profileImagePlaceholder: { // 실제 이미지 없을 때 사용
+    width: SCREEN_WIDTH * 0.09,
+    height: SCREEN_WIDTH * 0.09,
+    borderRadius: SCREEN_WIDTH * 0.045,
+    marginRight: SCREEN_WIDTH * 0.02,
+    borderWidth: 1,
+  },
+  messageContent: {
+    flex: 1, // 메시지 내용이 남은 공간을 모두 차지하도록
+    marginRight: SCREEN_WIDTH * 0.02,
+  },
+  nickname: {
+    fontSize: SCREEN_WIDTH * 0.034,
+    fontWeight: "bold",
+    marginBottom: 2,
+  },
+  bubble: {
+    paddingVertical: SCREEN_HEIGHT * 0.008,
+    paddingHorizontal: SCREEN_WIDTH * 0.025,
+    borderRadius: SCREEN_WIDTH * 0.03,
+    alignSelf: 'flex-start', // 말풍선이 내용물 크기에 맞게
+  },
+  messageText: {
+    fontSize: SCREEN_WIDTH * 0.038,
+    color: "#FFFFFF",
+  },
+  timeText: {
+    fontSize: SCREEN_WIDTH * 0.028,
+    color: "#888888",
+    alignSelf: 'flex-end', // 시간 오른쪽 끝으로
+  },
+  footer: {
+    padding: SCREEN_WIDTH * 0.04,
+    borderTopWidth: 1,
+    borderTopColor: "#EEEEEE",
+    backgroundColor: "#FFFFFF",
+  },
+  footerButton: {
+    paddingVertical: SCREEN_HEIGHT * 0.018,
+    borderRadius: SCREEN_WIDTH * 0.03,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmButton: {
+    // backgroundColor는 동적으로 설정
+  },
+  disabledButton: {
+    backgroundColor: "#CCCCCC",
+  },
+  footerButtonText: {
+    color: "#FFFFFF",
+    fontSize: SCREEN_WIDTH * 0.04,
+    fontWeight: "600",
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  inlineLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  inlineLoadingText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#555555',
+  }
+});
+
+export default ChatReportPage; 

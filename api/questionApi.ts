@@ -212,3 +212,66 @@ export const deleteQuestion = async (questionId: number): Promise<void> => {
         throw error;
     }
   }
+
+// 비회원 문의 생성을 위한 DTO 타입 정의
+interface GuestQuestionPostDto {
+  title: string;
+  content: string;
+  email: string;
+}
+
+// 비회원 문의 생성 함수 파라미터 타입 정의
+type CreateGuestQuestionParams = {
+  dto: GuestQuestionPostDto;
+  imageUris?: string[]; // 회원 문의와 동일하게 이미지 URI 배열을 받음
+}
+
+// 비회원 문의 생성 함수
+export const createGuestQuestion = async ({ dto, imageUris }: CreateGuestQuestionParams) => {
+  const formData = new FormData();
+
+  // DTO를 JSON 문자열로 변환하여 FormData에 추가 (백엔드가 받을 키 이름 확인 필요, 예: 'guestQuestionPostDto')
+  // 백엔드 Java DTO의 필드명이 title, content, email이므로, JSON.stringify(dto)가 이를 포함해야 함.
+  // @RequestPart("guestQuestionPostDto") GuestQuestionDto.GuestPost guestQuestionPostDto 와 같이 받는다면
+  // formData.append('guestQuestionPostDto', JSON.stringify(dto)); 와 같이 보내야 함.
+  // 만약 @ModelAttribute로 받는다면, 각 필드를 개별적으로 append해야 할 수도 있음.
+  // 여기서는 Spring Boot @RequestPart("dtoKeyName") String dtoString, @RequestPart List<MultipartFile> images 형태로 받는다고 가정하고,
+  // DTO 객체 전체를 하나의 JSON 문자열로 보내는 방식을 사용. (백엔드와 협의 필요)
+  formData.append('guestQuestionPostDto', JSON.stringify(dto)); 
+  console.log("📝 [createGuestQuestion] DTO:", JSON.stringify(dto, null, 2));
+  console.log("🖼️ [createGuestQuestion] Image URIs to be processed:", imageUris);
+
+  if (imageUris && imageUris.length > 0) {
+    imageUris.forEach((uri, index) => {
+      const fileName = uri.split('/').pop() || `guest_photo_${index}.jpg`;
+      const fileType = fileName.split('.').pop()?.toLowerCase() === 'png' ? 'image/png' : 'image/jpeg';
+      
+      const imageFile = {
+        uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+        name: fileName,
+        type: fileType,
+      };
+      formData.append('images', imageFile as any); // 백엔드가 받을 이미지 파일 배열의 키 이름 (예: 'images')
+      console.log(`📄 [createGuestQuestion] Appended image to FormData: ${fileName}, Type: ${fileType}, URI: ${uri}`);
+    });
+  }
+  console.log("🔍 [createGuestQuestion] FormData object:", formData); // FormData 내용 확인
+
+  try {
+    // 비회원 문의는 토큰이 필요 없으므로, axiosWithoutToken 또는 별도의 설정된 인스턴스 사용 필요
+    // 현재 axiosWithToken만 import 되어 있으므로, axiosWithoutToken을 사용하도록 수정하거나, 해당 인스턴스를 API 파일 내에서 접근 가능하게 해야 함.
+    // 여기서는 임시로 axiosWithToken을 사용하지만, 실제로는 토큰 없이 요청 가능한 axios 인스턴스를 사용해야 함을 주석으로 명시.
+    // 만약 axios.ts에 axiosWithoutToken이 export 되어 있다면 그것을 사용.
+    // 지금은 createQuestion과 동일하게 axiosWithToken을 사용하고, 실제로는 axiosWithoutToken으로 교체해야 함을 주석으로 명시.
+    const { axiosWithoutToken } = await import("./axios/axios"); // axiosWithoutToken 동적 import
+    const response = await axiosWithoutToken.post("/questions/guest", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("🚨 비회원 문의 등록 실패:", error);
+    throw error;
+  }
+};

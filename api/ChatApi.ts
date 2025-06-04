@@ -1,6 +1,6 @@
-import { axiosWithToken } from "./axios/axios";
 import useAuthStore from "@/zustand/stores/authStore"; // 경로 수정 가능성 있음
 import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; // 새로 만든 ChatRoomStore 임포트
+import { axiosWithToken } from "./axios/axios";
 
 // isPossible API 응답 데이터 타입 (실제 API 스펙에 맞게 조정 필요)
 interface IsPossibleResponseData {
