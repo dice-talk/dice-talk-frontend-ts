@@ -84,6 +84,7 @@ const HomeScreen = () => {
           // API 응답에서 curThemeId를 가져와 HomeStore에 저장
           if (homeDataResponse.data.curThemeId !== undefined) {
             setCurThemeId(homeDataResponse.data.curThemeId);
+            // console.log('아아아아아ㅏ아아',homeDataResponse.data.curThemeId)
           } else {
             setCurThemeId(null); // curThemeId가 없으면 null로 설정
           }

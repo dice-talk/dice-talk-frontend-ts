@@ -9,7 +9,6 @@ import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import ChatProfile from "@/components/chat/ChatProfile";
 import GptNotice from "@/components/chat/GptNotice";
 import ReadingTag from "@/components/chat/ReadingTag";
-
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
@@ -17,25 +16,15 @@ import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/heartSignal/ResultLoveArrow";
 import UnmatchedModal from "@/components/event/heartSignal/UnmatchedModal";
-
-// import useArrowEventStore from "@/zustand/stores/ArrowEventStore"; // Result 컴포넌트가 스토어를 직접 사용하지 않으므로 주석 처리 또는 제거 가능
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
-import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
-
-
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
-import React, { useEffect, useState } from "react"; // React, useCallback 추가
-import { ActivityIndicator, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // ActivityIndicator 추가
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, Keyboard, Platform } from "react-native";
 import { SvgProps } from "react-native-svg";
-
-
-
-// LoveArrowMatch에 필요한 ProfileInfo 타입 (LoveArrowMatch.tsx와 동일하게)
 import { ProfileInfo } from "@/components/event/heartSignal/LoveArrowMatch";
-
-// ResultLoveArrow.tsx의 diceCharacterMap과 유사하게, 또는 닉네임으로 SVG를 매핑하는 맵
-// 실제 프로젝트에서는 이 맵을 공통 파일로 옮기거나, ResultLoveArrow에서 export하여 사용하는 것이 좋습니다.
 import DaoSvg from "@/assets/images/dice/dao.svg";
 import DoriSvg from "@/assets/images/dice/dori.svg";
 import NemoSvg from '@/assets/images/dice/nemo.svg';
@@ -46,9 +35,6 @@ const nicknameToSvgMap: Record<string, React.FC<SvgProps>> = {
   "한가로운 하나": Hana, "두 얼굴의 매력 두리": DoriSvg, "세침한 세찌": SezziSvg,
   "네모지만 부드러운 네몽": NemoSvg, "단호한데 다정한 다오": DaoSvg, "육감적인 직감파 육땡": YukdaengSvg,
 };
-
-
-
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -62,21 +48,47 @@ interface ChatMessage {
   isMe?: boolean; // 내가 보낸 메시지인지 여부
   memberId: number; // memberId 추가
 }
+// ChatEventNotice.tsx 에서 가져온 시간 상수
+const SECRET_MESSAGE_START_OFFSET = 23 * 60 * 60; // 시크릿 메시지 시작까지 23시간
+const SECRET_MESSAGE_DURATION = 1 * 60 * 60; // 시크릿 메시지 1시간 진행
+const SECRET_MESSAGE_END_OFFSET = SECRET_MESSAGE_START_OFFSET + SECRET_MESSAGE_DURATION; // 24시간 시점
 
+// 1단계: 시크릿 메시지 종료 후 ~ 40시간 (총 16시간)
+const CUPID_INTERIM_START_OFFSET = SECRET_MESSAGE_END_OFFSET; // 24시간 시점
+const CUPID_INTERIM_END_OFFSET = 40 * 60 * 60; // 1단계 종료: 채팅방 생성 후 40시간
+
+// 2단계: 1단계 종료 후 (40시간) ~ 48시간 (총 8시간)
+const CUPID_MAIN_EVENT_START_OFFSET = CUPID_INTERIM_END_OFFSET; // 2단계 시작: 1단계 종료 직후 (40시간)
+const CUPID_MAIN_EVENT_DURATION = 8 * 60 * 60; // 큐피드 메인 이벤트 8시간 진행
+const CUPID_MAIN_EVENT_END_OFFSET = CUPID_MAIN_EVENT_START_OFFSET + CUPID_MAIN_EVENT_DURATION; // 2단계 종료: 채팅방 생성 후 48시간
+
+// 큐피드 메인 이벤트 종료 후 채팅방 종료까지의 유예 시간
+const POST_CUPID_MAIN_DURATION = 1 * 60 * 60; // 1시간
+const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURATION; // 채팅방 실제 종료 시점: 49시간
+
+// 시간 포맷 함수
+const formatTime = (totalSeconds: number) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const pad = (num: number) => (num < 10 ? `0${num}` : `${num}`);
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+};
 
 const ChatRoom = () => {
   const router = useRouter();
   //const params = useLocalSearchParams();
-  //const chatRoomIdFromParams = params.id ? parseInt(params.id as string) : null; // URL에서 chatRoomId 가져오기 (경로가 /chat/[id] 형태라고 가정)
-  const { chatRoomId } = useLocalSearchParams<{ chatRoomId?: string }>();
+  const { chatRoomId: chatRoomIdFromParams, themeId: themeIdFromParams } = useLocalSearchParams<{ chatRoomId?: string, themeId?: string }>();
 
   const { setChatRoomDetails, clearChatRoomDetails } = useChatRoomStore((state) => state.actions);
-  const themeId = useChatRoomStore((state) => state.themeId) || 1; // 스토어에서 themeId 가져오기
+  // const originalThemeIdFromChatRoomStore = useChatRoomStore((state) => state.themeId); // ChatRoomStore에서 가져오던 themeId
+  const curThemeId = useHomeStore((state) => state.curThemeId as number | undefined) ?? 1; // HomeStore에서 curThemeId 가져오기, 없으면 기본값 1
+  const createdAt = useChatRoomStore((state) => state.createdAt); // 채팅방 생성 시간
   const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
   
   // 테마별 색상 설정
-  const alertModalTitleColor = themeId === 2 ? "#5C5279" : "#A45C73";
-  const alertModalConfirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
+  const alertModalTitleColor = curThemeId === 2 ? "#5C5279" : "#A45C73";
+  const alertModalConfirmButtonColor = curThemeId === 2 ? "#9FC9FF" : "#FFB6C1";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotice, setShowNotice] = useState(true);
   const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
@@ -86,6 +98,7 @@ const ChatRoom = () => {
   const [showLoveLetterSelect, setShowLoveLetterSelect] = useState(false);
   const [showLoveArrow, setShowLoveArrow] = useState(false);
   const [showResultLoveArrow, setShowResultLoveArrow] = useState(false);
+  const [showResultFriendArrow, setShowResultFriendArrow] = useState(false); // New state for FriendArrow result
   const [showResultAlertModal, setShowResultAlertModal] = useState(false);
   const [showLoveArrowMatch, setShowLoveArrowMatch] = useState(false);
   const [isEnvelopeReadOnly, setIsEnvelopeReadOnly] = useState(false); // EnvelopeAnimation 읽기 전용 상태
@@ -93,30 +106,38 @@ const ChatRoom = () => {
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
   const [matchedPair, setMatchedPair] = useState<{ myProfile?: ProfileInfo; partnerProfile?: ProfileInfo } | null>(null);
 
+  // Keyboard offset for input adjustment
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
   // const setSelectionsForAnimation = useArrowEventStore((state) => state.setSelectionsForAnimation); // Result 컴포넌트에서 직접 API 호출하므로 제거
   // const chatParts = useChatRoomStore((state) => state.chatParts); // Result 컴포넌트에서 직접 스토어 사용
   
+  // GptNotice 텍스트 업데이트를 위한 상태
+  const [currentEventPhase, setCurrentEventPhase] = useState("LOADING");
+  const [remainingSecondsForDisplay, setRemainingSecondsForDisplay] = useState(0);
+  const [activeNoticeType, setActiveNoticeType] = useState<"SECRET_MESSAGE_START" | "SECRET_MESSAGE_RESULT" | "LOVE_ARROW_START" | "LOVE_ARROW_RESULT" | null>(null);
+
   // 채팅 메시지 상태 (실제 API 연동 시 변경)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); 
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   useEffect(() => {
-    if (chatRoomId) {
-      console.log("ChatRoom.tsx: Mounting with chatRoomId from params:", chatRoomId);
+    if (chatRoomIdFromParams) {
+      console.log("ChatRoom.tsx: Mounting with chatRoomId from params:", chatRoomIdFromParams);
       // 스토어에 chatRoomId와 themeId 설정 (themeId도 params로 받거나, chatRoomId 기반으로 서버에서 받아올 수 있음)
       // 여기서는 params.themeId가 있다고 가정하고, 없다면 기본값 또는 스토어 현재값 사용
-      const themeIdFromParamsOrDefault = chatRoomId ? parseInt(chatRoomId as string) : themeId;
-      setChatRoomDetails({ chatRoomId: Number(chatRoomId), themeId: themeIdFromParamsOrDefault });
+      const themeIdToSetInChatRoomStore = themeIdFromParams ? parseInt(themeIdFromParams) : (useChatRoomStore.getState().themeId || 1);
+      setChatRoomDetails({ chatRoomId: Number(chatRoomIdFromParams), themeId: themeIdToSetInChatRoomStore });
     } else {
       console.warn("ChatRoom.tsx: chatRoomId not found in params. Navigating back or showing error.");
       // router.back(); 또는 에러 처리
     }
     return () => {
       // 컴포넌트 언마운트 시 스토어의 채팅방 정보 클리어 (선택적)
-      // clearChatRoomDetails(); 
+      // clearChatRoomDetails();
       // console.log("ChatRoom.tsx: Unmounted, chatRoomId:", chatRoomIdFromParams);
     };
-  }, [chatRoomId, setChatRoomDetails, clearChatRoomDetails/*, themeId*/, router]);
+  }, [chatRoomIdFromParams, themeIdFromParams, setChatRoomDetails, clearChatRoomDetails, router]);
 
   useEffect(() => {
     if (showNotice) { // GptNotice 표시 여부에 따라 스크롤뷰 마진 조정
@@ -125,6 +146,92 @@ const ChatRoom = () => {
       setScrollViewMarginTop(SCREEN_HEIGHT * 0.075);
     }
   }, [showNotice]);
+
+  useEffect(() => {
+    if (!createdAt) {
+      setCurrentEventPhase("ERROR");
+      return;
+    }
+
+    let isoCreatedAt = createdAt.replace(' ', 'T');
+    if (!isoCreatedAt.endsWith('Z') && !isoCreatedAt.match(/[+-]\d{2}:\d{2}$/)) {
+      isoCreatedAt += 'Z';
+    }
+    const creationTimestamp = new Date(isoCreatedAt).getTime();
+
+    if (isNaN(creationTimestamp)) {
+      setCurrentEventPhase("ERROR");
+      return;
+    }
+
+    const updateEventStateInChatRoom = () => {
+      const currentTimestamp = Date.now();
+      const elapsedSeconds = Math.floor((currentTimestamp - creationTimestamp) / 1000);
+
+      let targetTimestamp = 0;
+      let newPhase = "";
+      let newActiveNoticeType: typeof activeNoticeType = null;
+
+      if (elapsedSeconds < SECRET_MESSAGE_START_OFFSET) {
+        targetTimestamp = creationTimestamp + SECRET_MESSAGE_START_OFFSET * 1000;
+        newPhase = "PRE_SECRET";
+        newActiveNoticeType = "SECRET_MESSAGE_START";
+      } else if (elapsedSeconds < SECRET_MESSAGE_END_OFFSET) {
+        targetTimestamp = creationTimestamp + SECRET_MESSAGE_END_OFFSET * 1000;
+        newPhase = "SECRET";
+        newActiveNoticeType = "SECRET_MESSAGE_START";
+      } else if (elapsedSeconds < CUPID_INTERIM_END_OFFSET) {
+        targetTimestamp = creationTimestamp + CUPID_INTERIM_END_OFFSET * 1000;
+        newPhase = "CUPID_INTERIM";
+        newActiveNoticeType = "SECRET_MESSAGE_RESULT"; // 시크릿 메시지 결과 확인 우선
+      } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) {
+        targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_END_OFFSET * 1000;
+        newPhase = "CUPID_MAIN";
+        // CUPID_MAIN 단계에서는 짝대기 참여를 우선으로 표시
+        // 사용자가 이미 참여했거나, 선택 시간이 종료된 후 결과 확인으로 변경하는 로직은 추가 상태 관리가 필요할 수 있음
+        newActiveNoticeType = "LOVE_ARROW_START"; 
+      } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) {
+        targetTimestamp = creationTimestamp + CHAT_ROOM_END_OFFSET * 1000;
+        newPhase = "COUNTDOWN_TO_END";
+        newActiveNoticeType = null; // 이 단계에서는 특정 GptNotice 없음
+      } else {
+        targetTimestamp = currentTimestamp;
+        newPhase = "POST_EVENT";
+        newActiveNoticeType = null; // 이벤트 종료 후 GptNotice 없음
+      }
+
+      setRemainingSecondsForDisplay(Math.max(0, Math.floor((targetTimestamp - currentTimestamp) / 1000)));
+      setCurrentEventPhase(newPhase);
+      setActiveNoticeType(newActiveNoticeType);
+    };
+
+    updateEventStateInChatRoom();
+    const intervalId = setInterval(updateEventStateInChatRoom, 1000);
+    return () => clearInterval(intervalId);
+  }, [createdAt]);
+
+  // Keyboard listeners for adjusting input position
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardOffset(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardOffset(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+
+  // GptNotice 텍스트 생성 로직 (ChatEventNotice.tsx의 로직과 유사하게)
+  // const getGptNoticeText = (type: "secretMessageStart" | "secretMessageResult" | "loveArrowStart" | "loveArrowResult") => {
+  //   const timeLeftFormatted = formatTime(remainingSecondsForDisplay);
+  //   // ... (ChatEventNotice.tsx의 currentNoticeText 생성 로직 참고하여 각 type에 맞는 텍스트 반환)
+  //   // 예시: if (type === "secretMessageStart" && currentEventPhase === "PRE_SECRET") return `시크릿 메시지 시작까지 ${timeLeftFormatted}`;
+  //   return "공지사항 로딩 중..."; // 기본값
+  // };
   
   const sampleMessages: ChatMessage[] = [ // API 연동 전까지 사용할 샘플 메시지
     {
@@ -196,18 +303,16 @@ const ChatRoom = () => {
     setShowLoveArrow(true);
   };
   
-  // 사랑의 짝대기 결과 확인 버튼 클릭 핸들러 (바로 결과 표시)
+  // 사랑의 짝대기 결과 확인 핸들러 (LoveArrow)
   const handleLoveArrowResultCheck = () => {
-    console.log('사랑의 짝대기 결과 확인 모달 표시 요청');
-    setShowResultLoveArrow(true); // ResultLoveArrow/ResultFriendArrow 모달 표시
+    console.log('사랑의 짝대기 결과 확인 모달 표시 요청 (LoveArrow)');
+    setShowResultLoveArrow(true);
   };
 
-  // 이벤트 수정 버튼 클릭 핸들러 (아이템 필요)
-  const handleEventModify = () => {
-    // LoveArrow 컴포넌트가 자체적으로 CustomCostModal을 관리하므로,
-    // ChatRoom.tsx에서 직접 setShowCustomCostModal(true)를 호출할 필요가 없습니다.
-    // 필요하다면 LoveArrow를 표시하는 로직을 여기에 추가할 수 있습니다.
-    console.log("GptNotice에서 이벤트 수정 요청. LoveArrow 컴포넌트 내부에서 처리됩니다.");
+  // 친구의 짝대기 결과 확인 핸들러 (FriendArrow)
+  const handleFriendArrowResultCheck = () => {
+    console.log('친구의 짝대기 결과 확인 모달 표시 요청 (FriendArrow)');
+    setShowResultFriendArrow(true);
   };
   
   const handleLoveLetterSelectClose = () => {
@@ -230,7 +335,11 @@ const ChatRoom = () => {
   // ResultAlertModal의 확인 버튼 클릭 핸들러
   const handleResultAlertConfirm = () => {
     setShowResultAlertModal(false); // ResultAlertModal 닫기
-    setShowResultLoveArrow(true); // ResultLoveArrow 모달 표시
+    if (curThemeId === 2) {
+      setShowResultFriendArrow(true); // FriendArrow 결과 표시
+    } else {
+      setShowResultLoveArrow(true); // LoveArrow 결과 표시
+    }
   };
   
   // SideBar에서 프로필 클릭 시 처리 함수
@@ -250,7 +359,6 @@ const ChatRoom = () => {
   
   // 매칭 결과 보기 버튼 클릭 핸들러
   const handleMatchPress = async () => {
-    setShowResultLoveArrow(false); // ResultLoveArrow 모달 닫기
 
     const currentMemberId = useAuthStore.getState().memberId;
     const participants = useChatRoomStore.getState().chatParts;
@@ -309,10 +417,37 @@ const ChatRoom = () => {
     }
   };
   
-  const handleUnmatched = () => {
-    setShowUnmatchedModal(true);
+
+  const getNoticeText = (noticeType: "SECRET_MESSAGE_START" | "SECRET_MESSAGE_RESULT" | "LOVE_ARROW_START" | "LOVE_ARROW_RESULT"): string => {
+    const timeStr = formatTime(remainingSecondsForDisplay);
+    const cupidEventName = curThemeId === 2 ? "우정의 짝대기" : "사랑의 짝대기";
+
+    switch (noticeType) {
+      case "SECRET_MESSAGE_START":
+        return `[시스템] 시크릿 메시지 이벤트가 시작되었습니다.`; // 기본값 또는 해당 페이즈 아닐 때
+      
+      case "SECRET_MESSAGE_RESULT":
+        if (currentEventPhase === "CUPID_INTERIM") { // 시크릿 메시지 종료 후 ~ 짝대기 시작 전
+          return `[시스템] 시크릿 메시지 결과를 확인해주세요!!`;
+        }
+        return `[시스템] 시크릿 메시지 결과를 확인해주세요!!`; // 기본값 또는 해당 페이즈 아닐 때
+
+      case "LOVE_ARROW_START":
+        if (currentEventPhase === "CUPID_INTERIM") { // 짝대기 이벤트 시작 전
+          return `[시스템] ${cupidEventName} 이벤트가 시작되었습니다.`;
+        }
+        return `[시스템] ${curThemeId === 2 ? "우정의 짝대기" : "사랑의 짝대기"} 이벤트가 시작되었습니다.`; // 기본값
+
+      case "LOVE_ARROW_RESULT":
+        if (currentEventPhase === "CUPID_MAIN") { // 짝대기 이벤트 진행 중 (결과 확인 기간)
+          return `[시스템] ${cupidEventName} 결과를 확인해주세요!!`;
+        }
+        return `[시스템] ${curThemeId === 2 ? "우정의 짝대기" : "사랑의 짝대기"} 결과를 확인해주세요!!`; // 기본값
+      default:
+        return "[시스템] 공지사항";
+    }
   };
-  
+
   const renderMessages = () => {
     const displayMessages = chatMessages.length > 0 ? chatMessages : sampleMessages; // API 연동 후 sampleMessages 제거
     if (isLoadingMessages) return <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#A45C73" />;
@@ -341,7 +476,7 @@ const ChatRoom = () => {
               isConsecutive={isConsecutive}
               showTime={showTime}
               onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
-              themeId={themeId}
+
           />
         );
       } else {
@@ -355,7 +490,7 @@ const ChatRoom = () => {
               isConsecutive={isConsecutive}
               showTime={showTime}
               onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
-              themeId={themeId}
+
           />
         );
       }
@@ -382,42 +517,20 @@ const ChatRoom = () => {
             fontColor="#A45C73"
             backgroundColor="#ffffff"
                   onToggleSidebar={() => setSidebarOpen(true)}
-                  themeId={themeId}
-              />
-            {showNotice && (
+
+            />
+            {showNotice && activeNoticeType && (
               <GptNotice 
-                text="[시스템] 시크릿 메시지 이벤트가 시작되었습니다."
+                text={getNoticeText(activeNoticeType)}
                 onHide={hideNotice}
-                onParticipate={handleSecretMessageParticipate}
+                onParticipate={
+                  activeNoticeType === "SECRET_MESSAGE_START" ? handleSecretMessageParticipate :
+                  activeNoticeType === "SECRET_MESSAGE_RESULT" ? handleSecretMessageResultCheck :
+                  activeNoticeType === "LOVE_ARROW_START" ? handleLoveArrowParticipate :
+                  activeNoticeType === "LOVE_ARROW_RESULT" ? (curThemeId === 2 ? handleFriendArrowResultCheck : handleLoveArrowResultCheck) :
+                  () => {} // 기본값
+                }
                 hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
-              />
-            )}
-            {showNotice && (
-              <GptNotice 
-                text="[시스템] 시크릿 메시지 결과를 확인해주세요!!"
-                onHide={hideNotice}
-                onParticipate={handleSecretMessageResultCheck} // 결과 확인 핸들러로 변경
-                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
-              />
-            )}
-            {showNotice && (
-              <GptNotice 
-                text="[시스템] 사랑의 짝대기 이벤트가 시작되었습니다."
-                onHide={hideNotice}
-                onParticipate={handleLoveArrowParticipate}
-                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
-              />
-            )}
-            {showNotice && (
-              <GptNotice 
-                text="[시스템] 사랑의 짝대기 결과를 확인해주세요!!"
-                onHide={hideNotice}
-                onParticipate={handleLoveArrowResultCheck}
-                hideOnParticipate={false} // 참여하기 클릭 시 공지가 유지되도록 설정
-                themeId={themeId}
               />
             )}
 
@@ -426,8 +539,9 @@ const ChatRoom = () => {
             style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
         >
-          {showReadingTag && <ReadingTag themeId={themeId} />}
+          {showReadingTag && <ReadingTag/>}
           {renderMessages()}
         </ScrollView>
         {/* 사이드바 표시 */}
@@ -437,8 +551,8 @@ const ChatRoom = () => {
             onProfilePress={handleSidebarProfilePress}
         />
         {/* 하단 영역: ChatInput */}
-          <View style={styles.inputContainer}>
-            <ChatInput themeId={themeId} />
+          <View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
+            <ChatInput />
           </View>
         {/* 프로필 팝업 - z-index를 높게 설정하여 최상위에 표시 */}
         {selectedProfile && (
@@ -447,7 +561,7 @@ const ChatRoom = () => {
               profileImage={selectedProfile.SvgComponent}
               nickname={selectedProfile.nickname}
               onClose={() => setSelectedProfile(null)}
-              themeId={themeId}
+
             />
           </View>
         )}
@@ -457,7 +571,7 @@ const ChatRoom = () => {
           visible={showLoveLetterSelect}
           onClose={handleLoveLetterSelectClose}
           onConfirm={handleLoveLetterSelectConfirm}
-          themeId={themeId}
+
         />
         
         {/* 사랑의 짝대기 모달 */}
@@ -466,7 +580,7 @@ const ChatRoom = () => {
           onClose={handleLoveArrowClose}
           gender="MALE"
           remainingCount={1}
-          themeId={themeId}
+
         />
     
         {/* ResultAlertModal */}
@@ -497,7 +611,7 @@ const ChatRoom = () => {
             </View>
           </View>
         </Modal>
-        {/* ResultLoveArrow/ResultFriendArrow 모달 */}
+        {/* ResultLoveArrow 모달 */}
         <Modal
           visible={showResultLoveArrow}
           transparent={true}
@@ -505,19 +619,25 @@ const ChatRoom = () => {
           onRequestClose={() => setShowResultLoveArrow(false)}
         >
           <View style={styles.modalContainer}>
-            {themeId === 2 ? (
-              <ResultFriendArrow
-                onClose={() => setShowResultLoveArrow(false)}
-                onMatchPress={handleMatchPress}
-                themeId={themeId}
-              />
-            ) : (
               <ResultLoveArrow
-                // onClose={() => setShowResultLoveArrow(false)}
                 onMatchPress={handleMatchPress}
-                themeId={themeId} // themeId 전달
+                onClose={() => setShowResultLoveArrow(false)} // ResultLoveArrow 모달 닫기 콜백 전달
+                themeId={curThemeId} // HomeStore의 curThemeId 전달
               />
-            )}
+          </View>
+        </Modal>
+        {/* ResultFriendArrow 모달 */}
+        <Modal
+          visible={showResultFriendArrow}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowResultFriendArrow(false)}
+        >
+          <View style={styles.modalContainer}>
+            <ResultFriendArrow
+              onMatchPress={handleMatchPress}
+              onClose={() => setShowResultFriendArrow(false)} // ResultFriendArrow 모달 닫기 콜백 전달
+            />
           </View>
         </Modal>
         
@@ -527,7 +647,7 @@ const ChatRoom = () => {
             <EnvelopeAnimation 
               autoPlay={true}
               onAnimationComplete={handleEnvelopeAnimationComplete}
-              themeId={themeId}
+
               isReadOnly={isEnvelopeReadOnly} // 읽기 전용 상태 전달
               messages={readOnlyEnvelopeMessages} // 읽기 전용 메시지 전달
               content={
@@ -553,7 +673,7 @@ const ChatRoom = () => {
               setShowLoveArrowMatch(false);
               setMatchedPair(null); // 상태 초기화
             }}
-            themeId={themeId}
+
             myProfile={matchedPair.myProfile}
             partnerProfile={matchedPair.partnerProfile}
           />
@@ -563,7 +683,7 @@ const ChatRoom = () => {
         <UnmatchedModal
           visible={showUnmatchedModal}
           onClose={() => setShowUnmatchedModal(false)}
-          themeId={themeId}
+
         />
     </View>
   );

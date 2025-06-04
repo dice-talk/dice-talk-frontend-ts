@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
+import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore 임포트
 import Svg, { Line, Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
@@ -388,27 +389,25 @@ interface DiceArrowAnimationProps {
   fromNickname: string; // 시작 위치 캐릭터의 닉네임
   toNickname: string;   // 도착 위치 캐릭터의 닉네임
   color?: string;  // 화살표 색상 (지정된 색상이 없으면 하드코딩된 색상 사용)
-  useHexagonLayout?: boolean; // 6각형 레이아웃 사용 여부 (기본값: false)
 }
 
 const DiceArrowAnimation: React.FC<DiceArrowAnimationProps> = ({
   fromNickname,
   toNickname,
   color,
-  useHexagonLayout = false,
 }) => {
   // 애니메이션 상태 값 - 모든 훅은 조건문 이전에 선언
   const progress = useRef(new Animated.Value(0)).current;
+  const curThemeId = useHomeStore((state) => state.curThemeId);
 
   // 닉네임을 ID로 변환하고, arrowKey 및 arrowPosition을 계산합니다.
   // 이 값들은 useEffect의 의존성 및 조건부 렌더링에 사용됩니다.
   const fromId = nicknameToIdMap[fromNickname];
   const toId = nicknameToIdMap[toNickname];
-
   const arrowKey = (fromId !== undefined && toId !== undefined) ? `${fromId}-${toId}` : null;
   
   const arrowPosition = arrowKey
-    ? (useHexagonLayout ? hexagonArrowPositions[arrowKey] : arrowPositions[arrowKey])
+    ? (curThemeId === 2 ? hexagonArrowPositions[arrowKey] : arrowPositions[arrowKey])
     : undefined; // arrowKey가 null이면 arrowPosition은 undefined가 됩니다.
 
   // useEffect 훅은 모든 조건부 반환문 이전에 호출되어야 합니다.

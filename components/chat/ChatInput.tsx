@@ -1,17 +1,15 @@
 import SendIcon from "@/assets/images/chat/send.svg";
 import { useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import useHomeStore from "@/zustand/stores/HomeStore";
 
-interface ChatInputProps {
-  themeId?: number;
-}
-
-const ChatInput = ({ themeId = 1 }: ChatInputProps) => {
+const ChatInput = () => {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const curThemeId = useHomeStore((state) => state.curThemeId);
 
   // 테마에 따른 색상 설정
-  const borderColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const borderColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
 
   const handleSend = () => {
     if (message.trim()) {

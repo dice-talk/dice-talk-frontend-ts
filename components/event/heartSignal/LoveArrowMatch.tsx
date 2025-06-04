@@ -3,6 +3,7 @@ import Signal from '@/assets/images/event/signal.svg';
 import TextForm from '@/assets/images/event/textForm.svg';
 import CircleProfile from '@/components/common/CircleProfile';
 import { BlurView } from 'expo-blur';
+import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore 임포트
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from 'react-native-svg';
 
@@ -25,16 +26,17 @@ const nicknameToIconColorMap: Record<string, string> = {
 type LoveArrowMatchProps = {
   isVisible: boolean;
   onClose: () => void;
-  themeId?: number;
   myProfile?: ProfileInfo;      // 본인 프로필 정보
   partnerProfile?: ProfileInfo; // 매칭된 상대 프로필 정보
 };
 
-const LoveArrowMatch = ({ isVisible, onClose, themeId = 1, myProfile, partnerProfile }: LoveArrowMatchProps) => {
+const LoveArrowMatch = ({ isVisible, onClose, myProfile, partnerProfile }: LoveArrowMatchProps) => {
+  const curThemeId = useHomeStore((state) => state.curThemeId); // HomeStore에서 curThemeId 가져오기
+
   // 테마별 색상 설정
-  const textColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const buttonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
-  const buttonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
+  const textColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const buttonColor = curThemeId === 2 ? "#9FC9FF" : "#FFB6C1";
+  const buttonBorderColor = curThemeId === 2 ? "#9FC9FF" : "#FFD6DD";
 
   if (!myProfile || !partnerProfile) return null; // 또는 로딩/에러 상태 표시
 
@@ -43,12 +45,12 @@ const LoveArrowMatch = ({ isVisible, onClose, themeId = 1, myProfile, partnerPro
   let partnerIconColor: string;
   let myProfileBorderColor: string;
   let partnerProfileBorderColor: string;
-
-  if (themeId === 2) {
+  
+  if (curThemeId === 2) {
     myIconColor = "#9FC9FF";
     partnerIconColor = "#9FC9FF";
     myProfileBorderColor = "#9FC9FF";
-    partnerProfileBorderColor = "#9FC9FF";
+    partnerProfileBorderColor = "#9FC9FF"; // themeId 2일 때는 모두 동일 색상
   } else {
     myIconColor = nicknameToIconColorMap[myProfile.nickname] || "#FFB6C1";
     partnerIconColor = nicknameToIconColorMap[partnerProfile.nickname] || "#FFB6C1";
@@ -65,8 +67,8 @@ const LoveArrowMatch = ({ isVisible, onClose, themeId = 1, myProfile, partnerPro
     >
       <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
         <View style={styles.container}>
-          <Image source={require('@/assets/images/event/heartBoardBase.png')} style={styles.image} />
-          {themeId === 2 ? (
+          <Image source={require('@/assets/images/event/heartBoardBase.png')} style={styles.image} resizeMode="contain" />
+          {curThemeId === 2 ? (
             <FriendLetterForm 
               style={styles.friendTextForm}
               width={width * 0.8}

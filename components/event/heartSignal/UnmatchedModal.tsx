@@ -3,6 +3,7 @@ import BoardBase from '@/assets/images/event/heartBoardBase.png';
 import TextForm from '@/assets/images/event/textForm.svg';
 import { BlurView } from "expo-blur";
 import { useRouter } from 'expo-router';
+import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore 임포트
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -10,20 +11,19 @@ const { width, height } = Dimensions.get("window");
 interface UnmatchedModalProps {
   visible: boolean;
   onClose: () => void;
-  themeId?: number;
 }
 
-const UnmatchedModal = ({ visible, onClose, themeId = 1 }: UnmatchedModalProps) => {
+const UnmatchedModal = ({ visible, onClose }: UnmatchedModalProps) => {
   const router = useRouter();
+  const curThemeId = useHomeStore((state) => state.curThemeId); // HomeStore에서 curThemeId 가져오기
 
   const handleGoToMain = () => {
     onClose(); // 모달 닫기
     router.push('/chat'); // ChatMain으로 이동
   };
-
-  // themeId에 따른 색상 설정
-  const textColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const buttonColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  // curThemeId에 따른 색상 설정
+  const textColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const buttonColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
 
   return (
     <Modal
@@ -36,8 +36,8 @@ const UnmatchedModal = ({ visible, onClose, themeId = 1 }: UnmatchedModalProps) 
         <View style={styles.container}>
           <Image source={BoardBase} style={styles.boardBase} />
           
-          {/* themeId에 따른 조건부 렌더링 */}
-          {themeId === 2 ? (
+          {/* curThemeId에 따른 조건부 렌더링 */}
+          {curThemeId === 2 ? (
             <View style={styles.friendTextForm}>
               <FriendLetterForm width="100%" height="100%" />
             </View>

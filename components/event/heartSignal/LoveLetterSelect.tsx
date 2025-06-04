@@ -5,6 +5,7 @@ import SelectableOption from "./SelectableOption";
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트 (경로 가정)
 import useEventMessageStore from "@/zustand/stores/SecretMessageStore"; // EventMessageStore 임포트
 import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 임포트
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 
 // SVG 파일 import
 import DaoSvg from '@/assets/images/dice/dao.svg';
@@ -35,17 +36,16 @@ interface LoveLetterSelectProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (selectedIndex: number) => void;
-  themeId?: number;
 }
 
 const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
   visible,
   onClose,
   onConfirm,
-  themeId = 1,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   // SharedProfileStore에서 nickname 가져오기
+  const curThemeId = useHomeStore((state) => state.curThemeId); // HomeStore에서 curThemeId 가져오기
   const nickname = useSharedProfileStore((state) => state.nickname);
   const authMemberId = useAuthStore((state) => state.memberId); // AuthStore에서 memberId 가져오기
   const { setCurrentEventMessage } = useEventMessageStore((state) => state); // updateEventMessage 대신 setCurrentEventMessage 사용
@@ -54,8 +54,8 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
 
   // 옵션 목록 결정 로직 수정
   const baseOptions = useMemo(() => {
-    if (themeId === 2) {
-      // themeId가 2이면 모든 캐릭터 옵션을 합쳐서 반환
+    if (curThemeId === 2) {
+      // curThemeId가 2이면 모든 캐릭터 옵션을 합쳐서 반환
       return [...FEMALE_TARGET_OPTIONS, ...MALE_TARGET_OPTIONS];
     }
     // themeId가 2가 아닐 경우, 기존 로직 (닉네임 기반으로 성별 그룹 결정)
@@ -63,7 +63,7 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
       return MALE_TARGET_OPTIONS;
     }
     return FEMALE_TARGET_OPTIONS;
-  }, [nickname, themeId]); // themeId를 의존성 배열에 추가
+  }, [nickname, curThemeId]); // curThemeId를 의존성 배열에 추가
 
   // 자신의 닉네임이 있다면 목록에서 제외
   const optionsToDisplay = useMemo(() => {
@@ -84,19 +84,19 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
 
 
   // 테마별 색상 설정
-  const containerBorderColor = themeId === 2 ? "#9FC9FF" : "#FAD4DC";
-  const dividerColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const confirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FEBFC8";
-  const confirmButtonBorderColor = themeId === 2 ? "#6DA0E1" : "#FFD9DF";
-  const textColor = themeId === 2 ? "#879FC0" : "#A45C73";
-  const radioColor = themeId === 2 ? "#879FC0" : "#D6A0B1";
-  const checkmarkColor = themeId === 2 ? "#879FC0" : "#E04C65";
+  const containerBorderColor = curThemeId === 2 ? "#9FC9FF" : "#FAD4DC";
+  const dividerColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const confirmButtonColor = curThemeId === 2 ? "#9FC9FF" : "#FEBFC8";
+  const confirmButtonBorderColor = curThemeId === 2 ? "#6DA0E1" : "#FFD9DF";
+  const textColor = curThemeId === 2 ? "#879FC0" : "#A45C73";
+  const radioColor = curThemeId === 2 ? "#879FC0" : "#D6A0B1";
+  const checkmarkColor = curThemeId === 2 ? "#879FC0" : "#E04C65";
   // SVG 색상 결정 로직 수정
   let svgColor: string;
   let selectedSvgColor: string;
 
-  if (themeId === 2) {
-    svgColor = "#9FC9FF"; // themeId가 2일 때 기본 SVG 색상
+  if (curThemeId === 2) {
+    svgColor = "#9FC9FF"; // curThemeId가 2일 때 기본 SVG 색상
     selectedSvgColor = "#9FC9FF"; // themeId가 2일 때 선택된 SVG 색상
   } else {
     const shouldUseSpecialNicknameColor = nickname && TRIGGER_NICKNAMES.includes(nickname);

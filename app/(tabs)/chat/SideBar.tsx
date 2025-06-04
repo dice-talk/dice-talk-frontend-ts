@@ -12,6 +12,7 @@ import useChatRoomStore, { ChatParticipant } from '@/zustand/stores/ChatRoomStor
 import React, { useEffect, useMemo, useRef } from "react"; // useMemo와 React 임포트
 import { Animated, Dimensions, Pressable, StyleSheet, View } from "react-native";
 import { SvgProps } from "react-native-svg";
+import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore
 
 interface SideBarProps {
   visible: boolean;
@@ -46,7 +47,7 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
   const translateX = useRef(new Animated.Value(width)).current;
 
   // SideBar가 직접 themeId를 스토어에서 가져옴 (스타일링 목적)
-  const themeId = useChatRoomStore((state) => state.themeId) || 1;
+  const themeId = useHomeStore((state) => state.curThemeId) || 1;
   const chatParts = useChatRoomStore((state) => state.chatParts);
 
   const createdAtFromStore = useChatRoomStore((state) => state.createdAt); // createdAt 가져오기
@@ -133,11 +134,11 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
         </View>
         <View style={styles.content}>
           <View style={styles.topSection}>
-            <ChatEventNotice themeId={themeId} createdAt={createdAtFromStore} />
+            <ChatEventNotice createdAt={createdAtFromStore} />
           </View>
           <View style={styles.bottomSection}>
             <View style={{ flex: 1, width: '100%' }}>
-              <ActiveUser users={usersToDisplay} onProfilePress={handleProfilePress} themeId={themeId} />
+              <ActiveUser users={usersToDisplay} onProfilePress={handleProfilePress} />
             </View>
             <View style={{height: height * 0.05, justifyContent: 'center', width: '100%'}}>
             <View style={[styles.bottomLine, { backgroundColor: bottomLineColor }]} />

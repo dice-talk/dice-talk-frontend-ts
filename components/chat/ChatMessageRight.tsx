@@ -2,6 +2,7 @@ import React from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface ChatMessageProps {
@@ -12,7 +13,6 @@ interface ChatMessageProps {
   isConsecutive?: boolean; // 연속된 메시지인지 여부
   showTime?: boolean; // 시간을 표시할지 여부
   onPressProfile?: () => void;
-  themeId?: number; // ✅ 추가
 }
 
 const ChatMessageRight = ({
@@ -23,15 +23,15 @@ const ChatMessageRight = ({
   isConsecutive = false,
   showTime = true,
   onPressProfile,
-  themeId = 1, // ✅ 기본값
 }: ChatMessageProps) => {
   const ProfileImage = profileImage as React.FC<SvgProps>;
+  const curThemeId = useHomeStore((state) => state.curThemeId);
 
-  const bubbleColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const profileBorderColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
-  const nicknameColor = themeId === 2 ? "#5C5279" : "#F9BCC1";
-  const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
-  const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const bubbleColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const profileBorderColor = curThemeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  const nicknameColor = curThemeId === 2 ? "#5C5279" : "#F9BCC1";
+  const timeColor = curThemeId === 2 ? "#5C5279" : "#A88B9D";
+  const profileIconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
   
   return (
     <View style={[
