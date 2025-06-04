@@ -53,7 +53,9 @@ const NoticeSearchBar: React.FC<NoticeSearchBarProps> = ({
       Alert.alert("알림", "검색어는 2글자 이상 입력해주세요.");
       return;
     }
-    if (trimmedKeyword.length === 0 || trimmedKeyword.length >= 2 || selectedFilter !== 'ALL') {
+    if (trimmedKeyword.length === 0 || trimmedKeyword.length >= 2) {
+        onSearch(selectedFilter, trimmedKeyword);
+    } else if (selectedFilter !== 'ALL') {
         onSearch(selectedFilter, trimmedKeyword);
     } 
   };
@@ -83,6 +85,10 @@ const NoticeSearchBar: React.FC<NoticeSearchBarProps> = ({
     setSelectedFilter(value);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setDropdownVisible(false);
+
+    const trimmedKeyword = keyword.trim();
+    
+    onSearch(value, trimmedKeyword);
   };
 
   console.log("NoticeSearchBar rendering (fully restored)");

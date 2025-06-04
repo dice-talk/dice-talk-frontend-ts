@@ -20,14 +20,37 @@ import {
 import { loginMember } from '@/api/loginApi'; // EmailAPI를 loginAPI 등으로 변경 고려, 경로 확인 필요
 // AsyncStorage는 스토어 사용으로 대체 가능성 있음 (필요시 유지)
 // import AsyncStorage from '@react-native-async-storage/async-storage';
+import { sendPushTokenToServer } from '@/api/notificationApi'; // <<<<<< [수정] 주석 해제
+import useAuthStore from '@/zustand/stores/authStore'; // <<<<<< 스토어 임포트
+// import Constants from 'expo-constants'; // notificationUtils로 이동
+// import * as Device from 'expo-device'; // notificationUtils로 이동
+// import * as Notifications from 'expo-notifications'; // notificationUtils에서 주로 사용, 여기서는 직접 호출 X
+import { registerForPushNotificationsAsync } from '@/utils/notificationUtils'; // << IMPORT 경로 수정
 import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView 사용
+
+// 알림 핸들러: 앱이 실행 중일 때 알림이 오면 어떻게 처리할지 설정
+// 이 부분은 _layout.tsx 로 이동될 예정이므로 여기서는 주석 처리하거나 삭제 가능.
+// 만약 _layout.tsx에서 이미 설정했다면 여기서는 필요 없음.
+/*
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true, // 앱 실행 중에도 알림을 표시할지 여부
+    shouldPlaySound: false, // 소리 재생 여부 (앱 내 설정과 연동 가능)
+    shouldSetBadge: false, // 뱃지 카운트 설정 여부
+  }),
+});
+*/
 
 // LoginScreenProps 정의 (Expo Router 사용 시 페이지 컴포넌트는 별도 props를 잘 받지 않음)
 // interface LoginScreenProps {} // 필요시 정의
 
 export default function LoginScreen() {
   const router = useRouter();
-  // 스토어 set 함수들은 loginApi.ts에서 호출하므로 여기서는 직접 사용하지 않음
+  // const { memberInfo } = useAuthStore((state) => ({ // memberInfo에 id가 있다고 가정
+  //   memberInfo: state.memberInfo, // 이전 코드
+  // }));
+  // authStore에서 직접 memberId를 가져오도록 수정
+  const memberId = useAuthStore((state) => state.memberId);
 
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -51,6 +74,7 @@ export default function LoginScreen() {
 
   const canSubmit = isEmailValid && isPasswordValid && !isLoading;
 
+
   const handleLogin = async (): Promise<void> => {
     if (!canSubmit) {
       Alert.alert("입력 오류", "이메일과 비밀번호를 올바르게 입력해주세요.");
@@ -63,6 +87,29 @@ export default function LoginScreen() {
       const loginSuccess = await loginMember(email, password); 
       
       if (loginSuccess) {
+        console.log('로그인 성공, 푸시 알림 토큰 등록 및 전송 시도');
+        const expoPushToken = await registerForPushNotificationsAsync();
+
+        // memberInfo가 업데이트 되는 시점을 고려해야 할 수 있음 (loginMember 내부에서 스토어 업데이트 후 비동기적일 수 있음)
+        // authStore.getState().memberInfo?.id 와 같이 최신 상태를 직접 가져오는 것을 고려하거나,
+        // memberInfo가 확실히 업데이트된 후 이 로직을 실행하도록 보장해야 함.
+        // 여기서는 loginMember 후 memberInfo가 업데이트 되었다고 가정.
+        const currentMemberId = useAuthStore.getState().memberId; // 최신 ID 가져오기 (authStore 구조에 따름)
+
+        if (expoPushToken && currentMemberId) {
+          try {
+            await sendPushTokenToServer(currentMemberId, expoPushToken); // <<<<<< [수정] 주석 해제
+            console.log('Expo 푸시 토큰 서버 전송 성공:', expoPushToken, 'for memberId:', currentMemberId);
+          } catch (tokenError) {
+            console.error('Expo 푸시 토큰 서버 전송 실패 (LoginScreen catch):', tokenError);
+            // 사용자에게 이 오류를 직접적으로 알릴 필요는 없을 수 있지만, 개발/디버깅 시에는 중요합니다.
+            // Alert.alert('알림 설정 오류', '푸시 알림 설정을 완료하지 못했습니다. 나중에 다시 시도해주세요.');
+          }
+        } else {
+          if (!expoPushToken) console.log('Expo 푸시 토큰을 얻지 못했거나 실제 기기가 아닙니다. (서버 전송 시도 안 함)');
+          if (!currentMemberId) console.log('사용자 ID를 찾을 수 없어 토큰을 서버에 전송할 수 없습니다.');
+        }
+        
         // 스토어에 저장이 완료되었으므로, 여기서 스토어를 다시 읽을 필요 없이 바로 화면 전환
         console.log('로그인 성공 및 스토어 저장 확인, 홈으로 이동');
         router.replace('/(tabs)/home');

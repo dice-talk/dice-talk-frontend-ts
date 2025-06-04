@@ -11,7 +11,7 @@ const EmptyHistoryPlaceholder: React.FC<EmptyHistoryPlaceholderProps> = ({ type,
   const iconName = type === 'chat' ? 'chatbubbles-outline' : 'heart-outline';
   const defaultMessage = type === 'chat' 
     ? "아직 대화 내역이 없어요.\n새로운 친구와 이야기를 시작해보세요!"
-    : "주고받은 하트가 아직 없네요.";
+    : "받은 하트가 아직 없네요.";
   const displayMessage = message || defaultMessage;
 
   return (

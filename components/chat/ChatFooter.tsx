@@ -4,49 +4,47 @@ import Silence from "@/assets/images/chat/silence.svg";
 import Siren from "@/assets/images/chat/siren.svg";
 import ExitCostModal from "@/components/chat/ExitCostModal";
 import CustomCostModal from "@/components/common/CustomCostModal";
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 
 interface ChatFooterProps {
   onClose?: () => void;
-  onSirenPress?: () => void;
-  themeId?: number;
 }
 
-const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress, themeId = 1 }) => {
+const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
+  const chatRoomId = useChatRoomStore((state) => state.chatRoomId);
+  const themeId = useChatRoomStore((state) => state.themeId) || 1;
+  const router = useRouter();
+
   const iconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#D9B2D3";
   const textColor = themeId === 2 ? "#5C5279" : "#8A5A7A";
-  const router = useRouter();
+  
   const [isSilenced, setIsSilenced] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const [costModalVisible, setCostModalVisible] = useState(false);
 
   const handleExitPress = () => {
-    // 첫 번째 모달만 열기
     setExitModalVisible(true);
   };
 
   const handleExitCancel = () => {
-    // 첫 번째 모달만 닫기
     setExitModalVisible(false);
   };
 
   const handleExitConfirm = () => {
-    // 첫 번째 모달 닫고 두 번째 모달 열기
     setExitModalVisible(false);
     setCostModalVisible(true);
   };
 
   const handleCostConfirm = () => {
-    // 두 번째 모달 닫고 채팅방 나가기
     setCostModalVisible(false);
-    router.push("/chat");
+    router.push("/(tabs)/chat");
   };
 
   const handleCostCancel = () => {
-    // 두 번째 모달만 닫기
     setCostModalVisible(false);
   };
 
@@ -56,10 +54,15 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress, themeId 
 
   const handleSirenPress = () => {
     if (onClose) {
-      onClose(); // 사이드바 닫기
+      onClose();
     }
-    if (onSirenPress) {
-      onSirenPress(); // MessageCheckReport로 전환
+    if (chatRoomId) {
+      router.push({
+        pathname: "/chat/report/[id]" as any,
+        params: { id: chatRoomId.toString() },
+      });
+    } else {
+      console.warn("ChatRoom ID not found, cannot navigate to report page.");
     }
   };
 
@@ -96,6 +99,7 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress, themeId 
         onConfirm={handleExitConfirm}
         confirmButtonColor={confirmButtonColor}
         textColor={textColor}
+        // themeId={themeId} // 임시 주석 처리 (ExitCostModalProps에 themeId 추가 필요)
       />
 
       {/* 다이스 사용 모달 */}
@@ -103,11 +107,11 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose, onSirenPress, themeId 
         visible={costModalVisible}
         onClose={handleCostCancel}
         onConfirm={handleCostConfirm}
-        // content="하루에 2번 이상 \n채팅방을 나가셨습니다."
         diceCount={7}
         textColor={textColor}
         diceButtonColor={confirmButtonColor}
         cancelButtonColor={confirmButtonColor}
+        // themeId={themeId} // 임시 주석 처리 (CustomCostModalProps에 themeId 추가 필요)
       />
     </View>
   );
@@ -118,7 +122,7 @@ export default ChatFooter;
 const { height, width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "column", // 명시적으로 세로 방향 설정
+    flexDirection: "column",
     alignItems: "center",    
     width: width * 0.8,
   },
@@ -132,14 +136,14 @@ const styles = StyleSheet.create({
   leftContainer: {
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 5, // 터치 영역 확장
-    marginTop: -height * 0.025, // SVG를 위로 살짝 올림
+    padding: 5,
+    marginTop: -height * 0.025,
   },
   rightContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     gap: width * 0.05,
-    marginTop: -height * 0.025, // 양쪽 다 올릴 경우
+    marginTop: -height * 0.025,
   }
 });
