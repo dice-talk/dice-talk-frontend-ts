@@ -118,7 +118,7 @@ export const attemptAutoLogin = async (): Promise<boolean> => {
               nickname: anonymousInfo.nickname,
               profileImage: anonymousInfo.profile, // API 응답 필드명 확인 필요
               totalDice: anonymousInfo.totalDice,
-              isInChat: anonymousInfo.roomStatus === 'IN_CHAT' || anonymousInfo.exitStatus !== "ROOM_EXIT", // API 응답 필드명 확인 필요
+              isInChat: anonymousInfo.roomStatus === 'ROOM_ENTER' || anonymousInfo.exitStatus !== "ROOM_EXIT", // API 응답 필드명 확인 필요
             });
             console.log('attemptAutoLogin: 공유 프로필 정보 로드 성공.');
           } else {
