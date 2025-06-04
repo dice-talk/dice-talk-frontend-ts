@@ -1,6 +1,6 @@
 // 컬러 SVG import
 import DaoSvg from "@/assets/images/dice/dao.svg";
-import DoriSvg from "@/assets/images/dice/dori.svg";
+import DoriSvg from "@/assets/images/dice/dori.svg"; // 이미 존재
 import HanaSvg from "@/assets/images/dice/hana.svg";
 import NemoSvg from "@/assets/images/dice/nemo.svg";
 import SezziSvg from "@/assets/images/dice/sezzi.svg";
@@ -8,16 +8,18 @@ import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import CountPlusSvg from "@/assets/images/event/countPlus.svg";
 import FriendLetterForm from "@/assets/images/event/friend_letterForm.svg";
 import LetterForm from "@/assets/images/event/LetterForm.svg";
-import ToastMessage from "@/components/common/ToastMessage";
+import ToastMessage from "@/components/common/ToastMessage"; // 이미 존재
 import { sendRoomEvent } from "@/api/EventApi"; // sendRoomEvent 임포트
 import { EventMessageData } from "@/zustand/stores/SecretMessageStore"; // EventMessageData 타입 임포트
 import useArrowEventStore from "@/zustand/stores/ArrowEventStore"; // ArrowEventStore 임포트
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
-import React, { useState } from "react";
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
-
+// import { getPickEventsForRoom, RoomEventFromApi } from "@/api/EventApi"; // ChatRoomStore에서 roomEvents를 사용하므로 주석 처리
+import { useState } from "react";
+import CustomCostModal from "@/components/common/CustomCostModal"; // CustomCostModal 임포트
+import InsufficientItemModal from "@/components/common/DiceRechargeModal"; // InsufficientItemModal 임포트
 interface LoveArrowProps {
   visible: boolean;
   onClose: () => void;
@@ -36,11 +38,14 @@ interface CharacterInfo {
 const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE", remainingCount, themeId = 1 }) => {
   const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [showCustomCostModal, setShowCustomCostModal] = useState(false);
+  const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
   // 스토어 훅 사용
   const chatParts = useChatRoomStore((state) => state.chatParts);
   const currentAuthMemberId = useAuthStore((state) => state.memberId);
   const setArrowEventDetails = useArrowEventStore((state) => state.setArrowEventDetails);
   const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
+  const roomEvents = useChatRoomStore((state) => state.roomEvents); // roomEvents 상태 가져오기
 
   const handleIncrement = () => {
     // TODO: 필요 시 기능 구현
@@ -75,6 +80,20 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
 
   const handleConfirm = async () => { // async로 변경
     if (selectedCharacterIndex !== null) {
+      // ChatRoomStore의 roomEvents에서 사용자가 이미 PICK 이벤트를 보냈는지 확인
+      if (currentAuthMemberId && currentChatRoomId) {
+        const userAlreadyPicked = roomEvents.some(
+          event => event.senderId === currentAuthMemberId && event.roomEventType === "PICK" // roomEventType이 "PICK"인 이벤트 확인
+        );
+
+        if (userAlreadyPicked) {
+          console.log("이미 PICK 이벤트를 보냈습니다. CustomCostModal을 표시합니다.");
+          setShowCustomCostModal(true); // 내부 상태를 통해 CustomCostModal 표시
+          return; // 이후 로직 실행 중단
+        }
+      }
+
+      // 기존 선택 로직
       const selectedCharacter = characters[selectedCharacterIndex];
       const targetParticipant = chatParts.find(
         (participant: ChatParticipant) => participant.nickname === selectedCharacter.name
@@ -107,7 +126,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
           setShowToast(true);
           setTimeout(() => {
             setShowToast(false);
-            onClose(); 
+            onClose();
           }, 1500);
         } catch (error) {
           console.error("LoveArrow 이벤트 전송 실패:", error);
@@ -127,6 +146,27 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
       onClose();
     }
   };
+
+  // CustomCostModal 핸들러
+  const handleCustomCostConfirm = () => {
+    setShowCustomCostModal(false);
+    setShowInsufficientItemModal(true); // 아이템 부족 모달 표시
+  };
+
+  const handleCustomCostCancel = () => {
+    setShowCustomCostModal(false);
+  };
+
+  // InsufficientItemModal 핸들러
+  const handleGoToStore = () => {
+    setShowInsufficientItemModal(false);
+    // TODO: 상점 페이지로 이동하는 로직 추가
+    console.log('상점으로 이동');
+  };
+
+  const handleInsufficientItemCancel = () => {
+    setShowInsufficientItemModal(false);
+  };
   const width = SCREEN_WIDTH * 0.95;
   const height = SCREEN_WIDTH * 0.95;
   return (
@@ -136,61 +176,81 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <Image 
-          source={require('@/assets/images/event/heartBoardBase.png')} 
-          resizeMode="contain"
-          style={styles.heartboardImage}
-        />
-                  <Text style={[styles.title, { color: titleColor }]}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
-          {themeId === 2 ? (
-            <FriendLetterForm width={width * 0.55} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.37, zIndex: 3}} />
-          ) : (
-            <LetterForm width={width * 0.45} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.375, zIndex: 3}} />
-          )}
-        <View style={styles.charactersWrapper}>
-          <View style={styles.charactersContainer}>
-            {characters.map((character, index) => {
-              const isSelected = selectedCharacterIndex === index;
-              const SvgComponent = character.ColoredSvgComponent;
-              const svgColor = isSelected ? selectedColor : unselectedColor;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.characterItem}
-                  onPress={() => handleSelectCharacter(index)}
-                >
-                  <SvgComponent 
-                    width={35} 
-                    height={35} 
-                    style={styles.characterIcon} 
-                    color={svgColor}
-                  />
-                  <Text style={styles.characterName}>{character.name}</Text>
-                </TouchableOpacity>
-              );
-            })}
+      {/* LoveArrow 모달 내용 */}
+      {!showCustomCostModal && !showInsufficientItemModal && (
+        <View style={styles.modalOverlay}>
+          <Image 
+            source={require('@/assets/images/event/heartBoardBase.png')} 
+            resizeMode="contain"
+            style={styles.heartboardImage}
+          />
+          <Text style={[styles.title, { color: titleColor }]}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
+            {themeId === 2 ? (
+              <FriendLetterForm width={width * 0.55} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.37, zIndex: 3}} />
+            ) : (
+              <LetterForm width={width * 0.45} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.375, zIndex: 3}} />
+            )}
+          <View style={styles.charactersWrapper}>
+            <View style={styles.charactersContainer}>
+              {characters.map((character, index) => {
+                const isSelected = selectedCharacterIndex === index;
+                const SvgComponent = character.ColoredSvgComponent;
+                const svgColor = isSelected ? selectedColor : unselectedColor;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.characterItem}
+                    onPress={() => handleSelectCharacter(index)}
+                  >
+                    <SvgComponent 
+                      width={35} 
+                      height={35} 
+                      style={styles.characterIcon} 
+                      color={svgColor}
+                    />
+                    <Text style={styles.characterName}>{character.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <View style={styles.remainingCountRow}>
+              <Text style={styles.remainingCount}>첫번째 선택은 무료입니다. 신중한 선택을 해주세요</Text>
+            </View>
           </View>
-          <View style={styles.remainingCountRow}>
-            <Text style={styles.remainingCount}>남은 수정 횟수: {remainingCount}</Text>
-            <TouchableOpacity onPress={handleIncrement} style={{transform: [{ translateY: 2 }]}}>
-              <CountPlusSvg width={16} height={16} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[
+              styles.confirmButton,
+              { backgroundColor: confirmButtonColor, borderColor: confirmButtonBorderColor },
+              selectedCharacterIndex === null && styles.confirmButtonDisabled
+            ]}
+            onPress={handleConfirm}
+            disabled={selectedCharacterIndex === null}
+          >
+            <Text style={styles.confirmButtonText}>확인</Text>
+          </TouchableOpacity>
+          <ToastMessage message="선택이 완료되었습니다" visible={showToast} themeId={themeId} />
         </View>
-        <TouchableOpacity
-          style={[
-            styles.confirmButton,
-            { backgroundColor: confirmButtonColor, borderColor: confirmButtonBorderColor },
-            selectedCharacterIndex === null && styles.confirmButtonDisabled
-          ]}
-          onPress={handleConfirm}
-          disabled={selectedCharacterIndex === null}
-        >
-          <Text style={styles.confirmButtonText}>확인</Text>
-        </TouchableOpacity>
-        <ToastMessage message="선택이 완료되었습니다" visible={showToast} themeId={themeId} />
-      </View>
+      )}
+      {/* CustomCostModal (LoveArrow 모달 위에 표시될 수 있도록 조건부 렌더링) */}
+      <CustomCostModal
+        visible={showCustomCostModal}
+        onClose={handleCustomCostCancel}
+        onConfirm={handleCustomCostConfirm}
+        content="이벤트 수정은 아이템이 필요합니다"
+        diceCount={5}
+        textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
+        diceButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
+        cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
+      />
+      {/* InsufficientItemModal (LoveArrow 모달 위에 표시될 수 있도록 조건부 렌더링) */}
+      <InsufficientItemModal
+        visible={showInsufficientItemModal}
+        onClose={handleInsufficientItemCancel}
+        onGoToStore={handleGoToStore}
+        textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
+        storeButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
+        cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
+      />
     </Modal>
   );
 };
@@ -227,16 +287,15 @@ const styles = StyleSheet.create({
   },
   charactersContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-evenly", // Changed from "space-between"
     alignItems: "center",
-    width: SCREEN_WIDTH * 0.85,
+    width: SCREEN_WIDTH * 0.9, // Increased from 0.85
   },
   characterItem: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 10,
+    padding: 12, // Reduced padding
     borderRadius: 15,
-    width: SCREEN_WIDTH * 0.25,
+    width: SCREEN_WIDTH * 0.3, // Increased width
   },
   characterIcon: {
     marginTop: 5,
@@ -247,10 +306,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "white",
     textAlign: "center",
-    maxWidth: 80,
+    maxWidth: SCREEN_WIDTH * 0.28,
   },
   confirmButton: {
-    paddingVertical: 10,
+    paddingVertical: 5,
     paddingHorizontal: 60,
     borderRadius: 30,
     borderWidth: 2,
