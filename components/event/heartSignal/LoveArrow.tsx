@@ -72,8 +72,9 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
   };
 
   // themeId와 gender에 따른 색상 설정
-  const selectedColor = themeId === 2 
-    ? "#9FC9FF" 
+  // themeId가 2이면 무조건 #9FC9FF, 아니면 gender에 따라 결정
+  const selectedColor = themeId === 2
+    ? "#9FC9FF"
     : (gender === "MALE" ? "#F9BCC1" : "#9FC9FF");
   const unselectedColor = "#FFFFFF";
   

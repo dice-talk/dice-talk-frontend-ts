@@ -96,8 +96,8 @@ const LoveLetterSelect: React.FC<LoveLetterSelectProps> = ({
   let selectedSvgColor: string;
 
   if (themeId === 2) {
-    svgColor = "#9FC9FF";
-    selectedSvgColor = "#9FC9FF";
+    svgColor = "#9FC9FF"; // themeId가 2일 때 기본 SVG 색상
+    selectedSvgColor = "#9FC9FF"; // themeId가 2일 때 선택된 SVG 색상
   } else {
     const shouldUseSpecialNicknameColor = nickname && TRIGGER_NICKNAMES.includes(nickname);
     svgColor = shouldUseSpecialNicknameColor ? "#9FC9FF" : "#F9BCC1";
