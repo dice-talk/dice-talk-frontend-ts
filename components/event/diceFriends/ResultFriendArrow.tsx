@@ -1,5 +1,5 @@
 import DaoSvg from "@/assets/images/dice/dao.svg";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
@@ -14,6 +14,8 @@ import SezziSvg from "@/assets/images/dice/sezzi.svg";
 import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import DiceArrowAnimation from "../animation/DiceArrowAnimation";
 import DiceIconContainer from "./DiceIconContainer";
+import { getPickEventsForRoom } from "@/api/EventApi"; // API 호출 함수 임포트
+import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 임포트
 
 // 주사위 번호와 캐릭터 매핑
 const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
@@ -25,33 +27,56 @@ const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
   6: YukdaengSvg
 };
 
+// FetchedSelection 인터페이스 (ResultLoveArrow.tsx 참고)
+interface FetchedSelection {
+  fromId: number;
+  toId: number;
+  fromNickname?: string;
+  toNickname?: string;
+}
+
 interface ResultFriendArrowProps {
-  leftUsers?: any[];
-  rightUsers?: any[];
-  selections?: { from: number; to: number }[];
+  // selections prop은 내부적으로 데이터를 가져오므로 제거
   onClose?: () => void;
   onMatchPress?: () => void;  // 매칭 결과 버튼 클릭 핸들러
   themeId?: number;
 }
 
-interface Position {
-  x: number;
-  y: number;
-}
-
 const ResultFriendArrow: React.FC<ResultFriendArrowProps> = ({
-  selections = [
-    { from: 1, to: 2 },
-    { from: 1, to: 3 },
-    { from: 1, to: 4 },
-    { from: 1, to: 5 },
-    { from: 1, to: 6 },
-
-  ],
   onClose,
   onMatchPress,
-  themeId = 1
+  themeId = 2 // ResultFriendArrow는 themeId 2를 기본값으로 가정
 }) => {
+  const [fetchedSelections, setFetchedSelections] = useState<FetchedSelection[]>([]);
+  const chatParts = useChatRoomStore((state) => state.chatParts);
+
+  useEffect(() => {
+    const fetchSelectionsAndNicknames = async () => {
+      try {
+        const events = await getPickEventsForRoom(); // API 호출
+        const mappedSelections: FetchedSelection[] = events.map(event => {
+          const sender = chatParts.find((p: ChatParticipant) => p.memberId === event.senderId);
+          const receiver = chatParts.find((p: ChatParticipant) => p.memberId === event.receiverId);
+          return {
+            fromId: event.senderId,
+            toId: event.receiverId,
+            fromNickname: sender?.nickname,
+            toNickname: receiver?.nickname
+          };
+        });
+        setFetchedSelections(mappedSelections);
+      } catch (error) {
+        console.error("🔥 selections 불러오기 실패 (ResultFriendArrow):", error);
+        setFetchedSelections([]); // 오류 발생 시 빈 배열로 설정
+      }
+    };
+    if (chatParts && chatParts.length > 0) {
+      fetchSelectionsAndNicknames();
+    } else {
+      setFetchedSelections([]);
+    }
+  }, [chatParts]);
+
   // 테마별 색상 설정
   const matchButtonColor = themeId === 2 ? "#9FC9FF" : "#FFB6C1";
   const matchButtonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD6DD";
@@ -62,15 +87,21 @@ const ResultFriendArrow: React.FC<ResultFriendArrowProps> = ({
         style={styles.backgroundImage}
         resizeMode="contain"
       />
-      
-      {selections.map((selection, index) => (
-        <DiceArrowAnimation
-          key={`arrow-${index}`}
-          fromId={selection.from}
-          toId={selection.to}
-          useHexagonLayout={true}
-        />
-      ))}
+
+      {fetchedSelections.map((selection, index) => {
+        // fromNickname과 toNickname이 모두 유효한 경우에만 렌더링
+        if (selection.fromNickname && selection.toNickname) {
+          return (
+            <DiceArrowAnimation
+              key={`arrow-${index}-${selection.fromId}-${selection.toId}`}
+              fromNickname={selection.fromNickname}
+              toNickname={selection.toNickname}
+              useHexagonLayout={themeId === 2} // themeId에 따라 육각형 레이아웃 사용 결정
+            />
+          );
+        }
+        return null; // 닉네임이 유효하지 않으면 렌더링하지 않음
+      })}
       {/* 6각형 형태로 아이콘 배치 */}
       <DiceIconContainer 
         svgComponents={[HanaSvg, DoriSvg, SezziSvg, NemoSvg, DaoSvg, YukdaengSvg]}

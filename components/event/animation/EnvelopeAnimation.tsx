@@ -1,6 +1,9 @@
 import LetterForm from '@/assets/images/event/LetterForm.svg';
 import FriendLetterForm from '@/assets/images/event/friend_letterForm.svg';
-import React, { useEffect, useRef, useState } from "react";
+import useEventMessageStore, { EventMessageData } from "@/zustand/stores/SecretMessageStore"; // EventMessageStore 및 타입 임포트
+import { sendRoomEvent } from '@/api/EventApi'; // API 호출 함수 임포트
+import axios from 'axios'; // isAxiosError 사용을 위해 임포트
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -29,6 +32,8 @@ interface EnvelopeAnimationProps {
   content?: React.ReactNode;
   autoPlay?: boolean;
   themeId?: number;
+  isReadOnly?: boolean; // 읽기 전용 모드 (받은 편지 보기)
+  messages?: string[]; // 읽기 전용 모드일 때 표시할 메시지 배열
 }
 
 const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
@@ -36,12 +41,18 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
   content,
   autoPlay = false,
   themeId = 1,
+  isReadOnly = false, // 기본값은 false (쓰기 모드)
+  messages = [],    // 기본값은 빈 배열
 }) => {
   // 애니메이션 상태
   const [isOpen, setIsOpen] = useState(false);
   // 편지 내용 상태 추가
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [letterText, setLetterText] = useState('');
   
+  // EventMessageStore에서 updateEventMessage 액션 가져오기
+  const { updateEventMessage } = useEventMessageStore();
+
   // 테마에 따른 이미지 선택
   const LETTER_IMAGES = themeId === 2 ? FRIEND_LETTER_IMAGES : LOVE_LETTER_IMAGES;
   const mainLetterImage = themeId === 2 
@@ -164,32 +175,121 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
     });
   };
   
-  // autoPlay가 true면 자동으로 애니메이션 시작
+  // isReadOnly가 true이거나 autoPlay가 true면 자동으로 애니메이션 시작
   useEffect(() => {
-    if (autoPlay) {
+    if (isReadOnly) {
+      // isReadOnly가 true이면 지연 없이 바로 애니메이션 시작
+      // playAnimation 함수 내부에 이미 isOpen 상태를 체크하는 로직이 있음
+      playAnimation();
+    } else if (autoPlay) {
+      // isReadOnly가 false이고 autoPlay가 true이면 기존 로직대로 500ms 지연 후 시작
       const timer = setTimeout(() => {
         playAnimation();
       }, 500);
-      
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isReadOnly, autoPlay]); // isReadOnly 또는 autoPlay 값이 변경될 때 이 효과를 다시 실행
   
+  // isReadOnly 또는 messages prop 변경 시 currentMessageIndex 초기화
+  useEffect(() => {
+    if (isReadOnly) {
+      setCurrentMessageIndex(0);
+    }
+  }, [isReadOnly, messages]);
+
   // 보내기 버튼 클릭 핸들러
-  const handleSendPress = () => {
-    // 보내기 버튼 클릭 시 페이드 아웃 애니메이션 후 콜백 호출
+  const handleSendPress = async () => {
+    if (!isLetterValid()) {
+      // Toast.show({ type: 'info', text1: '알림', text2: '메시지를 입력해주세요.' });
+      console.log("메시지를 입력해주세요."); // 실제 토스트 메시지로 대체하세요.
+      return;
+    }
+
+    // 1. Zustand 스토어에 메시지 업데이트
+    updateEventMessage({ message: letterText });
+    // 스토어 업데이트 후 상태 확인
+    console.log("📬 EventMessageStore 상태 업데이트 후:", useEventMessageStore.getState());
+
+    // 스토어에서 최신 상태 가져오기
+    const currentState = useEventMessageStore.getState();
+
+    // currentEventMessage가 null이거나, 필수 ID들이 없는 경우를 더 안전하게 확인
+    // API 호출에 필요한 모든 필드가 있는지 확인하는 것이 좋습니다.
+    if (!currentState.currentEventMessage ||
+        currentState.currentEventMessage.senderId === undefined || currentState.currentEventMessage.senderId === null || currentState.currentEventMessage.senderId === 0 ||
+        currentState.currentEventMessage.receiverId === undefined || currentState.currentEventMessage.receiverId === null || currentState.currentEventMessage.receiverId === 0 ||
+        currentState.currentEventMessage.eventId === undefined || currentState.currentEventMessage.eventId === null ||
+        currentState.currentEventMessage.chatRoomId === undefined || currentState.currentEventMessage.chatRoomId === null ||
+        currentState.currentEventMessage.roomEventType === undefined || currentState.currentEventMessage.roomEventType === ''
+    ) {
+      console.error("fromId 또는 toId가 스토어에 없거나 유효하지 않습니다. 룸 이벤트를 보낼 수 없습니다.");
+      // Toast.show({ type: 'error', text1: '오류', text2: '메시지 전송에 필요한 사용자 정보가 없습니다.' });
+      console.log("메시지 전송에 필요한 사용자 정보가 없습니다."); // 실제 토스트 메시지로 대체하세요.
+      // API 호출을 건너뛰더라도 애니메이션 완료 처리는 수행
+      Animated.timing(containerOpacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        if (onAnimationComplete) {
+          onAnimationComplete();
+        }
+      });
+      return;
+    }
+
+    try {
+      // 2. API 호출 (sendRoomEvent)
+      const apiResponse = await sendRoomEvent(currentState.currentEventMessage); // 스토어에서 가져온 EventMessageData 객체를 인자로 전달
+    } catch (error) {
+      console.error("시크릿 메시지 전송 API 호출 중 오류 발생:", error);
+      // Toast.show({ type: 'error', text1: '오류', text2: '시크릿 메시지 전송에 실패했습니다. 다시 시도해주세요.' });
+      console.log("시크릿 메시지 전송에 실패했습니다. 다시 시도해주세요."); // 실제 토스트 메시지로 대체하세요.
+      if (axios.isAxiosError(error) && error.response) {
+        console.error("API 오류 상세:", error.response.data, error.response.status);
+      }
+    }
+
+    // 4. 애니메이션 완료 처리 (페이드 아웃 후 onAnimationComplete 콜백 호출)
     Animated.timing(containerOpacity, {
       toValue: 0,
       duration: 500,
       useNativeDriver: true,
     }).start(() => {
-      // 여기서 onAnimationComplete 콜백을 호출하여 부모 컴포넌트에 완료를 알림
       if (onAnimationComplete) {
         onAnimationComplete();
       }
     });
   };
   
+  // 읽기 전용 모드: 이전 메시지 보기
+  const handlePreviousMessage = useCallback(() => {
+    setCurrentMessageIndex(prevIndex => Math.max(0, prevIndex - 1));
+  }, []);
+
+  // 읽기 전용 모드: 다음 메시지 보기
+  const handleNextMessage = useCallback(() => {
+    setCurrentMessageIndex(prevIndex => Math.min(messages.length - 1, prevIndex + 1));
+  }, [messages.length]);
+
+  // 읽기 전용 모드: 확인 버튼 클릭 핸들러
+  const handleReadOnlyConfirm = useCallback(() => {
+    Animated.timing(containerOpacity, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      if (onAnimationComplete) {
+        onAnimationComplete();
+      }
+      // 상태 초기화 (필요한 경우)
+      setIsOpen(false);
+      setCurrentMessageIndex(0);
+      // letterOffset, letterScale 등 애니메이션 값들도 초기화할 수 있음
+      // playAnimation()이 다시 호출될 때를 대비
+    });
+  }, [onAnimationComplete, containerOpacity]);
+
   return (
     <Animated.View style={[styles.container, { opacity: containerOpacity }]}>
       <Pressable onPress={playAnimation} disabled={isOpen}>
@@ -248,36 +348,79 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
                 <FriendLetterForm width="100%" height="100%" />
               
               </Animated.View>
-            ) : (
+            ) : ( // themeId === 1 (love)
             <Animated.View style={[styles.mainLetterSvgWrapper, { opacity: letterFormOpacity }]}>
               <LetterForm width="100%" height="100%" />
             </Animated.View>
             )}
-            <Animated.View style={[themeId === 2 ? styles.friendLetterInputWrapper : styles.letterInputWrapper, { opacity: letterTextOpacity }]}>
-              <TextInput
-                style={[themeId === 2 ? styles.friendLetterInput : styles.letterInput, { color: textColor }]}
-                placeholder="마음에 드는 상대에게 보낼 내용을 작성하세요"
-                placeholderTextColor={placeholderColor}
-                value={letterText}
-                onChangeText={setLetterText}
-                multiline
-              />
+
+            {/* Content Area: TextInput or ReadOnly Message + Nav */}
+            <Animated.View style={[
+              themeId === 2 ? styles.friendLetterInputWrapper : styles.letterInputWrapper,
+              { opacity: letterTextOpacity }
+            ]}>
+              {isReadOnly ? (
+                <View style={styles.readOnlyMessageDisplayArea}>
+                  <View style={styles.messageScrollView}>
+                    <Text style={[
+                      themeId === 2 ? styles.friendReceivedMessageText : styles.receivedMessageText,
+                      { color: textColor }
+                    ]}
+                    numberOfLines={6} // 여러 줄 표시, 필요시 ScrollView로 변경 가능
+                    ellipsizeMode="tail"
+                    >
+                      {(messages && messages.length > 0 && messages[currentMessageIndex]) || "메시지를 불러올 수 없습니다."}
+                    </Text>
+                  </View>
+                  {messages && messages.length > 1 && (
+                    <View style={styles.navigationButtonsContainer}>
+                      <TouchableOpacity onPress={handlePreviousMessage} disabled={currentMessageIndex === 0} style={[styles.navButton, currentMessageIndex === 0 && styles.navButtonDisabled]}>
+                        <Text style={styles.navButtonText}>이전</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.messageCounterText}>{`${currentMessageIndex + 1} / ${messages.length}`}</Text>
+                      <TouchableOpacity onPress={handleNextMessage} disabled={currentMessageIndex === messages.length - 1} style={[styles.navButton, currentMessageIndex === messages.length - 1 && styles.navButtonDisabled]}>
+                        <Text style={styles.navButtonText}>다음</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              ) : ( // 쓰기 모드
+                  <TextInput
+                    style={[themeId === 2 ? styles.friendLetterInput : styles.letterInput, { color: textColor }]}
+                    placeholder="마음에 드는 상대에게 보낼 내용을 작성하세요"
+                    placeholderTextColor={placeholderColor}
+                    value={letterText}
+                    onChangeText={setLetterText}
+                    multiline
+                    maxLength={150} // 예시: 최대 글자 수 제한
+                  />
+              )}
             </Animated.View>
+
+            {/* Bottom Button Area: Send or Confirm */}
             <Animated.View style={[styles.sendButtonWrapper, { opacity: letterTextOpacity }]}>
-              <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  { backgroundColor: sendButtonColor, borderColor: sendButtonBorderColor },
-                  !isLetterValid() && styles.sendButtonDisabled
-                ]}
-                onPress={handleSendPress}
-                disabled={!isLetterValid()}
-              >
-                <Text style={[
-                  styles.sendButtonText,
-                  !isLetterValid() && styles.sendButtonTextDisabled
-                ]}>보내기</Text>
-              </TouchableOpacity>
+              {isReadOnly ? (
+                // 읽기 전용 모드일 때 "확인" 버튼
+                  <TouchableOpacity
+                    style={[styles.sendButton, { backgroundColor: sendButtonColor, borderColor: sendButtonBorderColor }]}
+                    onPress={handleReadOnlyConfirm}
+                  >
+                    <Text style={[styles.sendButtonText]}>확인</Text>
+                  </TouchableOpacity>
+              ) : (
+                // 쓰기 모드일 때 "보내기" 버튼
+                <TouchableOpacity
+                  style={[
+                    styles.sendButton,
+                    { backgroundColor: sendButtonColor, borderColor: sendButtonBorderColor },
+                    !isLetterValid() && styles.sendButtonDisabled,
+                  ]}
+                  onPress={handleSendPress}
+                  disabled={!isLetterValid()}
+                >
+                  <Text style={[styles.sendButtonText, !isLetterValid() && styles.sendButtonTextDisabled]}>보내기</Text>
+                </TouchableOpacity>
+              )}
             </Animated.View>
           </Animated.View>
         </View>
@@ -391,6 +534,18 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT * 0.12,
     textAlignVertical: 'top',
   },
+  receivedMessageText: { // 받은 메시지 텍스트 스타일
+    fontSize: 11,
+    marginBottom: 4, // 메시지 간 간격
+    lineHeight: 16,
+    textAlign: 'center', // 메시지 중앙 정렬
+  },
+  friendReceivedMessageText: { // 친구 테마 받은 메시지 텍스트 스타일
+    fontSize: 11,
+    marginBottom: 4,
+    lineHeight: 16,
+    textAlign: 'center', // 메시지 중앙 정렬
+  },
   sendButtonWrapper: {
     position: 'absolute',
     bottom: SCREEN_HEIGHT * 0.01,
@@ -419,6 +574,50 @@ const styles = StyleSheet.create({
   sendButtonTextDisabled: {
     color: '#A0A0A0',
   },
+  // 읽기 전용 모드 스타일
+  readOnlyMessageDisplayArea: {
+    flex: 1, // 부모(letterInputWrapper)의 공간을 채움
+    justifyContent: 'space-between', // 메시지와 네비게이션 버튼 공간 분배
+    paddingVertical: 4, // TextInput과 유사한 패딩
+    paddingHorizontal: 12,
+  },
+  messageScrollView: {
+    flex: 1, // 가능한 많은 공간 차지
+    maxHeight: SCREEN_HEIGHT * 0.08, // TextInput 높이보다 약간 작게 설정하여 네비게이션 공간 확보
+  },
+  navigationButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: SCREEN_HEIGHT * 0.005, // 메시지 영역과 약간의 간격
+    height: SCREEN_HEIGHT * 0.03, // 네비게이션 버튼 높이
+  },
+  navButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    // backgroundColor: '#f0f0f0', // 버튼 배경색 (테마에 맞게 조정 가능)
+    // borderRadius: 5,
+  },
+  navButtonDisabled: {
+    opacity: 0.5,
+  },
+  navButtonText: {
+    fontSize: 10,
+    color: '#333', // 버튼 텍스트 색상 (테마에 맞게 조정 가능)
+    fontWeight: '500',
+  },
+  messageCounterText: {
+    fontSize: 10,
+    color: '#555', // 카운터 텍스트 색상 (테마에 맞게 조정 가능)
+  },
+  // confirmButtonReadOnly: { // sendButton 스타일 재활용 가능
+  //   backgroundColor: '#FEBFC8', // sendButton과 동일하게
+  //   paddingHorizontal: 60,
+  //   paddingVertical: 3,
+  //   borderRadius: 30,
+  //   borderWidth: 2,
+  //   borderColor: '#FFD9DF', // sendButton과 동일하게
+  // },
 });
 
 export default EnvelopeAnimation; 

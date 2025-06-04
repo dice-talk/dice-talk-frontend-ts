@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
+import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 
 // 사용자 데이터 타입 정의
 interface User {
   id: string;
+  memberId: number; // 사용자 고유 memberId 추가
   name: string;
   profileSvg: React.FC<SvgProps>;
 }
@@ -17,11 +19,17 @@ interface ActiveUserProps {
 }
 
 const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => {
+  // AuthStore에서 현재 사용자의 memberId 가져오기
+  const currentUserMemberId = useAuthStore((state) => state.memberId);
+  // console.log("ActiveUser - 현재 사용자 Member ID (from authStore):", currentUserMemberId, "(Type:", typeof currentUserMemberId, ")");
+
   // 특정 닉네임 목록
   const specialNicknames = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
 
   // 개별 유저 렌더링 함수
   const renderUser = ({ item }: { item: User }) => {
+    // console.log("ActiveUser - Rendering User - item.id (partId):", item.id, "item.memberId:", item.memberId, "Name:", item.name);
+
     let currentProfileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
     let currentProfileBorderColor = themeId === 2 ? "#9FC9FF" : "#DEC2DB";
     let currentUserNameColor = themeId === 2 ? "#5C5279" : "#7c4762";
@@ -33,18 +41,49 @@ const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => 
       currentUserNameColor = "#5C5279";
     }
 
+    // 현재 사용자인지 확인 (item.memberId와 currentUserMemberId를 직접 비교)
+    const isCurrentUser = item.memberId === currentUserMemberId;
+
     return (
       <View style={styles.userItem}>
+        {/* 프로필 이미지 */}
         <TouchableOpacity
           style={[styles.profileCircle, { borderColor: currentProfileBorderColor }]}
           onPress={() => onProfilePress && onProfilePress(item)}
         >
           <item.profileSvg width={24} height={24} color={currentProfileIconColor} />
         </TouchableOpacity>
+
+        {/* "나" 표시 (현재 사용자일 경우) */}
+        {isCurrentUser && (
+          <View style={[
+            styles.meIndicatorCircle,
+            { backgroundColor: themeId === 2 ? '#9FC9FF' : '#F9BCC1' } // 테마에 따른 배경색 적용
+          ]}>
+            <Text style={styles.meIndicatorText}>나</Text>
+          </View>
+        )}
+
+        {/* 사용자 이름 */}
         <Text style={[styles.userName, { color: currentUserNameColor }]}>{item.name}</Text>
       </View>
     );
   };
+
+  // 현재 사용자를 맨 위로 오도록 정렬된 사용자 목록 생성
+  const sortedUsers = useMemo(() => {
+    if (!currentUserMemberId || !users || users.length === 0) {
+      return users;
+    }
+    // 현재 사용자를 찾을 때도 memberId를 사용합니다.
+    const currentUserIndex = users.findIndex(user => user.memberId === currentUserMemberId);
+    if (currentUserIndex > -1) {
+      const currentUser = users[currentUserIndex];
+      const otherUsers = users.filter((_, index) => index !== currentUserIndex);
+      return [currentUser, ...otherUsers];
+    }
+    return users;
+  }, [users, currentUserMemberId]);
 
   return (
     <View style={styles.container}>
@@ -52,7 +91,7 @@ const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => 
         <Text style={styles.headerText}>대화상대</Text>
     </View>
       <FlatList
-        data={users}
+        data={sortedUsers} // 정렬된 사용자 목록 사용
         renderItem={renderUser}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -141,5 +180,19 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     elevation: 5, // Android에서 z-index와 유사한 역할
+  },
+  meIndicatorCircle: {
+    width: 22, // 동그라미 크기
+    height: 22, // 동그라미 크기
+    borderRadius: 11, // 동그라미로 만들기 위해 너비/높이의 절반
+    // backgroundColor 는 renderUser 함수 내에서 동적으로 설정됩니다.
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,   // 동그라미와 닉네임 사이의 간격
+  },
+  meIndicatorText: {
+    fontSize: 12,
+    fontWeight: 'light',
+    color: '#ffffff', // "나" 텍스트 색상 (흰색)
   },
 });
