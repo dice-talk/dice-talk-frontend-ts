@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -22,11 +23,11 @@ interface ReportModalProps {
   visible: boolean;
   onSubmitReport: (reasons: string[]) => void; // 신고 사유를 전달하며 실제 신고 처리 요청
   onDismiss: () => void; // 모달을 단순히 닫는 경우
-  themeId?: number;
 }
 
-const ReportModal: React.FC<ReportModalProps> = ({ visible, onSubmitReport, onDismiss, themeId = 1 }) => {
+const ReportModal: React.FC<ReportModalProps> = ({ visible, onSubmitReport, onDismiss }) => {
   const [selectedReason, setSelectedReason] = useState<string | null>(null); // 단일 선택으로 변경
+  const curThemeId = useHomeStore((state) => state.curThemeId);
 
   useEffect(() => {
     // 모달이 화면에 표시될 때 (visible 프롭이 true가 될 때)
@@ -56,9 +57,9 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onSubmitReport, onDi
   const isConfirmEnabled = selectedReason !== null; // 단일 선택 여부로 변경
   
   // 테마에 따른 색상 설정
-  const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#EF5A52";
-  const titleColor = themeId === 2 ? "#5C5279" : "#000000";
-  const subtitleColor = themeId === 2 ? "#5C5279" : "#000000";
+  const confirmButtonColor = curThemeId === 2 ? "#6DA0E1" : "#EF5A52";
+  const titleColor = curThemeId === 2 ? "#5C5279" : "#000000";
+  const subtitleColor = curThemeId === 2 ? "#5C5279" : "#000000";
 
   return (
     <Modal visible={visible} transparent animationType="fade">

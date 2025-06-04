@@ -1,5 +1,6 @@
 import React from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -14,7 +15,6 @@ interface ChatMessageProps {
   isConsecutive?: boolean; // 연속된 메시지인지 여부
   showTime?: boolean; // 시간을 표시할지 여부
   onPressProfile?: () => void;
-  themeId?: number; // 테마 아이디 추가
 }
 
 const ChatMessageLeft = ({ 
@@ -25,25 +25,24 @@ const ChatMessageLeft = ({
   isConsecutive = false,
   showTime = true,
   onPressProfile,
-  themeId = 1,
 }: ChatMessageProps) => {
   const ProfileImage = profileImage as ProfileImageType;
+  const curThemeId = useHomeStore((state) => state.curThemeId);
   
   // 특정 닉네임 목록
   const specialNicknames = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
 
-  let nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
-  let timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
-  let bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
-  let profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D4B6D4";
-  let profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  let nicknameColor = curThemeId === 2 ? "#5C5279" : "#984A78";
+  let timeColor = curThemeId === 2 ? "#5C5279" : "#A88B9D";
+  let bubbleColor = curThemeId === 2 ? "#B8C5E0" : "#DEBBDF";
+  let profileBorderColor = curThemeId === 2 ? "#9FC9FF" : "#D4B6D4";
+  let profileIconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
 
   // 요청된 조건: themeId가 1이고, 닉네임이 specialNicknames에 포함될 경우
-  if (themeId === 1 && specialNicknames.includes(nickname)) {
+  if (curThemeId === 1 && specialNicknames.includes(nickname)) {
     profileBorderColor = "#9FC9FF";
     profileIconColor = "#9FC9FF";
   }
-  
   return (
     <View style={[
       styles.container, 

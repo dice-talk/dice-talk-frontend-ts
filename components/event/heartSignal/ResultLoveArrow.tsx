@@ -10,9 +10,8 @@ import NemoSvg from "@/assets/images/dice/nemo.svg";
 import SezziSvg from "@/assets/images/dice/sezzi.svg";
 import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import DiceArrowAnimation from "../animation/DiceArrowAnimation";
-import DiceIconContainer from "./DiceIconContainer";
 import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore";
-
+import DiceIconContainer from "./DiceIconContainer"
 // 주사위 번호와 캐릭터 매핑
 const diceCharacterMap: Record<number, React.FC<SvgProps>> = {
   1: HanaSvg,
@@ -33,10 +32,7 @@ interface FetchedSelection {
 interface ResultLoveArrowProps {
   leftUserIds?: number[]; // 왼쪽 사용자/캐릭터 ID 배열
   rightUserIds?: number[]; // 오른쪽 사용자/캐릭터 ID 배열
-  // selections prop은 내부적으로 데이터를 가져오므로 주석 처리하거나 제거할 수 있습니다.
-  // selections?: { from: number; to: number }[];
-  // onClose prop이 현재 컴포넌트 로직에서 사용되지 않는다면 주석 처리하거나 제거할 수 있습니다.
-  // onClose?: () => void;
+  onClose?: () => void; // 모달을 닫기 위한 콜백
   onMatchPress?: () => void;  // 매칭 결과 버튼 클릭 핸들러
   themeId?: number; // themeId prop 추가
 }
@@ -45,7 +41,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
   leftUserIds = [1, 3, 5], // 기본값: 하나, 세찌, 다오
   rightUserIds = [2, 4, 6], // 기본값: 두리, 네몽, 육땡
   // selections, // prop을 사용하지 않는다면 제거
-  // onClose,    // prop을 사용하지 않는다면 제거
+  onClose,
   onMatchPress,
   themeId = 2 // themeId 기본값 설정
 }) => {
@@ -80,6 +76,15 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
     }
   }, [chatParts]); // chatParts가 변경될 때마다 useEffect를 다시 실행합니다.
 
+  const handleButtonPress = () => {
+    if (onMatchPress) {
+      onMatchPress();
+    }
+    if (onClose) { // 모달 닫기 콜백 호출
+      onClose();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Image
@@ -96,7 +101,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
               key={`arrow-${index}-${selection.fromId}-${selection.toId}`} // 더 고유한 key 사용
               fromNickname={selection.fromNickname}
               toNickname={selection.toNickname}
-              useHexagonLayout={themeId === 2} // themeId가 2이면 true, 아니면 false
+
             />
           );
         }
@@ -126,7 +131,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
       {/* 매칭 결과 버튼 */}
       <TouchableOpacity 
         style={styles.matchButton}
-        onPress={onMatchPress}
+        onPress={handleButtonPress} // 수정된 핸들러 사용
       >
         <Text style={styles.matchButtonText}>매칭 결과 보기</Text>
       </TouchableOpacity>

@@ -24,10 +24,10 @@ interface LoveArrowProps {
   onClose: () => void;
   gender?: "MALE" | "FEMALE";
   remainingCount: number;
-  themeId?: number;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 
 interface CharacterInfo {
   name: string;
@@ -55,8 +55,8 @@ const MALE_CHARACTERS_DEFAULT: CharacterInfo[] = [
   { name: "육감적인 직감파 육땡", ColoredSvgComponent: YukdaengSvg }, // '육댕'이 아닌 '육땡'으로 가정
 ];
 
-const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE", remainingCount, themeId = 1 }) => {
-  const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null);
+const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE" }) => {
+  const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null); // themeId prop 제거
   const [showToast, setShowToast] = useState(false);
   const [showCustomCostModal, setShowCustomCostModal] = useState(false);
   const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
@@ -65,26 +65,23 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
   const currentAuthMemberId = useAuthStore((state) => state.memberId);
   const setArrowEventDetails = useArrowEventStore((state) => state.setArrowEventDetails);
   const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
-  const roomEvents = useChatRoomStore((state) => state.roomEvents); // roomEvents 상태 가져오기
+  const roomEvents = useChatRoomStore((state) => state.roomEvents);
+  const curThemeId = useHomeStore((state) => state.curThemeId); // HomeStore에서 curThemeId 가져오기
 
-  const handleIncrement = () => {
-    // TODO: 필요 시 기능 구현
-  };
-
-  // themeId와 gender에 따른 색상 설정
-  // themeId가 2이면 무조건 #9FC9FF, 아니면 gender에 따라 결정
-  const selectedColor = themeId === 2
+  // curThemeId와 gender에 따른 색상 설정
+  // curThemeId가 2이면 무조건 #9FC9FF, 아니면 gender에 따라 결정
+  const selectedColor = curThemeId === 2
     ? "#9FC9FF"
     : (gender === "MALE" ? "#F9BCC1" : "#9FC9FF");
   const unselectedColor = "#FFFFFF";
   
   // 테마별 UI 색상 설정
-  const titleColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const confirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FEBFC8";
-  const confirmButtonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD9DF";
+  const titleColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  const confirmButtonColor = curThemeId === 2 ? "#9FC9FF" : "#FEBFC8";
+  const confirmButtonBorderColor = curThemeId === 2 ? "#9FC9FF" : "#FFD9DF";
 
   const characters: CharacterInfo[] = useMemo(() => {
-    if (themeId === 2) {
+    if (curThemeId === 2) {
       if (!chatParts || chatParts.length === 0 || !currentAuthMemberId) {
         return [];
       }
@@ -101,7 +98,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
       // themeId가 2가 아닐 경우 기존 gender 기반 로직 사용
       return gender === "MALE" ? FEMALE_CHARACTERS_DEFAULT : MALE_CHARACTERS_DEFAULT;
     }
-  }, [themeId, chatParts, currentAuthMemberId, gender]);
+  }, [curThemeId, chatParts, currentAuthMemberId, gender]);
 
 
   const handleSelectCharacter = (index: number) => {
@@ -210,12 +207,12 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
       {!showCustomCostModal && !showInsufficientItemModal && (
         <View style={styles.modalOverlay}>
           <Image 
-            source={require('@/assets/images/event/heartBoardBase.png')} 
-            resizeMode={themeId !== 2 ? "contain" : "stretch"}
-            style={themeId !== 2 ? styles.heartboardImage : styles.friendBoardImage}
+            source={require('@/assets/images/event/heartBoardBase.png')}
+            resizeMode={curThemeId !== 2 ? "contain" : "stretch"}
+            style={curThemeId !== 2 ? styles.heartboardImage : styles.friendBoardImage}
           />
-          <Text style={[themeId !== 2 ? styles.title : styles.titleFriends, { color: titleColor }]}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
-            {themeId === 2 ? (
+          <Text style={[curThemeId !== 2 ? styles.title : styles.titleFriends, { color: titleColor }]}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
+            {curThemeId === 2 ? (
               <FriendLetterForm width={width * 0.5} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.35, zIndex: 3}} />
             ) : (
               <LetterForm width={width * 0.45} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.375, zIndex: 3}} />
@@ -224,12 +221,12 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
             <View style={styles.charactersContainer}>
               {characters.map((character, index) => {
                 const isSelected = selectedCharacterIndex === index;
-                const SvgComponent = character.ColoredSvgComponent;
+                const SvgComponent = character.ColoredSvgComponent; // themeId prop 제거
                 const svgColor = isSelected ? selectedColor : unselectedColor;
                 return (
                   <TouchableOpacity
                     key={index}
-                    style={themeId !==2 ? styles.characterItem : styles.characterItemFreinds}
+                    style={curThemeId !==2 ? styles.characterItem : styles.characterItemFreinds}
                     onPress={() => handleSelectCharacter(index)}
                   >
                     <SvgComponent 
@@ -243,14 +240,14 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
                 );
               })}
             </View>
-            <View style={themeId !== 2 ? styles.remainingCountRow : styles.remainingCountRowFriends}>
+            <View style={curThemeId !== 2 ? styles.remainingCountRow : styles.remainingCountRowFriends}>
               <Text style={styles.remainingCount}>첫번째 선택은 무료입니다. 신중한 선택을 해주세요</Text>
             </View>
           </View>
           <TouchableOpacity
             style={[
-              themeId !== 2 ? styles.confirmButton : styles.confirmButtonFreinds,
-              { backgroundColor: confirmButtonColor, borderColor: confirmButtonBorderColor },
+              curThemeId !== 2 ? styles.confirmButton : styles.confirmButtonFreinds,
+              { backgroundColor: confirmButtonColor, borderColor: confirmButtonBorderColor }, // themeId prop 제거
               selectedCharacterIndex === null && styles.confirmButtonDisabled
             ]}
             onPress={handleConfirm}
@@ -258,7 +255,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
           >
             <Text style={styles.confirmButtonText}>확인</Text>
           </TouchableOpacity>
-          <ToastMessage message="선택이 완료되었습니다" visible={showToast} themeId={themeId} />
+          <ToastMessage message="선택이 완료되었습니다" visible={showToast} />
         </View>
       )}
       {/* CustomCostModal (LoveArrow 모달 위에 표시될 수 있도록 조건부 렌더링) */}
@@ -268,18 +265,18 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
         onConfirm={handleCustomCostConfirm}
         content="이벤트 수정은 아이템이 필요합니다"
         diceCount={5}
-        textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
-        diceButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
-        cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
+        textColor={curThemeId === 2 ? "#5C5279" : "#8A5A7A"}
+        diceButtonColor={curThemeId === 2 ? "#9FC9FF" : "#D9B2D3"}
+        cancelButtonColor={curThemeId === 2 ? "#B8B8B8" : "#A8A3C8"}
       />
       {/* InsufficientItemModal (LoveArrow 모달 위에 표시될 수 있도록 조건부 렌더링) */}
       <InsufficientItemModal
         visible={showInsufficientItemModal}
         onClose={handleInsufficientItemCancel}
         onGoToStore={handleGoToStore}
-        textColor={themeId === 2 ? "#5C5279" : "#8A5A7A"}
-        storeButtonColor={themeId === 2 ? "#9FC9FF" : "#D9B2D3"}
-        cancelButtonColor={themeId === 2 ? "#B8B8B8" : "#A8A3C8"}
+        textColor={curThemeId === 2 ? "#5C5279" : "#8A5A7A"}
+        storeButtonColor={curThemeId === 2 ? "#9FC9FF" : "#D9B2D3"}
+        cancelButtonColor={curThemeId === 2 ? "#B8B8B8" : "#A8A3C8"}
       />
     </Modal>
   );

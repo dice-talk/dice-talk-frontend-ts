@@ -4,6 +4,7 @@ import useEventMessageStore, { EventMessageData } from "@/zustand/stores/SecretM
 import { sendRoomEvent } from '@/api/EventApi'; // API 호출 함수 임포트
 import axios from 'axios'; // isAxiosError 사용을 위해 임포트
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -31,7 +32,6 @@ interface EnvelopeAnimationProps {
   onAnimationComplete?: () => void;
   content?: React.ReactNode;
   autoPlay?: boolean;
-  themeId?: number;
   isReadOnly?: boolean; // 읽기 전용 모드 (받은 편지 보기)
   messages?: string[]; // 읽기 전용 모드일 때 표시할 메시지 배열
 }
@@ -40,10 +40,10 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
   onAnimationComplete,
   content,
   autoPlay = false,
-  themeId = 1,
   isReadOnly = false, // 기본값은 false (쓰기 모드)
   messages = [],    // 기본값은 빈 배열
 }) => {
+  const curThemeId = useHomeStore((state) => state.curThemeId);
   // 애니메이션 상태
   const [isOpen, setIsOpen] = useState(false);
   // 편지 내용 상태 추가
@@ -54,16 +54,16 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
   const { updateEventMessage } = useEventMessageStore();
 
   // 테마에 따른 이미지 선택
-  const LETTER_IMAGES = themeId === 2 ? FRIEND_LETTER_IMAGES : LOVE_LETTER_IMAGES;
-  const mainLetterImage = themeId === 2 
+  const LETTER_IMAGES = curThemeId === 2 ? FRIEND_LETTER_IMAGES : LOVE_LETTER_IMAGES;
+  const mainLetterImage = curThemeId === 2 
     ? require('@/assets/images/event/friend_letter_main.png')
     : require('@/assets/images/event/love_event_write.png');
 
   // 테마별 색상 설정
-  const placeholderColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
-  const textColor = themeId === 2 ? "#6DA0E1" : "#F9BCC1";
-  const sendButtonColor = themeId === 2 ? "#6DA0E1" : "#FEBFC8";
-  const sendButtonBorderColor = themeId === 2 ? "#6DA0E1" : "#FFD9DF";
+  const placeholderColor = curThemeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  const textColor = curThemeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  const sendButtonColor = curThemeId === 2 ? "#6DA0E1" : "#FEBFC8";
+  const sendButtonBorderColor = curThemeId === 2 ? "#6DA0E1" : "#FFD9DF";
 
   // 메인 편지 애니메이션 값
   const letterOffset = useRef(new Animated.Value(0)).current;
@@ -336,19 +336,19 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
               },
             ]}
           >
-                        <View style={themeId === 2 ? styles.friendLetterImageWrapper : styles.mainLetterImageWrapper}>
+                        <View style={curThemeId === 2 ? styles.friendLetterImageWrapper : styles.mainLetterImageWrapper}>
               <Image
                 source={mainLetterImage}
-                style={themeId === 2 ? styles.friendLetterImage : styles.mainLetterImage}
+                style={curThemeId === 2 ? styles.friendLetterImage : styles.mainLetterImage}
                 resizeMode="contain"
               />
             </View>
-            {themeId === 2 ? (
+            {curThemeId === 2 ? (
               <Animated.View style={[styles.friendLetterSvgWrapper, { opacity: letterFormOpacity }]}>
                 <FriendLetterForm width="100%" height="100%" />
               
               </Animated.View>
-            ) : ( // themeId === 1 (love)
+            ) : ( // curThemeId === 1 (love)
             <Animated.View style={[styles.mainLetterSvgWrapper, { opacity: letterFormOpacity }]}>
               <LetterForm width="100%" height="100%" />
             </Animated.View>
@@ -356,14 +356,14 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
 
             {/* Content Area: TextInput or ReadOnly Message + Nav */}
             <Animated.View style={[
-              themeId === 2 ? styles.friendLetterInputWrapper : styles.letterInputWrapper,
+              curThemeId === 2 ? styles.friendLetterInputWrapper : styles.letterInputWrapper,
               { opacity: letterTextOpacity }
             ]}>
               {isReadOnly ? (
                 <View style={styles.readOnlyMessageDisplayArea}>
                   <View style={styles.messageScrollView}>
                     <Text style={[
-                      themeId === 2 ? styles.friendReceivedMessageText : styles.receivedMessageText,
+                      curThemeId === 2 ? styles.friendReceivedMessageText : styles.receivedMessageText,
                       { color: textColor }
                     ]}
                     numberOfLines={6} // 여러 줄 표시, 필요시 ScrollView로 변경 가능
@@ -386,7 +386,7 @@ const EnvelopeAnimation: React.FC<EnvelopeAnimationProps> = ({
                 </View>
               ) : ( // 쓰기 모드
                   <TextInput
-                    style={[themeId === 2 ? styles.friendLetterInput : styles.letterInput, { color: textColor }]}
+                    style={[curThemeId === 2 ? styles.friendLetterInput : styles.letterInput, { color: textColor }]}
                     placeholder="마음에 드는 상대에게 보낼 내용을 작성하세요"
                     placeholderTextColor={placeholderColor}
                     value={letterText}
