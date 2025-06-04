@@ -16,8 +16,7 @@ import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
-// import { getPickEventsForRoom, RoomEventFromApi } from "@/api/EventApi"; // ChatRoomStore에서 roomEvents를 사용하므로 주석 처리
-import { useState } from "react";
+import { useState, useMemo } from "react"; // useMemo 추가
 import CustomCostModal from "@/components/common/CustomCostModal"; // CustomCostModal 임포트
 import InsufficientItemModal from "@/components/common/DiceRechargeModal"; // InsufficientItemModal 임포트
 interface LoveArrowProps {
@@ -34,6 +33,27 @@ interface CharacterInfo {
   name: string;
   ColoredSvgComponent: React.FC<SvgProps>;
 }
+
+// 모든 캐릭터 옵션을 미리 정의 (닉네임과 SVG 매핑용)
+const ALL_CHARACTERS_MAP: Record<string, React.FC<SvgProps>> = {
+  "한가로운 하나": HanaSvg,
+  "세침한 세찌": SezziSvg,
+  "단호한데 다정한 다오": DaoSvg,
+  "두 얼굴의 매력 두리": DoriSvg,
+  "네모지만 부드러운 네몽": NemoSvg,
+  "육감적인 직감파 육땡": YukdaengSvg, // '육댕'이 아닌 '육땡'으로 가정 (다른 파일들과 일관성)
+};
+
+const FEMALE_CHARACTERS_DEFAULT: CharacterInfo[] = [
+  { name: "한가로운 하나", ColoredSvgComponent: HanaSvg },
+  { name: "세침한 세찌", ColoredSvgComponent: SezziSvg },
+  { name: "단호한데 다정한 다오", ColoredSvgComponent: DaoSvg },
+];
+const MALE_CHARACTERS_DEFAULT: CharacterInfo[] = [
+  { name: "두 얼굴의 매력 두리", ColoredSvgComponent: DoriSvg },
+  { name: "네모지만 부드러운 네몽", ColoredSvgComponent: NemoSvg },
+  { name: "육감적인 직감파 육땡", ColoredSvgComponent: YukdaengSvg }, // '육댕'이 아닌 '육땡'으로 가정
+];
 
 const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE", remainingCount, themeId = 1 }) => {
   const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null);
@@ -62,17 +82,26 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
   const confirmButtonColor = themeId === 2 ? "#9FC9FF" : "#FEBFC8";
   const confirmButtonBorderColor = themeId === 2 ? "#9FC9FF" : "#FFD9DF";
 
-  const characters: CharacterInfo[] = gender === "MALE" 
-    ? [
-        { name: "한가로운 하나", ColoredSvgComponent: HanaSvg },
-        { name: "세침한 세찌", ColoredSvgComponent: SezziSvg },
-        { name: "단호한데 다정한 다오", ColoredSvgComponent: DaoSvg },
-      ] 
-    : [
-         { name: "두 얼굴의 매력 두리", ColoredSvgComponent: DoriSvg },
-        { name: "네모지만 부드러운 네몽", ColoredSvgComponent: NemoSvg },
-        { name: "육감적인 직감파 육땡", ColoredSvgComponent: YukdaengSvg },
-      ];
+  const characters: CharacterInfo[] = useMemo(() => {
+    if (themeId === 2) {
+      if (!chatParts || chatParts.length === 0 || !currentAuthMemberId) {
+        return [];
+      }
+      return chatParts
+        .filter(participant => participant.memberId !== currentAuthMemberId)
+        .map(participant => {
+          const SvgComponent = ALL_CHARACTERS_MAP[participant.nickname];
+          return SvgComponent 
+            ? { name: participant.nickname, ColoredSvgComponent: SvgComponent }
+            : null;
+        })
+        .filter(Boolean) as CharacterInfo[]; // null 값 제거 및 타입 단언
+    } else {
+      // themeId가 2가 아닐 경우 기존 gender 기반 로직 사용
+      return gender === "MALE" ? FEMALE_CHARACTERS_DEFAULT : MALE_CHARACTERS_DEFAULT;
+    }
+  }, [themeId, chatParts, currentAuthMemberId, gender]);
+
 
   const handleSelectCharacter = (index: number) => {
     setSelectedCharacterIndex(index === selectedCharacterIndex ? null : index);
@@ -181,12 +210,12 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
         <View style={styles.modalOverlay}>
           <Image 
             source={require('@/assets/images/event/heartBoardBase.png')} 
-            resizeMode="contain"
-            style={styles.heartboardImage}
+            resizeMode={themeId !== 2 ? "contain" : "stretch"}
+            style={themeId !== 2 ? styles.heartboardImage : styles.friendBoardImage}
           />
-          <Text style={[styles.title, { color: titleColor }]}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
+          <Text style={[themeId !== 2 ? styles.title : styles.titleFriends, { color: titleColor }]}>좀 더 대화하고 싶은 상대를 선택해주세요</Text>
             {themeId === 2 ? (
-              <FriendLetterForm width={width * 0.55} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.37, zIndex: 3}} />
+              <FriendLetterForm width={width * 0.5} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.35, zIndex: 3}} />
             ) : (
               <LetterForm width={width * 0.45} height={height * 0.25} style={{position: 'absolute', top: SCREEN_HEIGHT * 0.375, zIndex: 3}} />
             )}
@@ -199,7 +228,7 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
                 return (
                   <TouchableOpacity
                     key={index}
-                    style={styles.characterItem}
+                    style={themeId !==2 ? styles.characterItem : styles.characterItemFreinds}
                     onPress={() => handleSelectCharacter(index)}
                   >
                     <SvgComponent 
@@ -213,13 +242,13 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
                 );
               })}
             </View>
-            <View style={styles.remainingCountRow}>
+            <View style={themeId !== 2 ? styles.remainingCountRow : styles.remainingCountRowFriends}>
               <Text style={styles.remainingCount}>첫번째 선택은 무료입니다. 신중한 선택을 해주세요</Text>
             </View>
           </View>
           <TouchableOpacity
             style={[
-              styles.confirmButton,
+              themeId !== 2 ? styles.confirmButton : styles.confirmButtonFreinds,
               { backgroundColor: confirmButtonColor, borderColor: confirmButtonBorderColor },
               selectedCharacterIndex === null && styles.confirmButtonDisabled
             ]}
@@ -273,6 +302,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: SCREEN_HEIGHT * 0.44,
   },
+  titleFriends: {
+    fontSize: 12,
+    fontWeight: "light",
+    textAlign: "center",
+    zIndex: 2,
+    position: 'absolute',
+    top: SCREEN_HEIGHT * 0.42,
+  },
   heartboardImage: {
     width: SCREEN_WIDTH * 0.95,
     height: SCREEN_WIDTH * 0.95,
@@ -290,6 +327,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly", // Changed from "space-between"
     alignItems: "center",
     width: SCREEN_WIDTH * 0.9, // Increased from 0.85
+    flexWrap: "wrap", // 아이템들이 화면을 넘어갈 경우 다음 줄로 넘어가도록 설정
   },
   characterItem: {
     alignItems: "center",
@@ -351,4 +389,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
   },
+  characterItemFreinds: {
+    alignItems: "center",
+    width: SCREEN_WIDTH * 0.26,
+    paddingVertical: 2,
+  },
+  friendBoardImage: {
+    width: SCREEN_WIDTH * 0.98,
+    height: SCREEN_HEIGHT * 0.43,
+    marginBottom: -40,
+  },
+  confirmButtonFreinds: {
+    paddingVertical: 5,
+    paddingHorizontal: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    zIndex: 3,
+    position: 'absolute',
+    bottom: SCREEN_HEIGHT * 0.18,
+  },
+  remainingCountRowFriends: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    top: SCREEN_HEIGHT * 0.015,
+    gap: 8,
+  },
+  
 });

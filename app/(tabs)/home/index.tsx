@@ -52,9 +52,9 @@ const HomeScreen = () => {
     // Home API는 앱 실행 후 최초 한 번만 호출
     const fetchHomeDataOnceOnAppLaunch = async () => {
       const store = useHomeStore.getState();
-      const { initialHomeApiCalled } = store;
 
-      const { setInitialHomeApiCalled, setThemes, setNotices, setHasNewNotifications, setChatRoomId, setItems } = store.actions;
+      const { initialHomeApiCalled, curThemeId } = store; // curThemeId도 가져올 수 있지만, 여기서는 액션만 필요
+      const { setInitialHomeApiCalled, setThemes, setNotices, setHasNewNotifications, setChatRoomId, setCurThemeId, setItems } = store.actions; // setCurThemeId 액션 추가
 
 
       if (!initialHomeApiCalled) {
@@ -66,6 +66,7 @@ const HomeScreen = () => {
           setThemes(homeDataResponse.data.themes || []);
           setNotices(homeDataResponse.data.notices || []);
           setHasNewNotifications(homeDataResponse.data.hasNewNotifications || false);
+          
 
           if (homeDataResponse.data.items && Array.isArray(homeDataResponse.data.items)) {
             setItems(homeDataResponse.data.items as Item[]);
@@ -80,7 +81,15 @@ const HomeScreen = () => {
           } else {
             setChatRoomId(null); // curChatRoomId가 없으면 null로 설정
           }
-          setInitialHomeApiCalled(true);
+          // API 응답에서 curThemeId를 가져와 HomeStore에 저장
+          if (homeDataResponse.data.curThemeId !== undefined) {
+            setCurThemeId(homeDataResponse.data.curThemeId);
+          } else {
+            setCurThemeId(null); // curThemeId가 없으면 null로 설정
+          }
+
+          setInitialHomeApiCalled(true); // API 호출 후 플래그를 true로 설정
+
         } catch (error) {
           console.error("🔴 Home API 최초 호출 실패 (home/index.tsx):", error);
           setInitialHomeApiCalled(true);

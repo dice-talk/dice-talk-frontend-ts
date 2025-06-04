@@ -38,6 +38,7 @@ interface ResultLoveArrowProps {
   // onClose prop이 현재 컴포넌트 로직에서 사용되지 않는다면 주석 처리하거나 제거할 수 있습니다.
   // onClose?: () => void;
   onMatchPress?: () => void;  // 매칭 결과 버튼 클릭 핸들러
+  themeId?: number; // themeId prop 추가
 }
 
 const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
@@ -46,7 +47,8 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
   // selections, // prop을 사용하지 않는다면 제거
   // onClose,    // prop을 사용하지 않는다면 제거
   onMatchPress
-}) => {
+  // themeId = 1 // themeId 기본값 설정
+}) => { // themeId prop 추가
   const [fetchedSelections, setFetchedSelections] = useState<FetchedSelection[]>([]);
   const chatParts = useChatRoomStore((state) => state.chatParts);
 
