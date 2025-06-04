@@ -105,7 +105,7 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
           const SvgComponent = diceCharacterMap[id];
           return SvgComponent ? (
             <View style={styles.diceContainer} key={`right-${id}`}>
-              <SvgComponent width={25} height={25} />
+              <SvgComponent width={25} height={25} color="#F9BCC1" />
             </View>
           ) : null;
         })}
@@ -115,12 +115,11 @@ const ResultLoveArrow: React.FC<ResultLoveArrowProps> = ({
           const SvgComponent = diceCharacterMap[id];
           return SvgComponent ? (
             <View style={styles.diceContainer} key={`left-${id}`}>
-              <SvgComponent width={25} height={25} />
+              <SvgComponent width={25} height={25} color="#9FC9FF" />
             </View>
           ) : null;
         })}
       </DiceIconContainer>
-
       {/* 매칭 결과 버튼 */}
       <TouchableOpacity 
         style={styles.matchButton}

@@ -12,6 +12,7 @@ interface CircleProfileProps {
   svgComponent: React.FC<SvgProps>;
   svgColor?: string;
   borderColor?: string;
+  backgroundColor?: string; // 배경색 prop 추가
   size?: number;
 }
 
@@ -19,6 +20,7 @@ const CircleProfile: React.FC<CircleProfileProps> = ({
   svgComponent: SvgComponent,
   svgColor,
   borderColor = '#eee',
+  backgroundColor = 'transparent', // 기본값 transparent 유지
   size = 45
 }) => {
   return (
@@ -27,7 +29,8 @@ const CircleProfile: React.FC<CircleProfileProps> = ({
       {
         width: size,
         height: size,
-        borderRadius: size / 2,
+        borderRadius: size / 2, // 원형 유지
+        backgroundColor: backgroundColor, // 배경색 적용
         borderColor: borderColor
       }
     ]}>
@@ -44,7 +47,7 @@ export default CircleProfile;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'transparent',
+    // backgroundColor는 prop으로 전달받아 스타일 배열에서 적용됩니다.
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
