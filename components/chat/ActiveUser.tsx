@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 
 // 사용자 데이터 타입 정의
@@ -15,27 +16,28 @@ interface User {
 interface ActiveUserProps {
   users: User[];
   onProfilePress?: (user: User) => void;
-  themeId?: number;
 }
 
-const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => {
+const ActiveUser = ({ users, onProfilePress }: ActiveUserProps) => {
   // AuthStore에서 현재 사용자의 memberId 가져오기
   const currentUserMemberId = useAuthStore((state) => state.memberId);
   // console.log("ActiveUser - 현재 사용자 Member ID (from authStore):", currentUserMemberId, "(Type:", typeof currentUserMemberId, ")");
+  // HomeStore에서 현재 테마 ID 가져오기
+  const curThemeId = useHomeStore((state) => state.curThemeId);
 
   // 특정 닉네임 목록
   const specialNicknames = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
-
+  
   // 개별 유저 렌더링 함수
   const renderUser = ({ item }: { item: User }) => {
     // console.log("ActiveUser - Rendering User - item.id (partId):", item.id, "item.memberId:", item.memberId, "Name:", item.name);
 
-    let currentProfileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-    let currentProfileBorderColor = themeId === 2 ? "#9FC9FF" : "#DEC2DB";
-    let currentUserNameColor = themeId === 2 ? "#5C5279" : "#7c4762";
+    let currentProfileIconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+    let currentProfileBorderColor = curThemeId === 2 ? "#9FC9FF" : "#DEC2DB";
+    let currentUserNameColor = curThemeId === 2 ? "#5C5279" : "#7c4762";
 
-    // 요청된 조건: themeId가 1이고, 닉네임이 specialNicknames에 포함될 경우
-    if (themeId === 1 && specialNicknames.includes(item.name)) {
+    // 요청된 조건: curThemeId가 1이고, 닉네임이 specialNicknames에 포함될 경우
+    if (curThemeId === 1 && specialNicknames.includes(item.name)) {
       currentProfileIconColor = "#9FC9FF";
       currentProfileBorderColor = "#9FC9FF";
       currentUserNameColor = "#5C5279";
@@ -58,7 +60,7 @@ const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => 
         {isCurrentUser && (
           <View style={[
             styles.meIndicatorCircle,
-            { backgroundColor: themeId === 2 ? '#9FC9FF' : '#F9BCC1' } // 테마에 따른 배경색 적용
+            { backgroundColor: curThemeId === 2 ? '#9FC9FF' : '#F9BCC1' } // 테마에 따른 배경색 적용
           ]}>
             <Text style={styles.meIndicatorText}>나</Text>
           </View>
@@ -101,7 +103,7 @@ const ActiveUser = ({ users, onProfilePress, themeId = 1 }: ActiveUserProps) => 
     </View>
   );
 };
-
+// themeId prop 제거로 defaultProps 불필요
 // 기본 props 설정
 ActiveUser.defaultProps = {
   users: []

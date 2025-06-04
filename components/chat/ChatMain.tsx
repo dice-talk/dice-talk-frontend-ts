@@ -43,12 +43,6 @@ const ChatMain = () => {
             로딩 상태를 표시할 수도 있습니다. 여기서는 0으로 설정합니다. */}
         <CountdownTimer initialSeconds={remainingTimeForTimer ?? 0} fontFamily="digital" />
       </View>
-      <TouchableOpacity onPress={() => handleEnterChat(1)} style={styles.button}>
-        <Text style={styles.buttonText}>입장 (테마 1)</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleEnterChat(2)} style={styles.button}>
-        <Text style={styles.buttonText}>입장 (테마 2)</Text>
-      </TouchableOpacity>
     </View>
   );
 };

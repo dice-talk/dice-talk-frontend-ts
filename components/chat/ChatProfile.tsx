@@ -2,27 +2,28 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 
 interface ChatProfileProps {
   profileImage: React.FC<SvgProps>;
   nickname: string;
   onClose: () => void;
-  themeId?: number;
 }
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
-const ChatProfile: React.FC<ChatProfileProps> = ({ profileImage: ProfileImage, nickname, onClose, themeId = 1 }) => {
+const ChatProfile: React.FC<ChatProfileProps> = ({ profileImage: ProfileImage, nickname, onClose }) => {
   // 특정 닉네임 목록
   const specialNicknames = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
+  const curThemeId = useHomeStore((state) => state.curThemeId);
 
-  let profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D9B9D9";
-  let iconColor = themeId === 2 ? "#9FC9FF" : "#A98BD4";
-  let underlineColor = themeId === 2 ? "#9FC9FF" : "#A98BD4";
-  let profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  let profileBorderColor = curThemeId === 2 ? "#9FC9FF" : "#D9B9D9";
+  let iconColor = curThemeId === 2 ? "#9FC9FF" : "#A98BD4";
+  let underlineColor = curThemeId === 2 ? "#9FC9FF" : "#A98BD4";
+  let profileIconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
 
   // 요청된 조건: themeId가 1이고, 닉네임이 specialNicknames에 포함될 경우
-  if (themeId === 1 && specialNicknames.includes(nickname)) {
+  if (curThemeId === 1 && specialNicknames.includes(nickname)) {
     profileBorderColor = "#9FC9FF";
     iconColor = "#9FC9FF";
     underlineColor = "#9FC9FF";
