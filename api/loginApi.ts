@@ -114,3 +114,33 @@ export const verifyAuthCode = async ({ email, code }: VerifyCodeParams): Promise
         throw new Error("인증 처리 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.");
     }
 };
+
+// 비회원 문의용 이메일 인증번호 검증 함수
+interface VerifyCodeForNonMemberParams {
+  email: string;
+  code: string;
+}
+
+interface VerifyCodeForNonMemberResponse {
+  message: string; // 성공 시
+  // 서버 응답에 따라 추가적인 필드가 있을 수 있음 (예: 임시 토큰 등)
+}
+
+export const verifyCodeForNonMember = async ({ email, code }: VerifyCodeForNonMemberParams): Promise<VerifyCodeForNonMemberResponse> => {
+    try {
+        // axiosWithoutToken을 사용하여 /auth/verify-code-email 엔드포인트로 요청
+        const response = await axiosWithoutToken.post<VerifyCodeForNonMemberResponse>("/auth/verify-code-email", { email, code });
+        console.log('비회원 문의용 인증번호 검증 API 응답:', response.data);
+        return response.data; // 성공 시 { message: "..." } 또는 서버가 제공하는 응답 객체
+    } catch (error: any) {
+        console.error("🚨 비회원 문의용 인증번호 검증 실패 (API 응답):", error.response?.data);
+        console.error("🚨 비회원 문의용 인증번호 검증 실패 (전체 에러 객체):", error);
+
+        if (error.response && error.response.data) {
+            // 서버가 응답 본문에 에러 정보를 담아 보냈다면, 그 객체를 throw
+            throw error.response.data;
+        }
+        // 그 외의 경우 (네트워크 오류 등 서버 응답이 없는 경우) 일반 에러 throw
+        throw new Error("인증 처리 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.");
+    }
+};

@@ -1,12 +1,13 @@
-import { createQuestion } from "@/api/questionApi";
+import { createGuestQuestion } from "@/api/questionApi";
 import GradientHeader from "@/components/common/GradientHeader";
 import Toast from "@/components/common/Toast";
 import QuestionSuccessModal from "@/components/login/QuestionSuccessModal";
 import MediumButton from "@/components/profile/myInfoPage/MediumButton";
 import FileButton, { ExistingImage, ImageChangePayload } from "@/components/profile/question/FileButton";
-import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Dimensions,
   Platform,
   ScrollView,
@@ -19,8 +20,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function QuestionRegisterPage() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ verifiedEmail?: string }>();
+  
   const [titleValue, setTitleValue] = useState<string>("");
   const [emailValue, setEmailValue] = useState<string>("");
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [contentValue, setContentValue] = useState<string>("");
   const [charCount, setCharCount] = useState<number>(0);
   const [showToast, setShowToast] = useState<boolean>(false);
@@ -30,6 +34,25 @@ export default function QuestionRegisterPage() {
   const height = Dimensions.get("window").height;
 
   const memoizedInitialExistingImages = useMemo<ExistingImage[]>(() => [], []);
+
+  useEffect(() => {
+    if (params.verifiedEmail) {
+      setEmailValue(params.verifiedEmail);
+      setIsEmailVerified(true);
+    } else {
+      Alert.alert(
+        "이메일 인증 필요", 
+        "문의를 작성하려면 먼저 이메일 인증을 완료해야 합니다.",
+        [
+          { 
+            text: "확인", 
+            onPress: () => router.replace("/(onBoard)/EmailVerificationForQuestion") 
+          }
+        ],
+        { cancelable: false }
+      );
+    }
+  }, [params, router]);
 
   const handleContentChange = (text: string) => {
     if (text.length <= 500) {
@@ -43,13 +66,8 @@ export default function QuestionRegisterPage() {
   }, []);
 
   const handlePostQuestion = async () => {
-    if (!emailValue.trim()) {
-      setToastMessage("이메일을 입력해주세요.");
-      setShowToast(true);
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(emailValue)) {
-      setToastMessage("올바른 이메일 형식을 입력해주세요.");
+    if (!isEmailVerified || !emailValue.trim()) {
+      setToastMessage("이메일 인증이 필요합니다.");
       setShowToast(true);
       return;
     }
@@ -64,20 +82,25 @@ export default function QuestionRegisterPage() {
       return;
     }
 
+    const guestQuestionDto = {
+      email: emailValue.trim(),
+      title: titleValue.trim(),
+      content: contentValue.trim(),
+    };
+
     try {
-      await createQuestion({
-        email: emailValue.trim(),
-        title: titleValue.trim(),
-        content: contentValue.trim(),
-        imageUris: selectedImageUris,
-      } as any);
+      await createGuestQuestion({ dto: guestQuestionDto, imageUris: selectedImageUris });
       setShowSuccessModal(true);
     } catch (error) {
-      console.error("문의 등록 실패:", error);
-      setToastMessage("문의 등록에 실패했습니다.");
+      console.error("비회원 문의 등록 실패 (페이지):", error);
+      setToastMessage("문의 등록에 실패했습니다. 다시 시도해주세요.");
       setShowToast(true);
     }
   };
+
+  if (!isEmailVerified && !params.verifiedEmail) {
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -85,15 +108,12 @@ export default function QuestionRegisterPage() {
       <ScrollView style={[styles.content, { height: height * 0.8 }]} keyboardShouldPersistTaps="handled">
         <Text style={styles.questionText}>문의 내용은 가능한 자세히 작성해주세요</Text>
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>이메일</Text>
+          <Text style={styles.sectionLabel}>이메일 (인증 완료)</Text>
           <TextInput
-            style={styles.input}
-            placeholder="본인의 이메일 계정을 입력해주세요."
-            placeholderTextColor="#9CA3AF"
+            style={[styles.input, styles.disabledInput]}
             value={emailValue}
-            onChangeText={setEmailValue}
-            keyboardType="email-address"
-            autoCapitalize="none"
+            editable={false}
+            placeholderTextColor="#9CA3AF"
           />
           <View style={styles.underline} />
         </View>
@@ -201,6 +221,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1F2937",
     paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+  },
+  disabledInput: {
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
   },
   underline: {
     height: 1,
