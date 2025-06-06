@@ -3,7 +3,11 @@ import { useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import useHomeStore from "@/zustand/stores/HomeStore";
 
-const ChatInput = () => {
+interface ChatInputProps {
+  onSendMessage: (text: string) => void;
+}
+
+export default function ChatInput({ onSendMessage }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const curThemeId = useHomeStore((state) => state.curThemeId);
@@ -13,7 +17,7 @@ const ChatInput = () => {
 
   const handleSend = () => {
     if (message.trim()) {
-      console.log('메시지 전송:', message);
+      onSendMessage(message.trim());  // 실전 STOMP 전송 호출
       setMessage('');
     }
   };
@@ -44,8 +48,6 @@ const ChatInput = () => {
     </View>
   );
 };
-
-export default ChatInput; 
 
 const { width } = Dimensions.get('window');
 

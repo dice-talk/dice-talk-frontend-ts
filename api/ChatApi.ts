@@ -170,7 +170,7 @@ export const getChatRoomInfo = async (
       }
     );
     const apiData = response.data.data; // API로부터 받은 채팅방 상세 정보 (chatRoomId 포함 가정)
-    console.log(`🏠 채팅방 상세 정보 응답 (요청 ID: ${chatRoomIdFromHomeStore}, 응답 데이터:`, apiData, `):`, { status: response.status });
+    console.log(`🏠 채팅방 상세 정보 응답 (요청 ID: ${chatRoomIdFromHomeStore}, 응답 데이터:`, apiData.chats, `):`, { status: response.status });
     
     const { setChatRoomDetails } = useChatRoomStore.getState().actions;
 

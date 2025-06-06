@@ -61,7 +61,6 @@ const HomeScreen = () => {
         try {
           console.log("🚀 Home API 최초 호출 시도 (앱 실행 시 한 번, home/index.tsx)...");
           const homeDataResponse = await getHomeApi();
-          console.log("📊 Home API 실제 데이터 (home/index.tsx - 최초 실행):", homeDataResponse.data);
           
           setThemes(homeDataResponse.data.themes || []);
           setNotices(homeDataResponse.data.notices || []);
@@ -70,7 +69,6 @@ const HomeScreen = () => {
 
           if (homeDataResponse.data.items && Array.isArray(homeDataResponse.data.items)) {
             setItems(homeDataResponse.data.items as Item[]);
-            console.log('🛍️ Home API: 아이템 목록 저장 완료 (home/index.tsx)', homeDataResponse.data.items);
           } else {
             console.log('ℹ️ Home API: 응답에 아이템 목록이 없거나 형식이 올바르지 않습니다. (home/index.tsx)');
             setItems([]);

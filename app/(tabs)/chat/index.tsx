@@ -19,7 +19,6 @@ export default function Chat() {
   // 예시: const setHomeChatRoomId = useHomeStore(state => state.setChatRoomId);
   const { setChatRoomId: setHomeChatRoomId } = useHomeActions();
 
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // ChatRoomStore의 상태 및 액션은 채팅방 상세 정보(테마, 남은 시간 등) 관리에 계속 사용됩니다.
@@ -57,7 +56,6 @@ export default function Chat() {
     let isActive = true; // 컴포넌트 언마운트 시 상태 업데이트 방지
 
       const fetchChatData = async () => {
-        setIsLoading(true);
         setError(null);
         // ChatRoomStore 상태 초기화 (HomeStore의 chatRoomId는 유지)
         // ChatRoomStore를 업데이트하기 전에 이전 상태를 클리어합니다.
@@ -117,10 +115,6 @@ export default function Chat() {
             setError("채팅 상태를 확인하는 중 오류가 발생했습니다.");
             setHomeChatRoomId(0); // 오류 발생 시, HomeStore의 chatRoomId를 0으로 설정
           }
-        } finally {
-          if (isActive) {
-            setIsLoading(false);
-          }
         }
       };
       fetchChatData();
@@ -152,12 +146,8 @@ export default function Chat() {
           <EventBannerComponent banners={eventBannersForDisplay} />
         </View>
       )}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text>채팅 정보를 확인 중입니다...</Text>
-        </View>
-      ) : error ? (
+      {
+      error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>오류: {error}</Text>
         </View>
