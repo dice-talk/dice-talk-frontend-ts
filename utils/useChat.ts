@@ -9,6 +9,7 @@ export default function useChat(roomId: number, initialMessages: ChatMessage[] =
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [client, setClient] = useState<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [newMessagesArrived, setNewMessagesArrived] = useState(false);
 
   type ChatError = {
     message: string;
@@ -23,6 +24,10 @@ export default function useChat(roomId: number, initialMessages: ChatMessage[] =
 
   // 현재 사용자의 닉네임 찾기
   const currentUserNickname = chatParts.find(part => part.memberId === useAuthStore.getState().memberId)?.nickname || '알 수 없음';
+
+  useEffect(() => {
+    setNewMessagesArrived(false);
+  }, [initialMessages]);
 
   // 예시 인터페이스 (메시지 타입)
   interface MessageData {
@@ -74,6 +79,7 @@ export default function useChat(roomId: number, initialMessages: ChatMessage[] =
         // 채팅방 구독
         stompClient.subscribe(`/sub/chat/${roomId}`, (message) => {
           console.log('📨 메시지 수신:', message.body);
+          setNewMessagesArrived(true);
           const receivedMessage: ChatMessage = JSON.parse(message.body);
           setMessages(prev => {
             if (prev.some(m => m.chatId === receivedMessage.chatId)) {
@@ -164,6 +170,7 @@ export default function useChat(roomId: number, initialMessages: ChatMessage[] =
     deleteMessage,
     editMessage,
     handlePress,
+    newMessagesArrived,
   };
 }
 

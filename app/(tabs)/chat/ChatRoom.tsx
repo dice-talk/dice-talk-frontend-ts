@@ -12,6 +12,7 @@ import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import ChatProfile from "@/components/chat/ChatProfile";
 import GptNotice from "@/components/chat/GptNotice";
+import ReadingTag from "@/components/chat/ReadingTag";
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
@@ -23,6 +24,7 @@ import useChat from "@/utils/useChat"; // 실제 경로에 맞춰 조정
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
 import React, { useEffect, useState } from "react";
@@ -104,6 +106,7 @@ const ChatRoom = () => {
   const [readOnlyEnvelopeMessages, setReadOnlyEnvelopeMessages] = useState<string[]>([]); // 읽기 전용 편지 메시지
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
   const [matchedPair, setMatchedPair] = useState<{ myProfile?: ProfileInfo; partnerProfile?: ProfileInfo } | null>(null);
+  const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(null);
 
   // Keyboard offset for input adjustment
   const [keyboardOffset, setKeyboardOffset] = useState(0);
@@ -119,8 +122,46 @@ const ChatRoom = () => {
   // useChat 호출 예시 (chatRoomIdFromParams는 문자열이므로 Number(...) 처리)
   const roomIdNum = chatRoomIdFromParams ? Number(chatRoomIdFromParams) : 0;
   const initialChats = useChatRoomStore((state) => state.chats);
-  const { messages, isConnected, sendMessage } = useChat(roomIdNum, initialChats);
+  const { messages, isConnected, sendMessage, newMessagesArrived } = useChat(roomIdNum, initialChats);
 
+
+  useEffect(() => {
+    // 1. 입장 시 마지막으로 읽은 ID 불러오기
+    const loadLastReadMessageId = async () => {
+      if (currentChatRoomId) {
+        try {
+          const key = `lastReading_${currentChatRoomId}`;
+          const id = await AsyncStorage.getItem(key);
+          if (id !== null) {
+            setLastReadMessageId(Number(id));
+          }
+        } catch (e) {
+          console.error('❌ 마지막으로 읽은 메시지 ID 로딩 실패:', e);
+        }
+      }
+    };
+
+    loadLastReadMessageId();
+
+    // 2. 퇴장 시 마지막 메시지 ID 저장 (Cleanup function)
+    return () => {
+      const saveLastReadMessageId = async () => {
+        if (messages && messages.length > 0 && currentChatRoomId) {
+          const lastMessage = messages[messages.length - 1];
+          if (lastMessage && lastMessage.chatId) {
+            try {
+              const key = `lastReading_${currentChatRoomId}`;
+              await AsyncStorage.setItem(key, String(lastMessage.chatId));
+              console.log(`✅ 채팅방(${currentChatRoomId}) 퇴장. 마지막으로 읽은 메시지 ID(${lastMessage.chatId}) 저장.`);
+            } catch (e) {
+              console.error('❌ 마지막으로 읽은 메시지 ID 저장 실패:', e);
+            }
+          }
+        }
+      };
+      saveLastReadMessageId();
+    }
+  }, [currentChatRoomId, messages]);
 
   useEffect(() => {
     if (chatRoomIdFromParams) {
@@ -463,6 +504,7 @@ const ChatRoom = () => {
             // msg 타입은 서버에서 보내준 ChatDto.Response 형태라고 가정
             // 필요하다면 아래처럼 로컬에서 정의한 ChatMessage 타입으로 매핑:
             const isMine = Number(msg.memberId) === Number(useAuthStore.getState().memberId);
+            
             // 서버에서 받은 UTC 시간 문자열을 현지 시간으로 변환
             let isoCreatedAt = msg.createdAt.replace(' ', 'T');
             if (!isoCreatedAt.endsWith('Z') && !isoCreatedAt.match(/[+-]\d{2}:\d{2}$/)) {
@@ -473,41 +515,43 @@ const ChatRoom = () => {
             });
             // 프로필 이미지는 서버에 URL로 내려주지 않으면, 기존 닉네임→SVG 매핑 로직을 재활용
             const ProfileSvg = nicknameToSvgMap[msg.nickname] || NemoSvg; // 기본값
-            if (isMine) {
-              return (
-                <ChatMessageRight
-                  key={msg.chatId}
-                  profileImage={ProfileSvg}
-                  nickname={msg.nickname}
-                  message={msg.message}
-                  time={timeFormatted}
-                  isConsecutive={ // 이전 메시지와 연속 여부 비교
-                    index > 0 &&
-                    messages[index - 1].nickname === msg.nickname &&
-                    messages[index - 1].memberId === msg.memberId
-                  }
-                  showTime={true}
-                  onPressProfile={() => setSelectedProfile({ nickname: msg.nickname, SvgComponent: ProfileSvg })}
-                />
-              );
-            } else {
-              return (
-                <ChatMessageLeft
-                  key={msg.chatId}
-                  profileImage={ProfileSvg}
-                  nickname={msg.nickname}
-                  message={msg.message}
-                  time={timeFormatted}
-                  isConsecutive={
-                    index > 0 &&
-                    messages[index - 1].nickname === msg.nickname &&
-                    messages[index - 1].memberId === msg.memberId
-                  }
-                  showTime={true}
-                  onPressProfile={() => setSelectedProfile({ nickname: msg.nickname, SvgComponent: ProfileSvg })}
-                />
-              );
-            }
+
+            const messageComponent = isMine ? (
+              <ChatMessageRight
+                profileImage={ProfileSvg}
+                nickname={msg.nickname}
+                message={msg.message}
+                time={timeFormatted}
+                isConsecutive={ // 이전 메시지와 연속 여부 비교
+                  index > 0 &&
+                  messages[index - 1].nickname === msg.nickname &&
+                  messages[index - 1].memberId === msg.memberId
+                }
+                showTime={true}
+                onPressProfile={() => setSelectedProfile({ nickname: msg.nickname, SvgComponent: ProfileSvg })}
+              />
+            ) : (
+              <ChatMessageLeft
+                profileImage={ProfileSvg}
+                nickname={msg.nickname}
+                message={msg.message}
+                time={timeFormatted}
+                isConsecutive={
+                  index > 0 &&
+                  messages[index - 1].nickname === msg.nickname &&
+                  messages[index - 1].memberId === msg.memberId
+                }
+                showTime={true}
+                onPressProfile={() => setSelectedProfile({ nickname: msg.nickname, SvgComponent: ProfileSvg })}
+              />
+            );
+            
+            return (
+              <React.Fragment key={msg.chatId}>
+                {messageComponent}
+                {Number(msg.chatId) === lastReadMessageId && !newMessagesArrived && <ReadingTag />}
+              </React.Fragment>
+            );
           })}
         </ScrollView>
         {/* 사이드바 표시 */}
