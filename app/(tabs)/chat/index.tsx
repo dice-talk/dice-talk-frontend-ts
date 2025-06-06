@@ -1,12 +1,13 @@
+import { getChatRoomInfo } from "@/api/ChatApi"; // getCurrentChatRoomId 제거
 import ChatCustomButton from "@/components/chat/ChatCustomButton";
 import ChatMain from "@/components/chat/ChatMain";
 import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent"; // HomeStore는 이미 아래에서 chatRoomIdFromHomeStore로 사용됩니다.
-import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
-import { useRouter, Link } from "expo-router"; // useFocusEffect 제거
-import React, { useMemo, useState, useEffect } from "react"; // useCallback 제거 (useEffect 내부에서 직접 함수 정의), useEffect 추가
-import { Dimensions, StyleSheet, View, ActivityIndicator, Text } from "react-native";
-import { getChatRoomInfo } from "@/api/ChatApi"; // getCurrentChatRoomId 제거
+import useChat from '@/utils/useChat'; // useChat 훅 import
 import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; // ChatRoomDetails 임포트 추가
+import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
+import { useRouter } from "expo-router"; // useFocusEffect 제거
+import { useEffect, useMemo, useState } from "react"; // useCallback 제거 (useEffect 내부에서 직접 함수 정의), useEffect 추가
+import { ActivityIndicator, Button, Dimensions, StyleSheet, Text, View } from "react-native";
 
 export default function Chat() {
   const router = useRouter();
@@ -132,6 +133,18 @@ export default function Chat() {
         setRemainingTimeForTimer // ChatRoomStore 액션 (참조 안정성 중요)
   ]);
   
+  // 테스트용 useChat 훅 사용 (roomId: 1로 고정)
+  const { messages, isConnected, sendMessage } = useChat(4);
+
+  // 테스트용 로그 추가
+  useEffect(() => {
+    console.log('WebSocket 연결 상태:', isConnected);
+  }, [isConnected]);
+
+  useEffect(() => {
+    console.log('현재 메시지 목록:', messages);
+  }, [messages]);
+
   return (
     <View style={styles.container}>
       {eventBannersForDisplay.length > 0 && (
@@ -185,6 +198,18 @@ export default function Chat() {
           textStyle={{ fontSize: 18 }}
         />
           </View>
+          {/* 테스트용 UI 추가 */}
+          <View style={styles.testContainer}>
+            <Text>연결 상태: {isConnected ? '연결됨' : '연결 안됨'}</Text>
+            <Text>메시지 수: {messages.length}</Text>
+            <Button
+              title="테스트 메시지 전송"
+              onPress={() => {
+                console.log('메시지 전송 시도...');
+                sendMessage('테스트 메시지');
+              }}
+            />
+          </View>
         </>
       )}
     </View>
@@ -237,5 +262,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'grey',
     textAlign: 'center',
+  },
+  testContainer: {
+    position: 'absolute',
+    bottom: 60,
+    left: 0,
+    right: 0,
+    padding: 20,
   },
 });
