@@ -1,12 +1,12 @@
 import useAuthStore from '@/zustand/stores/authStore'; // AuthStore import
-import useChatRoomStore from '@/zustand/stores/ChatRoomStore';
+import useChatRoomStore, { ChatMessage } from '@/zustand/stores/ChatRoomStore';
 import { Client } from '@stomp/stompjs';
 import { useCallback, useEffect, useState } from 'react';
 import { TextStyle, ViewStyle } from 'react-native';
 import SockJS from 'sockjs-client';
 
-export default function useChat(roomId: number) {
-  const [messages, setMessages] = useState<MessageData[]>([]);
+export default function useChat(roomId: number, initialMessages: ChatMessage[] = []) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [client, setClient] = useState<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -26,10 +26,11 @@ export default function useChat(roomId: number) {
 
   // 예시 인터페이스 (메시지 타입)
   interface MessageData {
-    id: number;
-    content: string;
-    sender: string;
-    timestamp: string;
+    chatId: number;
+    memberId: number;
+    nickname: string;
+    message: string;
+    createdAt: string;
   }
 
   // 추가 필요:
@@ -73,8 +74,13 @@ export default function useChat(roomId: number) {
         // 채팅방 구독
         stompClient.subscribe(`/sub/chat/${roomId}`, (message) => {
           console.log('📨 메시지 수신:', message.body);
-          const receivedMessage = JSON.parse(message.body);
-          setMessages(prev => [...prev, receivedMessage]);
+          const receivedMessage: ChatMessage = JSON.parse(message.body);
+          setMessages(prev => {
+            if (prev.some(m => m.chatId === receivedMessage.chatId)) {
+              return prev;
+            }
+            return [...prev, receivedMessage];
+          });
         });
       },
       onDisconnect: () => {

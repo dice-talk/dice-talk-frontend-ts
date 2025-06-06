@@ -1,35 +1,34 @@
-import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
 import { getFilteredRoomEvents, getPickEventsForRoom, RoomEventFromApi } from "@/api/EventApi"; // getPickEventsForRoom 추가
-import Nemo from '@/assets/images/dice/nemo.svg';
+import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
+import DaoSvg from "@/assets/images/dice/dao.svg";
+import DoriSvg from "@/assets/images/dice/dori.svg";
 import Hana from '@/assets/images/dice/hana.svg'; // HanaSvg로 명확하게
+import NemoSvg from '@/assets/images/dice/nemo.svg';
+import SezziSvg from "@/assets/images/dice/sezzi.svg";
+import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft";
 import ChatMessageRight from "@/components/chat/ChatMessageRight";
 import ChatProfile from "@/components/chat/ChatProfile";
 import GptNotice from "@/components/chat/GptNotice";
-import ReadingTag from "@/components/chat/ReadingTag";
 import EnvelopeAnimation from "@/components/event/animation/EnvelopeAnimation";
 import ResultFriendArrow from "@/components/event/diceFriends/ResultFriendArrow";
 import LoveArrow from "@/components/event/heartSignal/LoveArrow";
-import LoveArrowMatch from "@/components/event/heartSignal/LoveArrowMatch";
+import LoveArrowMatch, { ProfileInfo } from "@/components/event/heartSignal/LoveArrowMatch";
 import LoveLetterSelect from "@/components/event/heartSignal/LoveLetterSelect";
 import ResultLoveArrow from "@/components/event/heartSignal/ResultLoveArrow";
 import UnmatchedModal from "@/components/event/heartSignal/UnmatchedModal";
+import useChat from "@/utils/useChat"; // 실제 경로에 맞춰 조정
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
-import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, Keyboard, Platform } from "react-native";
+import { Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
-import { ProfileInfo } from "@/components/event/heartSignal/LoveArrowMatch";
-import DaoSvg from "@/assets/images/dice/dao.svg";
-import DoriSvg from "@/assets/images/dice/dori.svg";
-import NemoSvg from '@/assets/images/dice/nemo.svg';
-import SezziSvg from "@/assets/images/dice/sezzi.svg";
-import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
+
 
 const nicknameToSvgMap: Record<string, React.FC<SvgProps>> = {
   "한가로운 하나": Hana, "두 얼굴의 매력 두리": DoriSvg, "세침한 세찌": SezziSvg,
@@ -117,9 +116,11 @@ const ChatRoom = () => {
   const [remainingSecondsForDisplay, setRemainingSecondsForDisplay] = useState(0);
   const [activeNoticeType, setActiveNoticeType] = useState<"SECRET_MESSAGE_START" | "SECRET_MESSAGE_RESULT" | "LOVE_ARROW_START" | "LOVE_ARROW_RESULT" | null>(null);
 
-  // 채팅 메시지 상태 (실제 API 연동 시 변경)
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]); 
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  // useChat 호출 예시 (chatRoomIdFromParams는 문자열이므로 Number(...) 처리)
+  const roomIdNum = chatRoomIdFromParams ? Number(chatRoomIdFromParams) : 0;
+  const initialChats = useChatRoomStore((state) => state.chats);
+  const { messages, isConnected, sendMessage } = useChat(roomIdNum, initialChats);
+
 
   useEffect(() => {
     if (chatRoomIdFromParams) {
@@ -223,40 +224,6 @@ const ChatRoom = () => {
       hideSub.remove();
     };
   }, []);
-
-
-  // GptNotice 텍스트 생성 로직 (ChatEventNotice.tsx의 로직과 유사하게)
-  // const getGptNoticeText = (type: "secretMessageStart" | "secretMessageResult" | "loveArrowStart" | "loveArrowResult") => {
-  //   const timeLeftFormatted = formatTime(remainingSecondsForDisplay);
-  //   // ... (ChatEventNotice.tsx의 currentNoticeText 생성 로직 참고하여 각 type에 맞는 텍스트 반환)
-  //   // 예시: if (type === "secretMessageStart" && currentEventPhase === "PRE_SECRET") return `시크릿 메시지 시작까지 ${timeLeftFormatted}`;
-  //   return "공지사항 로딩 중..."; // 기본값
-  // };
-  
-  const sampleMessages: ChatMessage[] = [ // API 연동 전까지 사용할 샘플 메시지
-    {
-      id: 1,
-      profileImage: Hana,
-      nickname: "한가로운 하나",
-      message: "다들 어제 개봉한 펩시 vs 콜라 영화 보셨나요?",
-      time: "오후 6:58",
-      isMe: false,
-      memberId: 21,
-    },
-    {
-      id: 2,
-      profileImage: Hana,
-      nickname: "한가로운 하나", // 이전 메시지와 동일한 닉네임
-      message: "정말 재밌어서 추천드려요",
-      time: "오후 6:58",
-      isMe: false,
-      memberId:22
-    },
-    {
-      id: 3, profileImage: Nemo, nickname: "네모지만 부드러운 네모", memberId: 102,
-      message: "와! 저도 어제 봤는데 사람이 많더라구요", time: "오후 6:59", isMe: true
-    },
-  ];
   
   const hideNotice = () => {
     setShowNotice(false);
@@ -447,55 +414,6 @@ const ChatRoom = () => {
         return "[시스템] 공지사항";
     }
   };
-
-  const renderMessages = () => {
-    const displayMessages = chatMessages.length > 0 ? chatMessages : sampleMessages; // API 연동 후 sampleMessages 제거
-    if (isLoadingMessages) return <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#A45C73" />;
-
-    return displayMessages.map((message, index) => {
-      const isConsecutive = index > 0 && 
-        displayMessages[index - 1].nickname === message.nickname &&
-        displayMessages[index - 1].isMe === message.isMe;
-      let showTime = true;
-      if (index < displayMessages.length - 1) {
-        const nextMessage = displayMessages[index + 1];
-        if (message.nickname === nextMessage.nickname && 
-            message.time === nextMessage.time &&
-            message.isMe === nextMessage.isMe) {
-          showTime = false;
-        }
-      }
-      if (message.isMe) {
-        return (
-          <ChatMessageRight
-              key={message.id}
-              profileImage={message.profileImage}
-              nickname={message.nickname}
-              message={message.message}
-              time={message.time}
-              isConsecutive={isConsecutive}
-              showTime={showTime}
-              onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
-
-          />
-        );
-      } else {
-        return (
-          <ChatMessageLeft
-              key={message.id}
-              profileImage={message.profileImage}
-              nickname={message.nickname}
-              message={message.message}
-              time={message.time}
-              isConsecutive={isConsecutive}
-              showTime={showTime}
-              onPressProfile={() => setSelectedProfile({ nickname: message.nickname, SvgComponent: message.profileImage })}
-
-          />
-        );
-      }
-    });
-  };
   
   return (
     <View style={styles.container}>
@@ -536,13 +454,61 @@ const ChatRoom = () => {
 
         </View>
         <ScrollView 
-            style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+          style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {showReadingTag && <ReadingTag/>}
-          {renderMessages()}
+          {messages.map((msg, index) => {
+            // msg 타입은 서버에서 보내준 ChatDto.Response 형태라고 가정
+            // 필요하다면 아래처럼 로컬에서 정의한 ChatMessage 타입으로 매핑:
+            const isMine = Number(msg.memberId) === Number(useAuthStore.getState().memberId);
+            // 서버에서 받은 UTC 시간 문자열을 현지 시간으로 변환
+            let isoCreatedAt = msg.createdAt.replace(' ', 'T');
+            if (!isoCreatedAt.endsWith('Z') && !isoCreatedAt.match(/[+-]\d{2}:\d{2}$/)) {
+              isoCreatedAt += 'Z';
+            }
+            const timeFormatted = new Date(isoCreatedAt).toLocaleTimeString([], {
+              hour: "2-digit", minute: "2-digit"
+            });
+            // 프로필 이미지는 서버에 URL로 내려주지 않으면, 기존 닉네임→SVG 매핑 로직을 재활용
+            const ProfileSvg = nicknameToSvgMap[msg.nickname] || NemoSvg; // 기본값
+            if (isMine) {
+              return (
+                <ChatMessageRight
+                  key={msg.chatId}
+                  profileImage={ProfileSvg}
+                  nickname={msg.nickname}
+                  message={msg.message}
+                  time={timeFormatted}
+                  isConsecutive={ // 이전 메시지와 연속 여부 비교
+                    index > 0 &&
+                    messages[index - 1].nickname === msg.nickname &&
+                    messages[index - 1].memberId === msg.memberId
+                  }
+                  showTime={true}
+                  onPressProfile={() => setSelectedProfile({ nickname: msg.nickname, SvgComponent: ProfileSvg })}
+                />
+              );
+            } else {
+              return (
+                <ChatMessageLeft
+                  key={msg.chatId}
+                  profileImage={ProfileSvg}
+                  nickname={msg.nickname}
+                  message={msg.message}
+                  time={timeFormatted}
+                  isConsecutive={
+                    index > 0 &&
+                    messages[index - 1].nickname === msg.nickname &&
+                    messages[index - 1].memberId === msg.memberId
+                  }
+                  showTime={true}
+                  onPressProfile={() => setSelectedProfile({ nickname: msg.nickname, SvgComponent: ProfileSvg })}
+                />
+              );
+            }
+          })}
         </ScrollView>
         {/* 사이드바 표시 */}
         <SideBar
@@ -551,8 +517,8 @@ const ChatRoom = () => {
             onProfilePress={handleSidebarProfilePress}
         />
         {/* 하단 영역: ChatInput */}
-          <View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
-            <ChatInput />
+         <View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
+            <ChatInput onSendMessage={sendMessage} />
           </View>
         {/* 프로필 팝업 - z-index를 높게 설정하여 최상위에 표시 */}
         {selectedProfile && (
