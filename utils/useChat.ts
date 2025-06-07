@@ -1,15 +1,33 @@
 import useAuthStore from '@/zustand/stores/authStore'; // AuthStore import
 import useChatRoomStore, { ChatMessage } from '@/zustand/stores/ChatRoomStore';
 import { Client } from '@stomp/stompjs';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TextStyle, ViewStyle } from 'react-native';
 import SockJS from 'sockjs-client';
+import { joinMatchingQueue } from '@/api/MatchingApi';
+interface UseChatOptions {
+  autoConnect?: boolean;
+}
 
-export default function useChat(roomId: number, initialMessages: ChatMessage[] = []) {
+export default function useChat(roomId?: number, initialMessages: ChatMessage[] = [], options: UseChatOptions = {}) {
+  console.log('[useChat] Hook initialized. roomId:', roomId, 'Options:', options); // <--- 이 로그를 추가합니다.
+  const { autoConnect = true } = options; // 기본값은 true
+
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [client, setClient] = useState<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [newMessagesArrived, setNewMessagesArrived] = useState(false);
+  // ① joinQueue 구현 (한 번만 대기열 등록)
+  const joinQueue = useCallback(async () => {
+    try {
+      console.log('useChat: joinQueue – 대기열 등록 HTTP 요청');
+      const result = await joinMatchingQueue();
+      console.log('useChat: joinQueue 결과', result);
+      // 결과 처리(성공 시 바로 채팅방 이동 로직이 있으면 여기에 둘 수도 있음)
+    } catch (err) {
+      console.error('useChat: joinQueue 오류', err);
+    }
+  }, []);
 
   type ChatError = {
     message: string;
@@ -62,52 +80,81 @@ export default function useChat(roomId: number, initialMessages: ChatMessage[] =
     // 룸 이벤트 타입 정의
   }
 
-  // 웹소켓 연결
-  useEffect(() => {
-    const socket = new SockJS('https://www.dicetalk.co.kr/ws-stomp');
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`, 
-        // (서버 코드에서 헤더 이름을 "Authorization"으로 감지하고 있으면 이대로,
-        //  다르면 StompHandler가 보고 있는 헤더 키 이름과 일치시켜 주세요)
-      },
+  // 웹소켓 연결 함수
+  const connectSocket = useCallback(async () => {
+    if (!token) {
+      console.warn('useChat: connectSocket - No auth token, connection not attempted.');
+      console.warn('useChat: 인증 토큰이 없어 연결을 시도하지 않습니다.');
+      setError({ message: '인증 토큰이 필요합니다.' });
+      setIsLoading(false);
+      return;
+    }
+    if (client?.active) {
+      console.log('useChat: 이미 STOMP 클라이언트가 활성화되어 있거나 연결 중입니다.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    console.log('useChat: connectSocket - Attempting STOMP connection...');
+
+    const newSocket = new SockJS('https://www.dicetalk.co.kr/ws-stomp');
+    const stompClientInstance = new Client({
+      webSocketFactory: () => newSocket,
+      connectHeaders: { Authorization: `Bearer ${token}` },
       onConnect: () => {
-        console.log('✅ STOMP 연결 성공');
+        console.log('✅ useChat: connectSocket - STOMP connection successful.');
         setIsConnected(true);
-        
-        // 채팅방 구독
-        stompClient.subscribe(`/sub/chat/${roomId}`, (message) => {
-          console.log('📨 메시지 수신:', message.body);
-          setNewMessagesArrived(true);
-          const receivedMessage: ChatMessage = JSON.parse(message.body);
-          setMessages(prev => {
-            if (prev.some(m => m.chatId === receivedMessage.chatId)) {
-              return prev;
-            }
-            return [...prev, receivedMessage];
+        setClient(stompClientInstance);
+        setIsLoading(false);
+
+        // 채팅방 구독 (roomId가 있을 때)
+        if (roomId) {
+          stompClientInstance.subscribe(`/sub/chat/${roomId}`, (message) => {
+            console.log('📨 메시지 수신:', message.body);
+            setNewMessagesArrived(true);
+            const receivedMessage: ChatMessage = JSON.parse(message.body);
+            setMessages(prev =>
+              prev.some(m => m.chatId === receivedMessage.chatId) ? prev : [...prev, receivedMessage]
+            );
           });
-        });
+        }
       },
       onDisconnect: () => {
-        console.log('❌ STOMP 연결 종료');
+        console.log('❌ useChat: connectSocket - STOMP connection closed.');
         setIsConnected(false);
+        // setClient(null); // 필요에 따라 클라이언트 상태 초기화
+        setIsLoading(false);
       },
-      onStompError: (error) => {
-        console.error('⚠️ STOMP 에러:', error);
+      onStompError: (frame) => {
+        console.error('⚠️ useChat: connectSocket - STOMP error:', frame.headers?.message || 'Unknown STOMP error', frame.body);
         setIsConnected(false);
+        setError({ message: frame.headers?.message || 'STOMP 연결 중 오류가 발생했습니다.', code: frame.headers?.['error-code'] });
+        setIsLoading(false);
+      },
+      debug: (str) => {
+        // console.log('STOMP DEBUG: ', str); // 개발 중 상세 로그 필요시 활성화
       }
     });
 
-    stompClient.activate();
-    setClient(stompClient);
+    stompClientInstance.activate();
+  }, [token, roomId, client]); // client 의존성 추가
+
+  useEffect(() => {
+    if (autoConnect && !client?.active && token) { // 토큰이 있을 때만 자동 연결 시도
+      console.log('useChat: useEffect[autoConnect, token] - Calling connectSocket.');
+      connectSocket();
+    }
 
     return () => {
-      if (stompClient.connected) {
-        stompClient.deactivate();
+      if (client?.active) {
+        console.log('useChat: 컴포넌트 언마운트 또는 autoConnect 변경, STOMP 연결 해제 시도');
+        client.deactivate();
+        setIsConnected(false);
+        setClient(null);
       }
     };
-  }, [roomId]);
+  }, [autoConnect, connectSocket, client, token]); // token 의존성 추가
 
   // 메시지 전송
   const sendMessage = useCallback((message: string) => {
@@ -124,9 +171,10 @@ export default function useChat(roomId: number, initialMessages: ChatMessage[] =
       });
       console.log('✅ 메시지 전송 완료');
     } else {
-      console.log('⚠️ 메시지 전송 실패: STOMP가 연결되지 않음');
+      console.warn('⚠️ 메시지 전송 실패: STOMP 미연결 또는 roomId 없음');
+      setError({ message: '메시지를 보내려면 먼저 연결해야 합니다.' });
     }
-  }, [client, isConnected, currentUserNickname]);
+  }, [client, isConnected, currentUserNickname, roomId]);
 
   // 메시지 삭제
   const deleteMessage = useCallback((messageId: number) => {
@@ -139,39 +187,35 @@ export default function useChat(roomId: number, initialMessages: ChatMessage[] =
         destination: `/pub/chat/message`,
         body: JSON.stringify(deleteData)
       });
+    } else {
+      console.warn('⚠️ 메시지 삭제 실패: STOMP 미연결');
     }
   }, [client, isConnected]);
-
-  // 메시지 수정
-  const editMessage = useCallback((messageId: number, newContent: string) => {
-    if (client && isConnected) {
-      const editData = {
-        type: 'edit',
-        messageId,
-        content: newContent,
-      };
-      client.publish({
-        destination: `/pub/chat/message`,
-        body: JSON.stringify(editData)
-      });
-    }
-  }, [client, isConnected]);
-
-  const handlePress = (): void => {
-    if (roomId && roomId !== 0) {
-      // ...
-    }
-  };
 
   return {
+    client,
     messages,
     isConnected,
+    joinQueue,
     sendMessage,
     deleteMessage,
-    editMessage,
-    handlePress,
     newMessagesArrived,
+    connect: autoConnect ? undefined : connectSocket, // autoConnect가 false일 때만 connect 함수 제공
+    error,
+    isLoading,
   };
+}
+
+// 반환 타입 정의 (선택 사항이지만 권장)
+export interface UseChatReturnType {
+  messages: ChatMessage[];
+  isConnected: boolean;
+  sendMessage: (message: string) => void;
+  deleteMessage: (messageId: number) => void;
+  newMessagesArrived: boolean;
+  connect?: () => Promise<void>; // connect 함수는 선택적이며 Promise를 반환할 수 있음
+  error: { message: string; code?: string; } | null;
+  isLoading: boolean;
 }
 
 type Styles = {

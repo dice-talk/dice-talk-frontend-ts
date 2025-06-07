@@ -239,3 +239,4 @@ export const getChatRoomInfo = async (
     return null;
   }
 };
+
