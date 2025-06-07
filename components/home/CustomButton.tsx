@@ -1,8 +1,8 @@
 // components/home/CustomButton.tsx
 
-import React from 'react';
-import { Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Dimensions, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from 'react-native';
 
 
 interface CustomButtonProps {
@@ -10,13 +10,14 @@ interface CustomButtonProps {
   onPress: () => void;
   containerStyle?: ViewStyle;
   textStyle?: TextStyle;
+  disabled?: boolean;
 }
 const { width, height } = Dimensions.get("window");
-const CustomButton: React.FC<CustomButtonProps> = ({ label, onPress, containerStyle, textStyle }) => {
+const CustomButton: React.FC<CustomButtonProps> = ({ label, onPress, containerStyle, textStyle, disabled = false }) => {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity onPress={onPress} activeOpacity={disabled ? 1 : 0.8} disabled={disabled}>
       <LinearGradient
-        colors={['#D1B4F8', '#F6A7D6']} // 보라 → 핑크
+        colors={disabled ? ['#BDBDBD', '#BDBDBD'] : ['#D1B4F8', '#F6A7D6']} // 비활성화 시 회색 그라데이션
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[styles.button, containerStyle, { width: width * 0.35 }]}

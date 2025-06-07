@@ -188,18 +188,6 @@ export default function Chat() {
           textStyle={{ fontSize: 18 }}
         />
           </View>
-          {/* 테스트용 UI 추가 */}
-          <View style={styles.testContainer}>
-            <Text>연결 상태: {isConnected ? '연결됨' : '연결 안됨'}</Text>
-            <Text>메시지 수: {messages.length}</Text>
-            <Button
-              title="테스트 메시지 전송"
-              onPress={() => {
-                console.log('메시지 전송 시도...');
-                sendMessage('테스트 메시지');
-              }}
-            />
-          </View>
         </>
       )}
     </View>
