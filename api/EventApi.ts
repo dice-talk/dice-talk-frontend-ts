@@ -3,7 +3,7 @@ import { axiosWithToken, axiosWithoutToken } from './axios/axios'; // 인증 필
 // SecretMessageStore.ts 파일이 EventMessageData 인터페이스를 export 하고 있어야 합니다.
 // 만약 SecretMessageStore.ts에서 EventMessageData를 export 하지 않았다면,
 // 해당 파일에 export 키워드를 추가하거나, useEventMessageStore.ts에서 가져오도록 경로를 수정해야 합니다.
-import useEventMessageStore, { EventMessageData } from '@/zustand/stores/SecretMessageStore'; // 스토어 훅 및 타입 임포트
+import { EventMessageData } from '@/zustand/stores/SecretMessageStore'; // 스토어 훅 및 타입 임포트
 import useAuthStore from '@/zustand/stores/authStore';
 import useChatRoomStore from '@/zustand/stores/ChatRoomStore';
 import axios from 'axios'; // axios.isAxiosError 사용을 위해 임포트

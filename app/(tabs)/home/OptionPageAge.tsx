@@ -2,11 +2,13 @@ import GradientLine from '@/components/common/GradientLine';
 import TextBox from '@/components/common/TextBox';
 import CustomButton from '@/components/home/CustomButton';
 import SelectBox from '@/components/home/SelectBox';
-import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react'; // useMemo 추가
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+
+import { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
 import useUserStore from '@/zustand/stores/UserStore';
-import useChatOptionStore, { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react'; // useMemo 추가, useCallback 추가
+import { Alert, Dimensions, StyleSheet, Text, View } from 'react-native';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,7 +17,6 @@ const OptionPageAge = () => {
   const userStoredRegion = useUserStore((state) => state.region); // UserStore에서 저장된 지역 정보 가져오기
   const userBirth = useUserStore((state) => state.birth);
   const { setBirth: setChatAgeGroup } = useChatOptionActions(); // ChatOptionStore의 setBirth (ageGroup) 액션 가져오기
-
   const [selectedBox, setSelectedBox] = useState<string | null>(null);
 
   // 랜덤 선택을 위한 나이대 옵션
@@ -75,12 +76,20 @@ const OptionPageAge = () => {
     }
   };
 
-  const handleConfirm = () => {
-    // 선택된 나이 선호도를 ChatOptionStore의 ageGroup에 저장합니다.
-    setChatAgeGroup(selectedBox); // selectedBox가 null일 수도 있음 (선택 안 한 경우)
-    console.log(useChatOptionStore.getState());
-    router.replace('/Loading');
-  };
+  const handleConfirm = useCallback(() => {
+    if (!selectedBox) {
+      Alert.alert('알림', '나이대를 선택해주세요.');
+      return;
+    }
+    // 1. ChatOptionStore에 나이대 저장
+    setChatAgeGroup(selectedBox);
+    
+    // 2. 로딩 화면으로 이동
+    // (LoadingScreen.tsx에서 웹소켓 연결 및 대기열 참여 로직이 실행될 것입니다.)
+    // router.replace('/LoadingScreen'); // 이전 코드
+    router.replace('/(tabs)/home/LoadingScreen'); // 수정된 경로
+
+  }, [selectedBox, setChatAgeGroup, router]);
 
   return (
     <View style={styles.container}>
@@ -128,6 +137,7 @@ const OptionPageAge = () => {
         <CustomButton
           label="확인"
           onPress={handleConfirm}
+          disabled={!selectedBox} // 선택된 항목이 없을 때 버튼 비활성화
         />
       </View>
     </View>
