@@ -1,9 +1,12 @@
-import {create} from 'zustand'
+import { create } from 'zustand';
 
 // API 응답에 따라 더 구체적인 타입 정의가 필요할 수 있습니다.
-interface ChatMessage {
-  // 예시: id: string; message: string; senderId: string; timestamp: string;
-  [key: string]: any; // 실제 메시지 구조에 맞게 수정
+export interface ChatMessage {
+  chatId: number;
+  memberId: number;
+  nickname: string;
+  message: string;
+  createdAt: string;
 }
 
 export interface ChatParticipant { // <- 'export' 키워드 추가
@@ -55,15 +58,17 @@ const initialState: ChatRoomDetails = {
 const useChatRoomStore = create<ChatRoomState>((set) => ({
   ...initialState,
   actions: {
-    setChatRoomDetails: (details) =>
+    setChatRoomDetails: (details) => {
+      console.log('✅ setChatRoomDetails 호출됨. 전달된 chats 데이터:', JSON.stringify(details.chats, null, 2));
       set((state) => ({
         ...state,
         ...details,
-        // Partial 업데이트 시 배열이 undefined로 덮어쓰이는 것을 방지
-        chats: details.chats !== undefined ? details.chats : state.chats,
-        chatParts: details.chatParts !== undefined ? details.chatParts : state.chatParts,
-        roomEvents: details.roomEvents !== undefined ? details.roomEvents : state.roomEvents,
-      })),
+        // Partial 업데이트 시 배열이 null 또는 undefined로 덮어쓰이는 것을 방지
+        chats: details.chats != null ? (details.chats as any).content || details.chats : state.chats,
+        chatParts: details.chatParts != null ? details.chatParts : state.chatParts,
+        roomEvents: details.roomEvents != null ? details.roomEvents : state.roomEvents,
+      }));
+    },
     clearChatRoomDetails: () => set({ ...initialState, actions: useChatRoomStore.getState().actions }), // actions는 유지
     setRemainingTimeForTimer: (seconds) =>
       set({ remainingTimeForTimer: seconds }),

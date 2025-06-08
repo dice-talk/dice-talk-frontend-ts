@@ -1,24 +1,24 @@
+import { getChatRoomInfo } from "@/api/ChatApi"; // getCurrentChatRoomId 제거
 import ChatCustomButton from "@/components/chat/ChatCustomButton";
 import ChatMain from "@/components/chat/ChatMain";
 import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent"; // HomeStore는 이미 아래에서 chatRoomIdFromHomeStore로 사용됩니다.
+import useChat from '@/utils/useChat'; // useChat 훅 import
+import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; 
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
-import { useRouter, Link } from "expo-router"; // useFocusEffect 제거
-import React, { useMemo, useState, useEffect } from "react"; // useCallback 제거 (useEffect 내부에서 직접 함수 정의), useEffect 추가
-import { Dimensions, StyleSheet, View, ActivityIndicator, Text } from "react-native";
-import { getChatRoomInfo } from "@/api/ChatApi"; // getCurrentChatRoomId 제거
-import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; // ChatRoomDetails 임포트 추가
+import { useRouter, useFocusEffect } from "expo-router"; // useFocusEffect 추가
+import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가
+import { ActivityIndicator, Button, Dimensions, StyleSheet, Text, View } from "react-native";
 
 export default function Chat() {
   const router = useRouter();
   const noticesFromStore = useHomeStore((state) => state.notices);
   // HomeStore에서 chatRoomId를 가져옵니다.
-  const chatRoomIdFromHomeStore = useHomeStore((state) => state.chatRoomId);
+  const chatRoomIdFromHomeStore : number | null = useHomeStore((state) => state.chatRoomId);
   // Zustand 액션 함수들의 참조 안정성을 위해 직접 선택하거나,
   // useHomeActions 훅이 안정적인 참조를 반환하도록 보장해야 합니다.
   // 예시: const setHomeChatRoomId = useHomeStore(state => state.setChatRoomId);
   const { setChatRoomId: setHomeChatRoomId } = useHomeActions();
 
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // ChatRoomStore의 상태 및 액션은 채팅방 상세 정보(테마, 남은 시간 등) 관리에 계속 사용됩니다.
@@ -51,44 +51,44 @@ export default function Chat() {
       });
   }, [noticesFromStore]);
 
-  // chatRoomIdFromHomeStore 또는 관련 setter 함수들이 변경될 때마다 실행
-  useEffect(() => {
-    let isActive = true; // 컴포넌트 언마운트 시 상태 업데이트 방지
+  // 화면이 포커스될 때마다 실행
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true; // 컴포넌트 언마운트 또는 포커스 아웃 시 상태 업데이트 방지
 
       const fetchChatData = async () => {
-        setIsLoading(true);
+        console.log('[ChatIndex] Screen focused, fetching chat data...');
         setError(null);
-        // ChatRoomStore 상태 초기화 (HomeStore의 chatRoomId는 유지)
-        // ChatRoomStore를 업데이트하기 전에 이전 상태를 클리어합니다.
-        setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
-        setRemainingTimeForTimer(null);
+        // ChatRoomStore를 업데이트하기 전에 이전 상태를 클리어할 수 있습니다.
+        // 필요에 따라 이 부분을 유지하거나, API 호출 결과에 따라 선택적으로 클리어할 수 있습니다.
+        // setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
+        // setRemainingTimeForTimer(null);
 
         try {
-          if (!isActive) return; // 컴포넌트 언마운트 시 중단
-
-          // chatRoomIdFromHomeStore 값과 관계없이 항상 getChatRoomInfo 호출
-          // getChatRoomInfo API는 내부적으로 HomeStore의 chatRoomId를 사용하거나,
-          // null 또는 0과 같은 값을 적절히 처리할 수 있어야 합니다.
+          // getChatRoomInfo API는 내부적으로 HomeStore의 chatRoomId를 사용합니다.
           const detailedRoomInfo = await getChatRoomInfo();
           if (!isActive) return;
 
           if (detailedRoomInfo && detailedRoomInfo.chatRoomId === 0) {
             // Case 1: API 응답의 chatRoomId가 0인 경우 ("참여중인 채팅방이 없습니다." 표시)
-            if (isActive) {
-              setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
-              setRemainingTimeForTimer(null);
-              setHomeChatRoomId(0); // HomeStore의 ID를 0으로 설정
-              setError(null);       // 에러 상태는 없음
-            }
+            setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
+            setRemainingTimeForTimer(null);
+            setHomeChatRoomId(0); // HomeStore의 ID를 0으로 설정
+            setError(null);       // 에러 상태는 없음
           } else if (detailedRoomInfo && typeof detailedRoomInfo.createdAt === 'string' && detailedRoomInfo.chatRoomId) {
             // Case 2: 유효한 채팅방 정보 (chatRoomId가 0이 아님)를 성공적으로 가져온 경우
-            // 유효한 채팅방 정보를 성공적으로 가져온 경우
             setChatRoomDetails(detailedRoomInfo as ChatRoomDetails); // ChatRoomStore에 방 정보 저장
 
             // HomeStore의 chatRoomId를 API 응답의 ID와 동기화
-            if (chatRoomIdFromHomeStore !== detailedRoomInfo.chatRoomId) {
-              setHomeChatRoomId(detailedRoomInfo.chatRoomId); // 실제 채팅방 ID로 설정
+            // chatRoomIdFromHomeStore는 useFocusEffect의 의존성 배열에 직접 넣을 수 없으므로,
+            // 이 로직은 API 응답을 기준으로 HomeStore를 업데이트하는 것이 더 적절할 수 있습니다.
+            // 또는, chatRoomIdFromHomeStore를 useFocusEffect의 의존성으로 추가하고,
+            // 이 fetchChatData 함수를 useFocusEffect 바깥으로 빼서 useCallback으로 감싸야 합니다.
+            // 여기서는 API 응답 기준으로 HomeStore를 업데이트합니다.
+            if (useHomeStore.getState().chatRoomId !== detailedRoomInfo.chatRoomId) {
+              setHomeChatRoomId(detailedRoomInfo.chatRoomId);
             }
+
             // 타이머 로직
             const localDate = new Date(detailedRoomInfo.createdAt.replace(' ', 'T'));
             const kstDate = new Date(localDate.getTime() + (9 * 60 * 60 * 1000)); // KST 변환
@@ -102,36 +102,40 @@ export default function Chat() {
           } else {
             // Case 3: getChatRoomInfo가 null을 반환했거나 (예: HomeStore의 ID가 null이었음),
             // 또는 응답 데이터 형식이 올바르지 않은 경우 (chatRoomId가 0인 경우는 이미 위에서 처리됨)
-            // ChatRoomStore 초기화
             setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
             setRemainingTimeForTimer(null);
-            if (isActive) {
-              setHomeChatRoomId(0); // UI는 "참여중인 방 없음" 또는 에러를 표시하도록 ID를 0으로 설정
-              setError(`채팅방 정보를 가져올 수 없거나 형식이 올바르지 않습니다.`);
-            }
+            setHomeChatRoomId(0); // UI는 "참여중인 방 없음" 또는 에러를 표시하도록 ID를 0으로 설정
+            setError(`채팅방 정보를 가져올 수 없거나 형식이 올바르지 않습니다.`);
           }
         } catch (apiError) {
           console.error("API 호출 오류 (fetchChatData):", apiError);
           if (isActive) {
             setError("채팅 상태를 확인하는 중 오류가 발생했습니다.");
             setHomeChatRoomId(0); // 오류 발생 시, HomeStore의 chatRoomId를 0으로 설정
-          }
-        } finally {
-          if (isActive) {
-            setIsLoading(false);
+            setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
+            setRemainingTimeForTimer(null);
           }
         }
       };
+
       fetchChatData();
 
       return () => { isActive = false; }; // 클린업 함수
-  }, [
-        chatRoomIdFromHomeStore, // HomeStore의 ID가 변경되면 재실행
-        setHomeChatRoomId,       // HomeStore 액션 (참조 안정성 중요)
-        setChatRoomDetails,      // ChatRoomStore 액션 (참조 안정성 중요)
-        setRemainingTimeForTimer // ChatRoomStore 액션 (참조 안정성 중요)
-  ]);
+    }, [setHomeChatRoomId, setChatRoomDetails, setRemainingTimeForTimer]) // Zustand setter 함수들은 참조가 안정적이라고 가정
+  );
   
+  // HomeStore의 chatRoomId를 사용하여 useChat 훅 사용
+  const { messages, isConnected, sendMessage } = useChat(chatRoomIdFromHomeStore, [], { autoConnect: true });
+
+  // 테스트용 로그 추가
+  useEffect(() => {
+    console.log('WebSocket 연결 상태:', isConnected);
+  }, [isConnected]);
+
+  useEffect(() => {
+    console.log('현재 메시지 목록:', messages);
+  }, [messages]);
+
   return (
     <View style={styles.container}>
       {eventBannersForDisplay.length > 0 && (
@@ -139,12 +143,8 @@ export default function Chat() {
           <EventBannerComponent banners={eventBannersForDisplay} />
         </View>
       )}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text>채팅 정보를 확인 중입니다...</Text>
-        </View>
-      ) : error ? (
+      {
+      error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>오류: {error}</Text>
         </View>
@@ -237,5 +237,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'grey',
     textAlign: 'center',
+  },
+  testContainer: {
+    position: 'absolute',
+    bottom: 60,
+    left: 0,
+    right: 0,
+    padding: 20,
   },
 });

@@ -1,21 +1,12 @@
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 스토어 임포트
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from "react-native";
-import { TouchableOpacity } from "react-native";
-import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 스토어 임포트
 import CountdownTimer from "../common/CountdownTimer";
 
 const ChatMain = () => {
   // 스토어에서 remainingTimeForTimer 값을 가져옵니다.
   const remainingTimeForTimer = useChatRoomStore((state) => state.remainingTimeForTimer);
-
-  const handleEnterChat = (themeId: number) => {
-    router.push({
-      pathname: "/chat/ChatRoom",
-      params: { themeId: themeId.toString() },
-    });
-  };
 
   const [fontsLoaded] = useFonts({
     digital: require('@/assets/fonts/digital-7.ttf'),
