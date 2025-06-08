@@ -29,6 +29,13 @@ export default function useChat(roomId?: number, initialMessages: ChatMessage[] 
     }
   }, []);
 
+  // ① 대기열 상태를 담을 상태 추가
+  const [queueStatus, setQueueStatus] = useState<{
+    count: number;
+    participants: string[];
+    message: string;
+  }>({ count: 0, participants: [], message: '' });
+
   type ChatError = {
     message: string;
     code?: string;
@@ -46,6 +53,23 @@ export default function useChat(roomId?: number, initialMessages: ChatMessage[] 
   useEffect(() => {
     setNewMessagesArrived(false);
   }, [initialMessages]);
+
+  useEffect(() => {
+    if (client && isConnected) {
+      // 매칭 상태 토픽 구독
+      const sub = client.subscribe('/sub/matching/status', frame => {
+        const data = JSON.parse(frame.body);
+        if (data.type === 'QUEUE_STATUS') {
+          setQueueStatus({
+            count: data.participants.length,
+            participants: data.participants,
+            message: data.message,
+          });
+        }
+      });
+      return () => sub.unsubscribe();
+    }
+  }, [client, isConnected]);
 
   // 예시 인터페이스 (메시지 타입)
   interface MessageData {
@@ -200,6 +224,7 @@ export default function useChat(roomId?: number, initialMessages: ChatMessage[] 
     sendMessage,
     deleteMessage,
     newMessagesArrived,
+    queueStatus,
     connect: autoConnect ? undefined : connectSocket, // autoConnect가 false일 때만 connect 함수 제공
     error,
     isLoading,
