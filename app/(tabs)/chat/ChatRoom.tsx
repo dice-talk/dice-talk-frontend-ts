@@ -105,8 +105,8 @@ const ChatRoom = () => {
   const [isEnvelopeReadOnly, setIsEnvelopeReadOnly] = useState(false); // EnvelopeAnimation 읽기 전용 상태
   const [readOnlyEnvelopeMessages, setReadOnlyEnvelopeMessages] = useState<string[]>([]); // 읽기 전용 편지 메시지
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
-  const [matchedPair, setMatchedPair] = useState<{ myProfile?: ProfileInfo; partnerProfile?: ProfileInfo } | null>(null);
-  const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(null);
+  const [matchedPair, setMatchedPair] = useState<{ myProfile?: ProfileInfo; partnerProfile?: ProfileInfo } | null>(null); 
+  const [fixedReadingTagAtMessageId, setFixedReadingTagAtMessageId] = useState<number | null>(null); // ReadingTag 고정 위치 상태
 
   // Keyboard offset for input adjustment
   const [keyboardOffset, setKeyboardOffset] = useState(0);
@@ -122,46 +122,77 @@ const ChatRoom = () => {
   // useChat 호출 예시 (chatRoomIdFromParams는 문자열이므로 Number(...) 처리)
   const roomIdNum = chatRoomIdFromParams ? Number(chatRoomIdFromParams) : 0;
   const initialChats = useChatRoomStore((state) => state.chats);
-  const { messages, isConnected, sendMessage, newMessagesArrived } = useChat(roomIdNum, initialChats);
+  const { messages, isConnected, sendMessage, newMessagesArrived, setNewMessagesArrived } = useChat(roomIdNum, initialChats); // setNewMessagesArrived 추가
 
 
   useEffect(() => {
-    // 1. 입장 시 마지막으로 읽은 ID 불러오기
-    const loadLastReadMessageId = async () => {
+    let isMounted = true;
+    // 입장 시 마지막으로 읽은 ID를 불러오고, ReadingTag 위치를 한 번만 결정합니다.
+    const loadAndSetInitialReadingTagPosition = async () => {
       if (currentChatRoomId) {
         try {
           const key = `lastReading_${currentChatRoomId}`;
-          const id = await AsyncStorage.getItem(key);
-          if (id !== null) {
-            setLastReadMessageId(Number(id));
+          const idStr = await AsyncStorage.getItem(key);
+
+          if (isMounted) {
+            if (idStr !== null) {
+              const loadedId = Number(idStr);
+              // newMessagesArrived 상태를 확인하여 ReadingTag를 고정할지 결정합니다.
+              // 이 확인은 setNewMessagesArrived(false) 호출 *전에* 이루어져야 합니다.
+              if (!newMessagesArrived) { // 현재 세션에서 아직 새 메시지가 없다고 판단될 때
+                setFixedReadingTagAtMessageId(loadedId);
+              }
+              // ReadingTag 표시 여부와 관계없이, 입장 시 newMessagesArrived는 false로 설정합니다.
+              setNewMessagesArrived(false);
+            } else {
+              // 저장된 lastReadMessageId가 없을 경우
+              setFixedReadingTagAtMessageId(null);
+              setNewMessagesArrived(false);
+            }
           }
         } catch (e) {
           console.error('❌ 마지막으로 읽은 메시지 ID 로딩 실패:', e);
+          if (isMounted) {
+            setNewMessagesArrived(false);
+          }
         }
+      } else if (isMounted) {
+        // currentChatRoomId가 없는 경우 (이론상 발생하기 어려움)
+        setFixedReadingTagAtMessageId(null);
+        setNewMessagesArrived(false);
       }
     };
 
-    loadLastReadMessageId();
+    loadAndSetInitialReadingTagPosition();
 
-    // 2. 퇴장 시 마지막 메시지 ID 저장 (Cleanup function)
     return () => {
-      const saveLastReadMessageId = async () => {
+      isMounted = false;
+    };
+    // 이 useEffect는 currentChatRoomId가 변경되거나, 컴포넌트가 처음 마운트될 때 실행됩니다.
+    // newMessagesArrived는 의존성 배열에 포함하지 않아, 해당 상태 변경으로 이 로직이 재실행되지 않도록 합니다.
+  }, [currentChatRoomId, setNewMessagesArrived]);
+
+  // 채팅방 퇴장 시 또는 messages 배열이 업데이트될 때 마지막 메시지 ID 저장
+  useEffect(() => {
+    return () => {
+      // 컴포넌트 언마운트 시 (채팅방 퇴장 시) 마지막 메시지 ID 저장
+      const saveLastReadOnUnmount = async () => {
         if (messages && messages.length > 0 && currentChatRoomId) {
-          const lastMessage = messages[messages.length - 1];
-          if (lastMessage && lastMessage.chatId) {
+          const lastMessageInView = messages[messages.length - 1];
+          if (lastMessageInView && lastMessageInView.chatId) {
             try {
               const key = `lastReading_${currentChatRoomId}`;
-              await AsyncStorage.setItem(key, String(lastMessage.chatId));
-              console.log(`✅ 채팅방(${currentChatRoomId}) 퇴장. 마지막으로 읽은 메시지 ID(${lastMessage.chatId}) 저장.`);
+              await AsyncStorage.setItem(key, String(lastMessageInView.chatId));
+              console.log(`✅ 채팅방(${currentChatRoomId}) 퇴장. 마지막으로 읽은 메시지 ID(${lastMessageInView.chatId}) 저장.`);
             } catch (e) {
               console.error('❌ 마지막으로 읽은 메시지 ID 저장 실패:', e);
             }
           }
         }
       };
-      saveLastReadMessageId();
-    }
-  }, [currentChatRoomId, messages]);
+      saveLastReadOnUnmount();
+    };
+  }, [messages, currentChatRoomId]); // messages나 currentChatRoomId가 변경될 때마다 cleanup 함수가 이전 상태로 저장할 수 있도록 설정
 
   useEffect(() => {
     if (chatRoomIdFromParams) {
@@ -549,7 +580,7 @@ const ChatRoom = () => {
             return (
               <React.Fragment key={msg.chatId}>
                 {messageComponent}
-                {Number(msg.chatId) === lastReadMessageId && !newMessagesArrived && <ReadingTag />}
+                {Number(msg.chatId) === fixedReadingTagAtMessageId && <ReadingTag />}
               </React.Fragment>
             );
           })}

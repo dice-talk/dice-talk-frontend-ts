@@ -9,7 +9,7 @@ interface UseChatOptions {
   autoConnect?: boolean;
 }
 
-export default function useChat(roomId?: number, initialMessages: ChatMessage[] = [], options: UseChatOptions = {}) {
+export default function useChat(roomId?: number | null, initialMessages: ChatMessage[] = [], options: UseChatOptions = {}) {
   console.log('[useChat] Hook initialized. roomId:', roomId, 'Options:', options); // <--- 이 로그를 추가합니다.
   const { autoConnect = true } = options; // 기본값은 true
 
@@ -138,6 +138,22 @@ export default function useChat(roomId?: number, initialMessages: ChatMessage[] 
             console.log('📨 메시지 수신:', message.body);
             setNewMessagesArrived(true);
             const receivedMessage: ChatMessage = JSON.parse(message.body);
+
+            // ChatRoomStore의 chats 배열 업데이트
+            // 현재 useChat 인스턴스의 roomId와 ChatRoomStore의 chatRoomId가 일치할 때만 업데이트
+            const currentRoomIdInStore = useChatRoomStore.getState().chatRoomId;
+            if (currentRoomIdInStore === roomId) {
+              const { chats: currentChatsInStore, actions: chatRoomActions } = useChatRoomStore.getState();
+              // 중복 추가 방지
+              if (!currentChatsInStore.some(m => m.chatId === receivedMessage.chatId)) {
+                // setChatRoomDetails가 부분 업데이트를 지원한다고 가정
+                chatRoomActions.setChatRoomDetails({ chats: [...currentChatsInStore, receivedMessage] });
+              }
+            } else {
+              console.warn(`[useChat] 수신된 메시지 (roomId: ${roomId})가 ChatRoomStore의 현재 채팅방 ID (${currentRoomIdInStore})와 다릅니다. 스토어는 업데이트되지 않았습니다.`);
+            }
+
+            // useChat 훅의 내부 messages 상태 업데이트 (ChatRoom.tsx에서 직접 사용)
             setMessages(prev =>
               prev.some(m => m.chatId === receivedMessage.chatId) ? prev : [...prev, receivedMessage]
             );
@@ -224,6 +240,7 @@ export default function useChat(roomId?: number, initialMessages: ChatMessage[] 
     sendMessage,
     deleteMessage,
     newMessagesArrived,
+    setNewMessagesArrived, // 추가
     queueStatus,
     connect: autoConnect ? undefined : connectSocket, // autoConnect가 false일 때만 connect 함수 제공
     error,
@@ -238,6 +255,7 @@ export interface UseChatReturnType {
   sendMessage: (message: string) => void;
   deleteMessage: (messageId: number) => void;
   newMessagesArrived: boolean;
+  setNewMessagesArrived: React.Dispatch<React.SetStateAction<boolean>>; // 추가
   connect?: () => Promise<void>; // connect 함수는 선택적이며 Promise를 반환할 수 있음
   error: { message: string; code?: string; } | null;
   isLoading: boolean;
