@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 export default function LoadingScreen() {
   console.log('--- LoadingScreen Component Render Start ---');
 
-  const { client, isConnected, joinQueue } = useChat(undefined, [], { autoConnect: true });
+  const { client, isConnected, joinQueue, queueStatus } = useChat(undefined, [], { autoConnect: true });
   const [matchingStatusMessage, setMatchingStatusMessage] = useState('✨ 매칭 상대를 찾고 있어요...');
 
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -25,6 +25,7 @@ export default function LoadingScreen() {
 
       const subscription = client.subscribe('/sub/matching/status', (frame) => {
         const data = JSON.parse(frame.body);
+        
         if (data.type === 'MATCHED') {
           console.log('[LoadingScreen] 매칭 완료:', data.chatRoomId);
           setHomeChatRoomId(data.chatRoomId);
@@ -80,6 +81,13 @@ export default function LoadingScreen() {
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { color: '#8B5CF6', marginTop: -50 }]}>대기실</Text>
+           {/* 실시간 대기열 인원·참여자 표시 */}
+     <Text style={{ fontSize: 16, marginBottom: 4 }}>
+       현재 대기열 인원: {queueStatus.count}명
+     </Text>
+     <Text style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
+       ({queueStatus.participants.join(', ')})
+     </Text>
       <View style={styles.circleContainer}>
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
           <Svg height="280" width="280" viewBox="0 0 280 280">

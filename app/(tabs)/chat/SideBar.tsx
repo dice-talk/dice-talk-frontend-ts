@@ -27,18 +27,6 @@ interface UserData {
   profileSvg: React.FC<SvgProps>;
 }
 
-// chatRoomDetails.chatParts 내부 아이템의 예상 구조
-// 실제 구조와 다를 경우 수정해주세요.
-
-const svgMap: Record<string, React.FC<SvgProps>> = {
-  Hana,
-  Nemo,
-  Dori,
-  Sezzi,
-  Dao,
-  Yukdaeng,
-};
-
 const { width } = Dimensions.get("window");
 
 
