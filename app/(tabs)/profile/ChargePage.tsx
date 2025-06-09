@@ -1,12 +1,16 @@
+import { getAllProducts } from '@/api/productApi';
 import CurrentDiceInfo from '@/components/charge/CurrentDiceInfo';
 import DiceProductItem from '@/components/charge/DiceProductItem';
 import PurchasableFunctionItem from '@/components/charge/PurchasableFunctionItem';
 import GradientHeader from '@/components/common/GradientHeader';
+import { Product } from '@/types/Product';
 import useHomeStore, { Item as StoreItem } from '@/zustand/stores/HomeStore';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   ScrollView,
@@ -34,18 +38,11 @@ interface ProductItemData {
 
 const { width } = Dimensions.get('window');
 
-// [복원] 로컬에서 관리하던 상품 데이터
-const diceProducts = [
-  { id: 1, diceAmount: '주사위 10개', price: 1200, quantity: 10 },
-  { id: 2, diceAmount: '주사위 50개', price: 5900, quantity: 50 },
-  { id: 3, diceAmount: '주사위 100개', price: 11000, quantity: 100 },
-  { id: 4, diceAmount: '주사위 150개', price: 18000, quantity: 150 },
-  { id: 5, diceAmount: '주사위 200개', price: 25000, quantity: 200 },
-];
-
 export default function ChargePage() {
   const navigation = useNavigation<any>();
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [diceProducts, setDiceProducts] = useState<ProductItemData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // HomeStore에서 아이템 목록 가져오기
   const storeItems = useHomeStore((state) => state.items);
@@ -61,15 +58,41 @@ export default function ChargePage() {
     }));
   }, [storeItems]);
 
-  // [복원] 백엔드 연동 전의 핸들러
+  // [수정] 컴포넌트 마운트 시 백엔드에서 상품 목록을 가져옵니다.
+  useEffect(() => {
+    const fetchDiceProducts = async () => {
+      try {
+        const response = await getAllProducts(1, 10); // 1페이지, 10개 항목
+        if (response && response.data && Array.isArray(response.data)) { 
+          const mappedProducts: ProductItemData[] = response.data.map((product: Product) => ({
+            id: product.productId,
+            diceAmount: product.productName,
+            price: product.price,
+            quantity: product.quantity,
+            productImage: product.productImage,
+          }));
+          setDiceProducts(mappedProducts);
+        } else {
+          setDiceProducts([]);
+        }
+      } catch (error) {
+        Alert.alert('오류', '상품 목록을 불러오는 데 실패했습니다.');
+        setDiceProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDiceProducts();
+  }, []);
+
   const handleProductSelect = (productId: number) => {
+    // [수정] API로 받아온 상품 목록에서 선택된 상품을 찾습니다.
     const selectedProduct = diceProducts.find(p => p.id === productId);
     if (!selectedProduct) {
       console.error("Selected product not found!");
       return;
     }
 
-    // [복원] PaymentScreen으로 기본 상품 정보만 전달
     navigation.navigate('PaymentScreen', {
       productId: selectedProduct.id.toString(),
       productName: selectedProduct.diceAmount,
@@ -113,27 +136,33 @@ export default function ChargePage() {
 
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>다이스 충전</Text>
-          <FlatList
-            data={diceProducts} // [복원] 로컬 상품 데이터 사용
-            renderItem={({ item }) => (
-              <DiceProductItem
-                id={item.id}
-                diceAmount={item.diceAmount}
-                price={item.price}
-                quantity={item.quantity}
-                onPress={() => handleProductSelect(item.id)} // [복원] 핸들러 연결
-                isSelected={selectedProductId === item.id}
-              />
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            ItemSeparatorComponent={() => (
-              <LinearGradient
-                colors={['#F0F0F0', '#F0F0F0']}
-                style={styles.productItemSeparator}
-              />
-            )}
-            scrollEnabled={false} 
-          />
+          {isLoading ? (
+            <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+          ) : diceProducts.length > 0 ? (
+            <FlatList
+              data={diceProducts}
+              renderItem={({ item }) => (
+                <DiceProductItem
+                  id={item.id}
+                  diceAmount={item.diceAmount}
+                  price={item.price}
+                  quantity={item.quantity}
+                  onPress={() => handleProductSelect(item.id)}
+                  isSelected={selectedProductId === item.id}
+                />
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              ItemSeparatorComponent={() => (
+                <LinearGradient
+                  colors={['#F0F0F0', '#F0F0F0']}
+                  style={styles.productItemSeparator}
+                />
+              )}
+              scrollEnabled={false} 
+            />
+          ) : (
+            <Text style={styles.emptyText}>충전 가능한 다이스 상품이 없습니다.</Text>
+          )}
         </View>
       </ScrollView>
     </View>

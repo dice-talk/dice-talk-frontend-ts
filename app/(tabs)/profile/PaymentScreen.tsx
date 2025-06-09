@@ -53,7 +53,7 @@ export default function PaymentScreen() {
   const paymentDetails = useMemo(() => ({
     clientKey: 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm', // [중요] 문서에서 제공된 테스트 클라이언트 키
     customerKey: memberId ? `member_${memberId}` : `guest_${orderId}`,
-    amount: parseFloat(price) * parseInt(quantity, 10),
+    amount: parseFloat(price),
     orderId: orderId,
     orderName: productName,
     successUrl: 'dicetalkts://payment-success', // 우리 앱의 딥링크
