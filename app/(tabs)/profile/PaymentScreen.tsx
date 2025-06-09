@@ -1,15 +1,13 @@
+import { PaymentResponseData } from '@/api/paymentApi';
 import useAuthStore from '@/zustand/stores/authStore';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Button, Linking, StyleSheet, View } from 'react-native';
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 
-// [복원] 네비게이션 파라미터 타입 정의
-type PaymentScreenParams = {
-  productId: string;
-  productName: string;
-  price: string;
-  quantity: string;
+// [수정] 네비게이션 파라미터 타입을 백엔드 응답 DTO와 합칩니다.
+type PaymentScreenParams = PaymentResponseData & {
+  productName: string; // ChargePage에서 추가로 넘겨주는 정보
 };
 
 type PaymentScreenRouteProp = RouteProp<{ PaymentScreen: PaymentScreenParams }, 'PaymentScreen'>;
@@ -41,24 +39,24 @@ export default function PaymentScreen() {
     return ( <View style={styles.container}><ActivityIndicator/></View> );
   }
 
-  // [복원] 전달받은 파라미터를 안전하게 파싱
-  const { productId, productName, price, quantity } = route.params;
+  // [수정] route.params에서 직접 필요한 정보를 추출합니다.
+  const { clientKey, orderId, amount, productName } = route.params;
   const memberId = useAuthStore((state) => state.memberId);
   const [isLoading, setIsLoading] = useState(true);
   const [isWidgetReady, setIsWidgetReady] = useState(false);
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
-  const [orderId] = useState(`order_${productId}_${new Date().getTime()}`);
   
-  // [복원] 결제 정보를 프론트에서 조합
+  // [수정] 백엔드로부터 받은 데이터로 paymentDetails를 구성합니다.
   const paymentDetails = useMemo(() => ({
-    clientKey: 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm', // [중요] 문서에서 제공된 테스트 클라이언트 키
+    // clientKey, // [임시 주석 처리] 백엔드에서 보내주는 키를 잠시 무시합니다.
+    clientKey: 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm', // [수정] 공식 문서의 올바른 테스트 클라이언트 키를 직접 사용합니다.
     customerKey: memberId ? `member_${memberId}` : `guest_${orderId}`,
-    amount: parseFloat(price),
-    orderId: orderId,
-    orderName: productName,
-    successUrl: 'dicetalkts://payment-success', // 우리 앱의 딥링크
-    failUrl: 'dicetalkts://payment-fail',       // 우리 앱의 딥링크
-  }), [memberId, orderId, price, quantity, productName]);
+    amount, // 백엔드에서 받은 값
+    orderId, // 백엔드에서 받은 값
+    orderName: productName, // ChargePage에서 전달받은 값
+    successUrl: 'dicetalkts://payment-success',
+    failUrl: 'dicetalkts://payment-fail',
+  }), [clientKey, memberId, orderId, amount, productName]);
   
   /**
    * WebView에 위젯 렌더링을 요청하는 스크립트를 주입합니다.
@@ -134,7 +132,7 @@ export default function PaymentScreen() {
           <ActivityIndicator size="large" color="#8A50F6" />
         ) : (
           <Button
-            title={`${paymentDetails.amount.toLocaleString()}원 결제하기`}
+            title={`${amount.toLocaleString()}원 결제하기`}
             onPress={handlePaymentRequest}
             disabled={!isWidgetReady}
           />

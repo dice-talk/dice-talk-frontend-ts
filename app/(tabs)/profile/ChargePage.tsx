@@ -1,3 +1,4 @@
+import { requestTossPayment } from '@/api/paymentApi';
 import { getAllProducts } from '@/api/productApi';
 import CurrentDiceInfo from '@/components/charge/CurrentDiceInfo';
 import DiceProductItem from '@/components/charge/DiceProductItem';
@@ -43,6 +44,7 @@ export default function ChargePage() {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [diceProducts, setDiceProducts] = useState<ProductItemData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRequestingPayment, setIsRequestingPayment] = useState(false);
   
   // HomeStore에서 아이템 목록 가져오기
   const storeItems = useHomeStore((state) => state.items);
@@ -85,25 +87,40 @@ export default function ChargePage() {
     fetchDiceProducts();
   }, []);
 
-  const handleProductSelect = (productId: number) => {
-    // [수정] API로 받아온 상품 목록에서 선택된 상품을 찾습니다.
-    const selectedProduct = diceProducts.find(p => p.id === productId);
-    if (!selectedProduct) {
-      console.error("Selected product not found!");
-      return;
-    }
+  const handleProductPress = async (item: ProductItemData) => {
+    if (isRequestingPayment) return;
+    setIsRequestingPayment(true);
 
-    navigation.navigate('PaymentScreen', {
-      productId: selectedProduct.id.toString(),
-      productName: selectedProduct.diceAmount,
-      price: selectedProduct.price.toString(),
-      quantity: selectedProduct.quantity.toString(),
-    });
+    try {
+      // 1. 백엔드에 결제 요청을 보내고, 결제 위젯에 필요한 정보를 받습니다.
+      const paymentData = await requestTossPayment({
+        productId: item.id,
+        amount: item.price,
+        diceAmount: item.quantity,
+      });
+
+      // 2. 받은 정보를 가지고 PaymentScreen으로 이동합니다.
+      navigation.navigate('PaymentScreen', {
+        ...paymentData,
+        productName: item.diceAmount, // 백엔드 응답에 상품명이 없어 프론트에서 전달
+      });
+
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || '결제 요청 중 오류가 발생했습니다.';
+      Alert.alert('오류', errorMessage);
+    } finally {
+      setIsRequestingPayment(false);
+    }
   };
 
   return (
     <View style={styles.safeAreaContainer}> 
       <GradientHeader title="충전하기" />
+      {isRequestingPayment && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#8A50F6" />
+        </View>
+      )}
       <ScrollView>
         <CurrentDiceInfo currentDiceCount={0} />
 
@@ -147,7 +164,7 @@ export default function ChargePage() {
                   diceAmount={item.diceAmount}
                   price={item.price}
                   quantity={item.quantity}
-                  onPress={() => handleProductSelect(item.id)}
+                  onPress={() => handleProductPress(item)}
                   isSelected={selectedProductId === item.id}
                 />
               )}
@@ -204,5 +221,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginLeft: width * 0.05, 
     marginRight: width * 0.05,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
 });

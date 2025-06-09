@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toss Payments</title>
+    <title>Toss Payment Widget</title>
     <!-- 사용자가 제공한 공식 문서 버전인 v1 스크립트를 사용합니다. -->
     <script src="https://js.tosspayments.com/v1/payment-widget"></script>
     <style>
@@ -25,73 +25,103 @@
     </style>
 </head>
 <body>
+    <!-- 결제 UI가 렌더링될 영역 -->
     <div id="payment-method"></div>
+    <!-- 이용약관 UI가 렌더링될 영역 -->
     <div id="agreement"></div>
-    <!-- 결제하기 버튼은 자동 실행되므로 필요 없어 보입니다. -->
-    <!-- <button id="payment-button" style="display:none;">결제하기</button> -->
 
     <script>
-        // 전역 변수로 위젯과 결제 정보를 저장합니다.
-        let paymentWidget = null;
-        let paymentData = null;
+        // let paymentWidget;
+        // let paymentMethodWidget;
+        const widgetClientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+        const customerKey = "jgEwseWGELD7bBy-mCBdV";
+        paymentWidget = PaymentWidget(widgetClientKey, customerKey); // 회원 결제
+        // const paymentWidget = PaymentWidget(widgetClientKey, PaymentWidget.ANONYMOUS) // 비회원 결제
 
-        /**
-         * 디버깅 및 오류 메시지를 React Native로 전송하는 헬퍼 함수
-         */
-        function sendMessageToReactNative(message) {
+        // React Native로부터 메시지를 수신하고 JSON으로 파싱하는 헬퍼 함수
+        const postMessage = (data) => {
             if (window.ReactNativeWebView) {
-                window.ReactNativeWebView.postMessage(JSON.stringify(message));
+                window.ReactNativeWebView.postMessage(JSON.stringify(data));
             }
-        }
+        };
 
-        /**
-         * React Native에서 호출할 함수: 위젯을 렌더링합니다.
-         */
-        window.renderWidget = async function(paymentDetailsString) {
-            sendMessageToReactNative({ type: 'LOG', payload: 'WebView: renderWidget 함수 호출됨.' });
+        // 로그 전송용 함수
+        const log = (payload) => postMessage({ type: 'LOG', payload });
+
+        // 위젯 렌더링 함수: React Native에서 호출됩니다.
+        window.renderWidget = (paymentDetailsJSON) => {
             try {
-                paymentData = JSON.parse(paymentDetailsString);
-                
-                // 1. 위젯 초기화 (고객 키는 비회원일 경우를 대비하여 ANONYMOUS 처리)
-                paymentWidget = PaymentWidget(paymentData.clientKey, paymentData.customerKey || PaymentWidget.ANONYMOUS);
-                
+                log('renderWidget called with: ' + paymentDetailsJSON);
+                const paymentDetails = JSON.parse(paymentDetailsJSON);
+                const { clientKey, customerKey, amount } = paymentDetails;
+
+                if (!clientKey || !customerKey || !amount) {
+                    throw new Error('필수 결제 정보(clientKey, customerKey, amount)가 누락되었습니다.');
+                }
+
+                // 1. 결제 위젯 초기화
+                paymentWidget = PaymentWidget(clientKey, customerKey);
+
                 // 2. 결제 UI 렌더링
-                await paymentWidget.renderPaymentMethods(
-                    "#payment-method", 
-                    { value: paymentData.amount },
-                    { variantKey: "DEFAULT" }
+                paymentMethodWidget = paymentWidget.renderPaymentMethods(
+                    '#payment-method', 
+                    { value: amount },
+                    { variantKey: 'DEFAULT' } // variantKey는 필요에 따라 변경
                 );
+                
+                // 3. 이용약관 UI 렌더링
+                paymentWidget.renderAgreement('#agreement', { variantKey: 'AGREEMENT' });
 
-                // 3. 약관 UI 렌더링
-                await paymentWidget.renderAgreement("#agreement", { variantKey: "AGREEMENT" });
-
-                sendMessageToReactNative({ type: 'LOG', payload: 'WebView: 위젯 렌더링 성공.' });
-                // 4. React Native에 위젯 준비 완료 신호 전송
-                sendMessageToReactNative({ type: 'WIDGET_READY' });
+                // 4. 위젯 렌더링 완료 신호 전송
+                postMessage({ type: 'WIDGET_READY' });
+                log('Widget rendering finished.');
 
             } catch (error) {
-                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 위젯 렌더링 실패: ' + error.message } });
+                log('Error in renderWidget: ' + error.message);
+                postMessage({ type: 'ERROR', payload: { message: error.message } });
             }
         };
 
-        /**
-         * React Native에서 호출할 함수: 결제를 요청합니다.
-         */
-        window.startPayment = async function() {
-            sendMessageToReactNative({ type: 'LOG', payload: 'WebView: startPayment 함수 호출됨.' });
-            if (paymentWidget && paymentData) {
-                try {
-                    await paymentWidget.requestPayment(paymentData);
-                } catch (error) {
-                    sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 요청 실패: ' + error.message } });
+        // 결제 요청 함수: React Native에서 호출됩니다.
+        window.startPayment = () => {
+            try {
+                log('startPayment called');
+                const paymentDetails = JSON.parse(window.paymentDetailsString); // 저장된 정보 사용
+
+                if (!paymentWidget) {
+                    throw new Error('결제 위젯이 초기화되지 않았습니다.');
                 }
-            } else {
-                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 위젯이 준비되지 않았습니다.' } });
+
+                // 결제 요청
+                paymentWidget.requestPayment({
+                    orderId: paymentDetails.orderId,
+                    orderName: paymentDetails.orderName,
+                    successUrl: paymentDetails.successUrl,
+                    failUrl: paymentDetails.failUrl,
+                    // 필요에 따라 고객 정보 추가
+                    // customerEmail: paymentDetails.customerEmail,
+                    // customerName: paymentDetails.customerName,
+                });
+
+            } catch (error) {
+                log('Error in startPayment: ' + error.message);
+                postMessage({ type: 'ERROR', payload: { message: error.message } });
             }
         };
+        
+        // 결제 요청에 필요한 정보를 전역 변수에 저장해두기 위한 트릭
+        // renderWidget 함수는 호출 시 인자를 받지만, startPayment는 인자 없이 호출되므로
+        // renderWidget 시점에 정보를 저장해둡니다.
+        Object.defineProperty(window, 'paymentDetailsString', {
+            value: '{}',
+            writable: true,
+        });
+        const originalRenderWidget = window.renderWidget;
+        window.renderWidget = (detailsJSON) => {
+            window.paymentDetailsString = detailsJSON;
+            originalRenderWidget(detailsJSON);
+        };
 
-        // 페이지가 로드되었음을 초기에 한번 알립니다.
-        sendMessageToReactNative({ type: 'HTML_LOADED' });
     </script>
 </body>
 </html>
