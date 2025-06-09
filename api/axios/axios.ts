@@ -57,14 +57,14 @@ axiosWithToken.interceptors.request.use(
   }
 );
 
-// [수정] 응답 인터셉터에서 자동 토큰 재발급 로직을 제거하여 순환 참조를 완전히 해결합니다.
-// 401 에러 발생 시, 에러를 그대로 반환하여 API를 호출한 상위 로직에서 처리하도록 책임을 위임합니다.
+// [수정] 응답 인터셉터에서 자동 토큰 재발급 로직을 제거합니다.
 axiosWithToken.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 401 에러 발생 시, 현재는 콘솔에 로그만 남기고 에러를 그대로 반환합니다.
+    // 이를 통해 순환 참조를 해결하고, 추후 각 API 호출부에서 에러를 직접 처리하도록 구조를 개선할 수 있습니다.
     if (error.response?.status === 401) {
-      console.log('axiosWithToken Interceptor: 401 에러(토큰 만료 가능성) 감지. 자동 재발급 로직 비활성화 상태. 에러를 그대로 반환합니다.');
-      // 여기서 추가적인 처리를 하지 않고 바로 에러를 반환합니다.
+      console.log('axios Interceptor: 401 Error. Token may have expired.');
     }
     return Promise.reject(error);
   }

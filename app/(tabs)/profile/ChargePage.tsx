@@ -1,13 +1,11 @@
-import { getAllProducts } from '@/api/productApi'; // getAllProducts import
 import CurrentDiceInfo from '@/components/charge/CurrentDiceInfo';
 import DiceProductItem from '@/components/charge/DiceProductItem';
 import PurchasableFunctionItem from '@/components/charge/PurchasableFunctionItem';
 import GradientHeader from '@/components/common/GradientHeader';
-import { Product } from '@/types/Product'; // Product 타입을 가져옵니다. 실제 경로에 따라 수정이 필요할 수 있습니다.
-import useHomeStore, { Item as StoreItem } from '@/zustand/stores/HomeStore'; // HomeStore와 Item 타입 import
-import { useNavigation } from '@react-navigation/native'; // 네비게이션 훅 import
-import { LinearGradient } from 'expo-linear-gradient'; // 구분선용
-import { useEffect, useMemo, useState } from 'react'; // useEffect import
+import useHomeStore, { Item as StoreItem } from '@/zustand/stores/HomeStore';
+import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -36,12 +34,19 @@ interface ProductItemData {
 
 const { width } = Dimensions.get('window');
 
-export default function ChargePage() {
-  const navigation = useNavigation<any>(); // 네비게이션 객체 생성
-  const [currentDiceCount] = useState<number>(0); // 이미지 기준 초기값
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null); // ID 타입을 number로 변경
-  const [diceProducts, setDiceProducts] = useState<ProductItemData[]>([]); // API로부터 받을 상품 목록 상태
+// [복원] 로컬에서 관리하던 상품 데이터
+const diceProducts = [
+  { id: 1, diceAmount: '주사위 10개', price: 1200, quantity: 10 },
+  { id: 2, diceAmount: '주사위 50개', price: 5900, quantity: 50 },
+  { id: 3, diceAmount: '주사위 100개', price: 11000, quantity: 100 },
+  { id: 4, diceAmount: '주사위 150개', price: 18000, quantity: 150 },
+  { id: 5, diceAmount: '주사위 200개', price: 25000, quantity: 200 },
+];
 
+export default function ChargePage() {
+  const navigation = useNavigation<any>();
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  
   // HomeStore에서 아이템 목록 가져오기
   const storeItems = useHomeStore((state) => state.items);
 
@@ -56,45 +61,15 @@ export default function ChargePage() {
     }));
   }, [storeItems]);
 
-  useEffect(() => {
-    const fetchDiceProducts = async () => {
-      try {
-        const response = await getAllProducts(1, 10); // response는 ProductListResponse 타입
-        // ProductListResponse가 { data: Product[] } 형태라고 가정하고, response.data가 Product 배열
-        if (response && response.data && Array.isArray(response.data)) { 
-          const mappedProducts: ProductItemData[] = response.data.map((product: Product) => ({
-            id: product.productId,
-            diceAmount: product.productName,
-            price: product.price,
-            quantity: product.quantity,
-            productImage: product.productImage, // productImage가 null일 수 있음
-          }));
-          setDiceProducts(mappedProducts);
-        } else {
-          console.warn('Products data is not in expected format or is empty:', response);
-          setDiceProducts([]);
-        }
-      } catch (error) {
-        console.error('Error fetching dice products:', error);
-        setDiceProducts([]);
-      }
-    };
-
-    fetchDiceProducts();
-  }, []); // 컴포넌트 마운트 시 1회 실행
-
+  // [복원] 백엔드 연동 전의 핸들러
   const handleProductSelect = (productId: number) => {
-    // 선택된 상품의 전체 정보를 찾습니다.
     const selectedProduct = diceProducts.find(p => p.id === productId);
     if (!selectedProduct) {
       console.error("Selected product not found!");
       return;
     }
 
-    console.log("Navigating to Payment with:", selectedProduct);
-
-    // PaymentScreen으로 네비게이션하면서 상품 정보를 파라미터로 전달합니다.
-    // 모든 파라미터는 문자열로 전달하는 것이 안전합니다.
+    // [복원] PaymentScreen으로 기본 상품 정보만 전달
     navigation.navigate('PaymentScreen', {
       productId: selectedProduct.id.toString(),
       productName: selectedProduct.diceAmount,
@@ -106,8 +81,8 @@ export default function ChargePage() {
   return (
     <View style={styles.safeAreaContainer}> 
       <GradientHeader title="충전하기" />
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-        <CurrentDiceInfo currentDiceCount={currentDiceCount} />
+      <ScrollView>
+        <CurrentDiceInfo currentDiceCount={0} />
 
         {purchasableFunctionsData.length > 0 ? (
           <View style={styles.sectionContainer}>
@@ -138,31 +113,27 @@ export default function ChargePage() {
 
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>다이스 충전</Text>
-          {diceProducts.length > 0 ? (
-            <FlatList
-              data={diceProducts} // API로부터 받은 상품 목록 사용
-              renderItem={({ item }) => (
-                <DiceProductItem
-                  id={item.id} // productId
-                  diceAmount={item.diceAmount} // productName
-                  price={item.price}
-                  quantity={item.quantity} // quantity 전달
-                  onPress={() => handleProductSelect(item.id)} // onPress 이벤트에 핸들러 연결
-                  isSelected={selectedProductId === item.id}
-                />
-              )}
-              keyExtractor={(item) => item.id.toString()} // id가 number이므로 string으로 변환
-              ItemSeparatorComponent={() => (
-                <LinearGradient
-                  colors={['#F0F0F0', '#F0F0F0']}
-                  style={styles.productItemSeparator}
-                />
-              )}
-              scrollEnabled={false} 
-            />
-          ) : (
-            <Text style={styles.emptyText}>충전 가능한 다이스 상품이 없습니다.</Text>
-          )}
+          <FlatList
+            data={diceProducts} // [복원] 로컬 상품 데이터 사용
+            renderItem={({ item }) => (
+              <DiceProductItem
+                id={item.id}
+                diceAmount={item.diceAmount}
+                price={item.price}
+                quantity={item.quantity}
+                onPress={() => handleProductSelect(item.id)} // [복원] 핸들러 연결
+                isSelected={selectedProductId === item.id}
+              />
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            ItemSeparatorComponent={() => (
+              <LinearGradient
+                colors={['#F0F0F0', '#F0F0F0']}
+                style={styles.productItemSeparator}
+              />
+            )}
+            scrollEnabled={false} 
+          />
         </View>
       </ScrollView>
     </View>

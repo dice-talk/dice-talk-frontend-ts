@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toss Payments</title>
-    <script src="https://js.tosspayments.com/v2/payment-widget"></script>
+    <!-- 사용자가 제공한 공식 문서 버전인 v1 스크립트를 사용합니다. -->
+    <script src="https://js.tosspayments.com/v1/payment-widget"></script>
     <style>
         /* 화면에 아무것도 안보이는 경우를 대비하여 payment-method 영역 확인용 스타일 */
         #payment-method {
@@ -20,81 +21,77 @@
             padding: 0;
             box-sizing: border-box;
         }
+        #payment-method, #agreement { width: 100%; }
     </style>
 </head>
 <body>
     <div id="payment-method"></div>
+    <div id="agreement"></div>
     <!-- 결제하기 버튼은 자동 실행되므로 필요 없어 보입니다. -->
     <!-- <button id="payment-button" style="display:none;">결제하기</button> -->
 
     <script>
+        // 전역 변수로 위젯과 결제 정보를 저장합니다.
+        let paymentWidget = null;
         let paymentData = null;
-        let isTossScriptLoaded = false;
 
-        /* [수정] RN에서 호출할 함수: 전달받은 결제 정보를 저장하고, 스크립트가 이미 로드되었다면 위젯 렌더링을 시작합니다. */
-        window.initializePayment = function(paymentDetailsString) {
-            console.log('[WebView] initializePayment function called.');
+        /**
+         * 디버깅 및 오류 메시지를 React Native로 전송하는 헬퍼 함수
+         */
+        function sendMessageToReactNative(message) {
+            if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify(message));
+            }
+        }
+
+        /**
+         * React Native에서 호출할 함수: 위젯을 렌더링합니다.
+         */
+        window.renderWidget = async function(paymentDetailsString) {
+            sendMessageToReactNative({ type: 'LOG', payload: 'WebView: renderWidget 함수 호출됨.' });
             try {
                 paymentData = JSON.parse(paymentDetailsString);
-                console.log('[WebView] Parsed payment details:', paymentData);
+                
+                // 1. 위젯 초기화 (고객 키는 비회원일 경우를 대비하여 ANONYMOUS 처리)
+                paymentWidget = PaymentWidget(paymentData.clientKey, paymentData.customerKey || PaymentWidget.ANONYMOUS);
+                
+                // 2. 결제 UI 렌더링
+                await paymentWidget.renderPaymentMethods(
+                    "#payment-method", 
+                    { value: paymentData.amount },
+                    { variantKey: "DEFAULT" }
+                );
 
-                if (isTossScriptLoaded) {
-                    console.log('[WebView] Toss script was already loaded. Rendering widget now.');
-                    renderWidget();
-                } else {
-                    console.log('[WebView] Toss script not loaded yet. Waiting for onload event.');
-                }
-            } catch (e) {
-                console.error('[WebView] Error parsing paymentDetailsString or in initializePayment:', e);
-                sendMessageToReactNative({
-                    type: 'ERROR',
-                    payload: { message: 'WebView에서 결제정보 처리 중 오류 발생', error: e.toString() }
-                });
+                // 3. 약관 UI 렌더링
+                await paymentWidget.renderAgreement("#agreement", { variantKey: "AGREEMENT" });
+
+                sendMessageToReactNative({ type: 'LOG', payload: 'WebView: 위젯 렌더링 성공.' });
+                // 4. React Native에 위젯 준비 완료 신호 전송
+                sendMessageToReactNative({ type: 'WIDGET_READY' });
+
+            } catch (error) {
+                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 위젯 렌더링 실패: ' + error.message } });
             }
         };
 
-        /* [추가] 토스 스크립트의 onload 이벤트에서 호출될 함수: 스크립트 로딩 완료를 기록하고, 결제 정보가 이미 도착했다면 위젯 렌더링을 시작합니다. */
-        function onTossScriptReady() {
-            console.log('[WebView] Toss script is now loaded.');
-            isTossScriptLoaded = true;
-            if (paymentData) {
-                console.log('[WebView] Payment data was already received. Rendering widget now.');
-                renderWidget();
+        /**
+         * React Native에서 호출할 함수: 결제를 요청합니다.
+         */
+        window.startPayment = async function() {
+            sendMessageToReactNative({ type: 'LOG', payload: 'WebView: startPayment 함수 호출됨.' });
+            if (paymentWidget && paymentData) {
+                try {
+                    await paymentWidget.requestPayment(paymentData);
+                } catch (error) {
+                    sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 요청 실패: ' + error.message } });
+                }
+            } else {
+                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 위젯이 준비되지 않았습니다.' } });
             }
-        }
-        
-        /* [수정] 위젯 렌더링 및 결제 요청 로직을 별도 함수로 분리 */
-        async function renderWidget() {
-             // 두 조건이 모두 충족되지 않으면 실행하지 않음
-            if (!paymentData || !isTossScriptLoaded) {
-                console.warn('[WebView] renderWidget called, but conditions not met.');
-                return;
-            }
+        };
 
-            const clientKey = paymentData.clientKey;
-            const customerKey = paymentData.customerKey;
-            const amount = paymentData.amount;
-            
-            console.log('[WebView] Initializing PaymentWidget with clientKey:', clientKey, 'customerKey:', customerKey);
-
-            try {
-                const paymentWidget = PaymentWidget(clientKey, customerKey || PaymentWidget.ANONYMOUS);
-                
-                await paymentWidget.renderPaymentMethods("#payment-method", { value: amount }, { variantKey: "DEFAULT" });
-                console.log('[WebView] renderPaymentMethods Succeeded. Requesting payment...');
-
-                await paymentWidget.requestPayment(paymentData);
-
-            } catch (error) {
-                console.error('[WebView] Error in renderWidget:', error);
-                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 UI 렌더링 또는 초기화 실패', errorName: error.name, errorMessage: error.message }});
-            }
-        }
-
-        // 기존의 sendMessageToReactNative, initializePaymentWidget, requestTossPayment 함수들은
-        // 위의 renderWidget 함수로 통합되었으므로, 여기서는 제거하거나 주석 처리합니다.
+        // 페이지가 로드되었음을 초기에 한번 알립니다.
+        sendMessageToReactNative({ type: 'HTML_LOADED' });
     </script>
-    <!-- [수정] 토스 스크립트 태그에 onload 콜백을 추가합니다. -->
-    <script src="https://js.tosspayments.com/v2/payment-widget" onload="onTossScriptReady()"></script>
 </body>
 </html>
