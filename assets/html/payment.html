@@ -31,12 +31,9 @@
     <div id="agreement"></div>
 
     <script>
-        // let paymentWidget;
-        // let paymentMethodWidget;
-        const widgetClientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
-        const customerKey = "jgEwseWGELD7bBy-mCBdV";
-        paymentWidget = PaymentWidget(widgetClientKey, customerKey); // 회원 결제
-        // const paymentWidget = PaymentWidget(widgetClientKey, PaymentWidget.ANONYMOUS) // 비회원 결제
+        let paymentWidget;
+        let paymentMethodWidget;
+        
 
         // React Native로부터 메시지를 수신하고 JSON으로 파싱하는 헬퍼 함수
         const postMessage = (data) => {

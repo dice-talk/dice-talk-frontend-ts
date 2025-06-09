@@ -48,8 +48,7 @@ export default function PaymentScreen() {
   
   // [수정] 백엔드로부터 받은 데이터로 paymentDetails를 구성합니다.
   const paymentDetails = useMemo(() => ({
-    // clientKey, // [임시 주석 처리] 백엔드에서 보내주는 키를 잠시 무시합니다.
-    clientKey: 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm', // [수정] 공식 문서의 올바른 테스트 클라이언트 키를 직접 사용합니다.
+    clientKey, // [수정] 백엔드 키가 수정되었으므로, 다시 백엔드에서 받은 값을 사용하도록 복원합니다.
     customerKey: memberId ? `member_${memberId}` : `guest_${orderId}`,
     amount, // 백엔드에서 받은 값
     orderId, // 백엔드에서 받은 값
@@ -127,17 +126,17 @@ export default function PaymentScreen() {
       {isLoading && !isWidgetReady && (
         <ActivityIndicator style={styles.loadingOverlay} size="large" color="#8A50F6" />
       )}
-      <View style={styles.paymentButtonContainer}>
-        {isPaymentProcessing ? (
-          <ActivityIndicator size="large" color="#8A50F6" />
-        ) : (
+
+      {/* [수정] 결제가 진행 중이 아닐 때만 버튼 컨테이너를 보여줍니다. */}
+      {!isPaymentProcessing && (
+        <View style={styles.paymentButtonContainer}>
           <Button
             title={`${amount.toLocaleString()}원 결제하기`}
             onPress={handlePaymentRequest}
             disabled={!isWidgetReady}
           />
-        )}
-      </View>
+        </View>
+      )}
     </View>
   );
 }
