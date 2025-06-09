@@ -46,7 +46,7 @@ export default function PaymentScreen() {
   const memberId = useAuthStore((state) => state.memberId);
   const [isLoading, setIsLoading] = useState(true);
   const [isWidgetReady, setIsWidgetReady] = useState(false);
-  // [복원] orderId를 프론트에서 생성
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   const [orderId] = useState(`order_${productId}_${new Date().getTime()}`);
   
   // [복원] 결제 정보를 프론트에서 조합
@@ -73,7 +73,9 @@ export default function PaymentScreen() {
   /**
    * WebView에 결제 시작을 요청하는 스크립트를 주입합니다.
    */
-  const requestPaymentInWebView = () => {
+  const handlePaymentRequest = () => {
+    if (isPaymentProcessing) return;
+    setIsPaymentProcessing(true);
     if (webViewRef.current) {
       webViewRef.current.injectJavaScript(`window.startPayment(); true;`);
     }
@@ -125,16 +127,19 @@ export default function PaymentScreen() {
         originWhitelist={['*']}
       />
       {isLoading && !isWidgetReady && (
-        <ActivityIndicator style={styles.loadingOverlay} size="large" />
+        <ActivityIndicator style={styles.loadingOverlay} size="large" color="#8A50F6" />
       )}
-      {isWidgetReady && (
-        <View style={styles.paymentButtonContainer}>
+      <View style={styles.paymentButtonContainer}>
+        {isPaymentProcessing ? (
+          <ActivityIndicator size="large" color="#8A50F6" />
+        ) : (
           <Button
             title={`${paymentDetails.amount.toLocaleString()}원 결제하기`}
-            onPress={requestPaymentInWebView}
+            onPress={handlePaymentRequest}
+            disabled={!isWidgetReady}
           />
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }
