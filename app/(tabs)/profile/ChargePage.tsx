@@ -8,12 +8,12 @@ import useHomeStore, { Item as StoreItem } from '@/zustand/stores/HomeStore'; //
 import { LinearGradient } from 'expo-linear-gradient'; // 구분선용
 import { useEffect, useMemo, useState } from 'react'; // useEffect import
 import {
-  Dimensions,
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Dimensions,
+    FlatList,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 // 데이터 타입 (PurchasableFunctionItemProps, DiceProductItemProps에서 가져오거나 여기서 간단히 정의)

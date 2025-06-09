@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toss Payments</title>
+    <script src="https://js.tosspayments.com/v1/payment-widget"></script>
+    <style>
+        /* 화면에 아무것도 안보이는 경우를 대비하여 payment-method 영역 확인용 스타일 */
+        #payment-method {
+            min-height: 100px; /* 최소 높이 지정 */
+            border: 1px solid #eee; /* 테두리 추가 */
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div id="payment-method"></div>
+    <!-- 결제하기 버튼은 자동 실행되므로 필요 없어 보입니다. -->
+    <!-- <button id="payment-button" style="display:none;">결제하기</button> -->
+
+    <script>
+        let paymentData = null;
+        let paymentWidget = null;
+        const clientKey = 'test_ck_Z1aOwX7K8mOyb5YxMMvqVyQxzvNP'; // 테스트 클라이언트 키
+
+        // React Native로 메시지 전송 (콘솔에도 동일 내용 로깅)
+        function sendMessageToReactNative(message) {
+            const messageString = JSON.stringify(message);
+            console.log('[WebView] Sending message to RN:', messageString); // 웹뷰 콘솔에도 로그
+            if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+                window.ReactNativeWebView.postMessage(messageString);
+            } else {
+                console.error('[WebView] ReactNativeWebView.postMessage is not available.');
+            }
+        }
+        
+        // 초기화 메시지를 부모(Expo)에게 보내 로딩되었음을 알림
+        // 이 메시지는 PaymentScreen.tsx에서 받아서 sendPaymentRequestToWebView()를 호출하게 함
+        sendMessageToReactNative({ type: 'HTML_LOADED' });
+        console.log('[WebView] HTML_LOADED message sent.');
+
+        window.addEventListener('message', function(event) {
+            console.log('[WebView] Received message event from RN:', event);
+            try {
+                // Expo 앱에서 전달된 JSON 문자열을 객체로 파싱
+                // 모바일 환경에 따라 event.nativeEvent.data 또는 event.data로 올 수 있음.
+                // RN에서 보낸 메시지는 event.data로 들어옴
+                const rawData = event.data; // 우선 event.data를 사용
+                console.log('[WebView] Raw message data:', rawData);
+
+                if (typeof rawData !== 'string') {
+                    console.error('[WebView] Received data is not a string:', rawData);
+                    sendMessageToReactNative({ type: 'ERROR', payload: { message: 'WebView received non-string data', dataReceived: rawData }});
+                    return;
+                }
+
+                const receivedData = JSON.parse(rawData);
+                console.log('[WebView] Parsed message data:', receivedData);
+                
+                // PaymentScreen.tsx에서는 'LOAD_PAYMENT_WIDGET' 타입으로 메시지를 보냄
+                if (receivedData.type === 'LOAD_PAYMENT_WIDGET') { // 타입 이름 확인
+                    paymentData = receivedData.payload;
+                    console.log('[WebView] PAYMENT_REQUEST (LOAD_PAYMENT_WIDGET) received. Payload:', paymentData);
+                    initializePaymentWidget(clientKey);
+                } else {
+                    console.log('[WebView] Received message of unknown type or not for payment:', receivedData.type);
+                }
+            } catch (e) {
+                console.error('[WebView] Error parsing message from RN or in event handler:', e);
+                sendMessageToReactNative({ type: 'ERROR', payload: { message: 'Error processing message in WebView', error: e.toString(), originalData: event.data }});
+            }
+        });
+        
+
+        async function initializePaymentWidget(currentClientKey) {
+            console.log('[WebView] initializePaymentWidget called with clientKey:', currentClientKey);
+            if (!paymentData) {
+                console.error('[WebView] Payment data is missing in initializePaymentWidget.');
+                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 정보 없음 (initializePaymentWidget)' }});
+                return;
+            }
+            console.log('[WebView] Payment data for widget:', paymentData);
+
+            // amount는 PaymentScreen.tsx에서 문자열로 올 수 있으므로 숫자로 변환
+            const amountAsNumber = parseInt(paymentData.amount, 10);
+            if (isNaN(amountAsNumber)) {
+                console.error('[WebView] Invalid amount:', paymentData.amount);
+                sendMessageToReactNative({ type: 'ERROR', payload: { message: '금액 정보 오류', amountReceived: paymentData.amount }});
+                return;
+            }
+            
+            console.log('[WebView] Initializing PaymentWidget with clientKey:', currentClientKey, 'customerKey:', paymentData.customerKey || PaymentWidget.ANONYMOUS);
+            try {
+                // 1. 결제위젯 초기화
+                paymentWidget = PaymentWidget(currentClientKey, paymentData.customerKey || PaymentWidget.ANONYMOUS);
+                console.log('[WebView] PaymentWidget initialized.');
+
+                // 2. 결제 UI 렌더링
+                console.log('[WebView] Rendering payment methods with amount:', amountAsNumber);
+                await paymentWidget.renderPaymentMethods(
+                    "#payment-method", 
+                    { value: amountAsNumber },
+                    { variantKey: "DEFAULT" } 
+                );
+                console.log('[WebView] paymentWidget.renderPaymentMethods Succeeded. Requesting payment...');
+                
+                // UI 렌더링이 성공하면 바로 결제 요청
+                await requestTossPayment(); // await 추가
+
+            } catch (error) {
+                console.error('[WebView] Error in initializePaymentWidget (renderPaymentMethods):', error);
+                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 UI 렌더링 또는 초기화 실패', errorName: error.name, errorMessage: error.message, errorStack: error.stack }});
+            }
+        }
+        
+        async function requestTossPayment() {
+            console.log('[WebView] requestTossPayment called.');
+            if (!paymentWidget || !paymentData) {
+                console.error('[WebView] Payment widget or data not ready for requestTossPayment.');
+                sendMessageToReactNative({ type: 'ERROR', payload: { message: '결제 준비 안됨 (requestTossPayment)' }});
+                return;
+            }
+
+            const { orderId, orderName, customerEmail, customerName, successUrl, failUrl } = paymentData;
+            console.log('[WebView] Requesting payment with data:', paymentData);
+
+            try {
+                await paymentWidget.requestPayment({
+                    orderId: orderId,
+                    orderName: orderName,
+                    customerEmail: customerEmail,
+                    customerName: customerName,
+                    successUrl: successUrl, 
+                    failUrl: failUrl,
+                });
+                // 이 함수가 성공적으로 호출되면 토스 결제창으로 리디렉션되거나, 토스 자체 UI가 로드됩니다.
+                // 성공/실패 자체는 successUrl/failUrl을 통해 WebView가 감지해야 합니다.
+                console.log('[WebView] paymentWidget.requestPayment call initiated.');
+            } catch (error) {
+                console.error('[WebView] Error in requestTossPayment:', error);
+                // 사용자가 결제창을 닫거나, 네트워크 오류 등 예외 상황 처리
+                sendMessageToReactNative({ type: 'PAYMENT_FAIL', payload: { message: '결제 요청 실패 또는 사용자 취소', errorName: error.name, errorMessage: error.message, errorStack: error.stack }});
+            }
+        }
+    </script>
+</body>
+</html>

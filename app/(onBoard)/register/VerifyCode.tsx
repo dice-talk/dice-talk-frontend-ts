@@ -90,10 +90,11 @@ export default function VerifyCode() {
             Alert.alert('알림', '인증번호 6자리를 모두 입력해주세요.');
             return;
         }
-        setIsVerifying(true);
+        //setIsVerifying(true);
         try {
             await verifyAuthCode({ email, code: value });
             // 성공 시 Alert 없이 바로 다음 화면으로 이동
+            setIsVerifying(true);
             router.replace('/(onBoard)/register/Agreement');
             // 성공 시 스토어의 이메일 외 다른 정보는 유지하고, 인증 완료 상태 등을 추가할 수 있음
         } catch (error: any) {
