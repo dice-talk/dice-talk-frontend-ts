@@ -168,7 +168,9 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(onBoard)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="Loading" options={{ headerShown: false }} /> 
+        <Stack.Screen name="Loading" options={{ headerShown: false }} />
+        <Stack.Screen name="payment-success" options={{ headerShown: false }} />
+        <Stack.Screen name="payment-fail" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
