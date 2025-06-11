@@ -29,6 +29,8 @@ const TossPaymentWebView = () => {
         amount: Number(amount),
         orderId,
         orderName,
+        successUrl: 'dicetalkts://payment-success',
+        failUrl: 'dicetalkts://payment-fail',
       };
       console.log("WebView로 전달하는 결제 정보:", paymentInfo);
       webViewRef.current.postMessage(JSON.stringify(paymentInfo));
@@ -102,19 +104,6 @@ const TossPaymentWebView = () => {
     );
   }
 
-  const injectedJavaScript = `
-    (function() {
-      const originalRequestPayment = PaymentWidget.prototype.requestPayment;
-      PaymentWidget.prototype.requestPayment = function(paymentParams) {
-        const successUrl = 'dicetalkts://payment-success';
-        const failUrl = 'dicetalkts://payment-fail';
-        const finalParams = { ...paymentParams, successUrl, failUrl };
-        originalRequestPayment.call(this, finalParams);
-      };
-    })();
-    true;
-  `;
-  
   return (
     <SafeAreaView style={styles.container}>
       <WebView
@@ -125,18 +114,6 @@ const TossPaymentWebView = () => {
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         javaScriptEnabled={true}
         originWhitelist={['*']}
-        injectedJavaScriptBeforeContentLoaded={`
-          // WebView 콘솔 로그를 React Native로 전달하는 프록시 설정
-          window.console.log = function(...args) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'LOG', data: args }));
-          };
-          window.console.error = function(...args) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', data: args }));
-          };
-          
-          // 기존 스크립트 (successUrl, failUrl 주입)
-          ${injectedJavaScript}
-        `}
       />
     </SafeAreaView>
   );

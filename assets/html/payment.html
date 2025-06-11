@@ -59,15 +59,16 @@
         try {
           console.log('HTML: Message event received.', event.data);
 
-          const { clientKey, customerKey, amount, orderId, orderName } = JSON.parse(event.data);
-          console.log('HTML: Parsed data', { clientKey, customerKey, amount, orderId, orderName });
+          const { clientKey, customerKey, amount, orderId, orderName, successUrl, failUrl } = JSON.parse(event.data);
+          console.log('HTML: Parsed data', { clientKey, customerKey, amount, orderId, orderName, successUrl, failUrl });
 
           if (!clientKey) {
             console.error('HTML: Client key is missing.');
             return;
           }
 
-          paymentParams = { amount, orderId, orderName };
+          // successUrl, failUrl을 포함하여 paymentParams를 구성
+          paymentParams = { amount, orderId, orderName, successUrl, failUrl };
 
           // 결제위젯 초기화
           console.log('HTML: Initializing PaymentWidget with clientKey:', clientKey, 'and customerKey:', customerKey);
@@ -99,6 +100,8 @@
             if (paymentWidget && paymentParams) {
                 // 결제 요청
                 console.log('HTML: Requesting payment with params:', paymentParams);
+                // successUrl, failUrl은 React Native에서 주입된 함수가 자동으로 처리하므로
+                // 여기서는 paymentParams만 전달하면 됩니다. injectedJavaScript 로직이 정상 동작해야 합니다.
                 paymentWidget.requestPayment(paymentParams);
             } else {
                 console.error('HTML: Payment widget is not initialized or params are missing.');

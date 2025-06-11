@@ -37,3 +37,9 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# Android/iOS build artifacts
+*.apk
+*.aab
+/android/app/build/
+/ios/build/
