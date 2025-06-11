@@ -6,8 +6,8 @@ import PurchasableFunctionItem from '@/components/charge/PurchasableFunctionItem
 import GradientHeader from '@/components/common/GradientHeader';
 import { Product } from '@/types/Product';
 import useHomeStore, { Item as StoreItem } from '@/zustand/stores/HomeStore';
-import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -40,7 +40,7 @@ interface ProductItemData {
 const { width } = Dimensions.get('window');
 
 export default function ChargePage() {
-  const navigation = useNavigation<any>();
+  const router = useRouter();
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [diceProducts, setDiceProducts] = useState<ProductItemData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,25 +89,33 @@ export default function ChargePage() {
 
   const handleProductPress = async (item: ProductItemData) => {
     if (isRequestingPayment) return;
-    setIsRequestingPayment(true);
 
+    setIsRequestingPayment(true);
     try {
-      // 1. 백엔드에 결제 요청을 보내고, 결제 위젯에 필요한 정보를 받습니다.
-      const paymentData = await requestTossPayment({
+      const requestData = {
         productId: item.id,
         amount: item.price,
-        diceAmount: item.quantity,
-      });
+        diceAmount: item.quantity, // Swagger에는 diceAmount로 되어있으므로 quantity를 사용
+      };
+      
+      console.log('결제 요청 데이터:', requestData);
+      const paymentResponse = await requestTossPayment(requestData);
+      console.log('결제 요청 응답:', paymentResponse);
 
-      // 2. 받은 정보를 가지고 PaymentScreen으로 이동합니다.
-      navigation.navigate('PaymentScreen', {
-        ...paymentData,
-        productName: item.diceAmount, // 백엔드 응답에 상품명이 없어 프론트에서 전달
+      // 백엔드에서 받은 정보로 PaymentScreen으로 이동
+      router.push({
+        pathname: '/profile/PaymentScreen',
+        params: {
+          amount: paymentResponse.amount.toString(), // amount는 숫자로 올 수 있으므로 문자열로 변환
+          orderId: paymentResponse.orderId,
+          orderName: paymentResponse.orderName,
+          clientKey: paymentResponse.clientKey,
+          // customerKey는 백엔드 응답에 없으므로, WebView에서 생성하도록 둡니다.
+        },
       });
-
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || '결제 요청 중 오류가 발생했습니다.';
-      Alert.alert('오류', errorMessage);
+    } catch (error) {
+      console.error("결제 요청 실패:", error);
+      Alert.alert('오류', '결제를 준비하는 중에 문제가 발생했습니다.');
     } finally {
       setIsRequestingPayment(false);
     }

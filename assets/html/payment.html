@@ -3,122 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toss Payment Widget</title>
+    <title>결제 페이지</title>
     <!-- 사용자가 제공한 공식 문서 버전인 v1 스크립트를 사용합니다. -->
     <script src="https://js.tosspayments.com/v1/payment-widget"></script>
     <style>
         /* 화면에 아무것도 안보이는 경우를 대비하여 payment-method 영역 확인용 스타일 */
         #payment-method {
-            min-height: 100px; /* 최소 높이 지정 */
-            border: 1px solid #eee; /* 테두리 추가 */
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        body, html {
             width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
         }
-        #payment-method, #agreement { width: 100%; }
+        body {
+            margin: 0;
+            padding: 1rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                'Helvetica Neue', Arial, sans-serif;
+            background-color: #ffffff;
+        }
+        #agreement {
+            width: 100%;
+        }
+        #payment-button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #payment-button:disabled {
+            background-color: #cdd3d8;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
-    <!-- 결제 UI가 렌더링될 영역 -->
+    <!-- 결제위젯, 이용약관 UI가 렌더링될 위치 -->
     <div id="payment-method"></div>
-    <!-- 이용약관 UI가 렌더링될 영역 -->
     <div id="agreement"></div>
+    <button id="payment-button" disabled>결제하기</button>
 
     <script>
-        let paymentWidget;
-        let paymentMethodWidget;
-        
+      // 이 스크립트 블록이 실행되는지 확인하는 최상위 로그
+      console.log('HTML: Script block started.');
 
-        // React Native로부터 메시지를 수신하고 JSON으로 파싱하는 헬퍼 함수
-        const postMessage = (data) => {
-            if (window.ReactNativeWebView) {
-                window.ReactNativeWebView.postMessage(JSON.stringify(data));
-            }
-        };
+      let paymentWidget;
+      let paymentParams;
 
-        // 로그 전송용 함수
-        const log = (payload) => postMessage({ type: 'LOG', payload });
+      // React Native 앱으로부터 메시지(결제 정보) 수신
+      // message 이벤트 리스너가 등록되는지 확인
+      console.log('HTML: Adding message event listener.');
+      document.addEventListener('message', (event) => {
+        try {
+          console.log('HTML: Message event received.', event.data);
 
-        // 위젯 렌더링 함수: React Native에서 호출됩니다.
-        window.renderWidget = (paymentDetailsJSON) => {
-            try {
-                log('renderWidget called with: ' + paymentDetailsJSON);
-                const paymentDetails = JSON.parse(paymentDetailsJSON);
-                const { clientKey, customerKey, amount } = paymentDetails;
+          const { clientKey, customerKey, amount, orderId, orderName } = JSON.parse(event.data);
+          console.log('HTML: Parsed data', { clientKey, customerKey, amount, orderId, orderName });
 
-                if (!clientKey || !customerKey || !amount) {
-                    throw new Error('필수 결제 정보(clientKey, customerKey, amount)가 누락되었습니다.');
-                }
+          if (!clientKey) {
+            console.error('HTML: Client key is missing.');
+            return;
+          }
 
-                // 1. 결제 위젯 초기화
-                paymentWidget = PaymentWidget(clientKey, customerKey);
+          paymentParams = { amount, orderId, orderName };
 
-                // 2. 결제 UI 렌더링
-                paymentMethodWidget = paymentWidget.renderPaymentMethods(
-                    '#payment-method', 
-                    { value: amount },
-                    { variantKey: 'DEFAULT' } // variantKey는 필요에 따라 변경
-                );
-                
-                // 3. 이용약관 UI 렌더링
-                paymentWidget.renderAgreement('#agreement', { variantKey: 'AGREEMENT' });
+          // 결제위젯 초기화
+          console.log('HTML: Initializing PaymentWidget with clientKey:', clientKey, 'and customerKey:', customerKey);
+          paymentWidget = PaymentWidget(clientKey, customerKey);
+          console.log('HTML: PaymentWidget initialized successfully.');
 
-                // 4. 위젯 렌더링 완료 신호 전송
-                postMessage({ type: 'WIDGET_READY' });
-                log('Widget rendering finished.');
+          // 결제 UI 렌더링
+          console.log('HTML: Rendering payment methods for amount:', amount);
+          paymentWidget.renderPaymentMethods('#payment-method', { value: amount });
 
-            } catch (error) {
-                log('Error in renderWidget: ' + error.message);
-                postMessage({ type: 'ERROR', payload: { message: error.message } });
-            }
-        };
+          console.log('HTML: Rendering agreement.');
+          paymentWidget.renderAgreement('#agreement');
 
-        // 결제 요청 함수: React Native에서 호출됩니다.
-        window.startPayment = () => {
-            try {
-                log('startPayment called');
-                const paymentDetails = JSON.parse(window.paymentDetailsString); // 저장된 정보 사용
+          // UI 렌더링이 완료되면 결제 버튼 활성화
+          console.log('HTML: Enabling payment button.');
+          document.getElementById('payment-button').disabled = false;
+        } catch (e) {
+          console.error('HTML: Error in message event listener.', e);
+        }
+      });
+      console.log('HTML: Message event listener added.');
 
-                if (!paymentWidget) {
-                    throw new Error('결제 위젯이 초기화되지 않았습니다.');
-                }
 
+      // 결제하기 버튼 클릭 이벤트
+      const payButton = document.getElementById('payment-button');
+      if (payButton) {
+        console.log('HTML: Adding click event listener to payment button.');
+        payButton.addEventListener('click', () => {
+            if (paymentWidget && paymentParams) {
                 // 결제 요청
-                paymentWidget.requestPayment({
-                    orderId: paymentDetails.orderId,
-                    orderName: paymentDetails.orderName,
-                    successUrl: paymentDetails.successUrl,
-                    failUrl: paymentDetails.failUrl,
-                    // 필요에 따라 고객 정보 추가
-                    // customerEmail: paymentDetails.customerEmail,
-                    // customerName: paymentDetails.customerName,
-                });
-
-            } catch (error) {
-                log('Error in startPayment: ' + error.message);
-                postMessage({ type: 'ERROR', payload: { message: error.message } });
+                console.log('HTML: Requesting payment with params:', paymentParams);
+                paymentWidget.requestPayment(paymentParams);
+            } else {
+                console.error('HTML: Payment widget is not initialized or params are missing.');
             }
-        };
-        
-        // 결제 요청에 필요한 정보를 전역 변수에 저장해두기 위한 트릭
-        // renderWidget 함수는 호출 시 인자를 받지만, startPayment는 인자 없이 호출되므로
-        // renderWidget 시점에 정보를 저장해둡니다.
-        Object.defineProperty(window, 'paymentDetailsString', {
-            value: '{}',
-            writable: true,
         });
-        const originalRenderWidget = window.renderWidget;
-        window.renderWidget = (detailsJSON) => {
-            window.paymentDetailsString = detailsJSON;
-            originalRenderWidget(detailsJSON);
-        };
-
+      } else {
+        console.error('HTML: Payment button not found.');
+      }
+      console.log('HTML: Script block finished.');
     </script>
 </body>
 </html>
