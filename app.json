@@ -19,6 +19,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.yeoseunga.dicetalkts",
+      "googleServicesFile": "./google-services.json",
       "queries": [
         {
           "intent": [

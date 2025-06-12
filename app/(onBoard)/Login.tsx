@@ -94,11 +94,11 @@ export default function LoginScreen() {
         // authStore.getState().memberInfo?.id 와 같이 최신 상태를 직접 가져오는 것을 고려하거나,
         // memberInfo가 확실히 업데이트된 후 이 로직을 실행하도록 보장해야 함.
         // 여기서는 loginMember 후 memberInfo가 업데이트 되었다고 가정.
-        const currentMemberId = useAuthStore.getState().memberId; // 최신 ID 가져오기 (authStore 구조에 따름)
+        const currentMemberId = useAuthStore.getState().memberId;
 
         if (expoPushToken && currentMemberId) {
           try {
-            await sendPushTokenToServer(currentMemberId, expoPushToken); // <<<<<< [수정] 주석 해제
+            await sendPushTokenToServer(expoPushToken); // <<<<<< [수정] memberId 인자 제거
             console.log('Expo 푸시 토큰 서버 전송 성공:', expoPushToken, 'for memberId:', currentMemberId);
           } catch (tokenError) {
             console.error('Expo 푸시 토큰 서버 전송 실패 (LoginScreen catch):', tokenError);
