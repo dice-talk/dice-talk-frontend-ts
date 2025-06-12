@@ -8,119 +8,31 @@
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
+      <category android:name="android.intent.category.BROWSABLE"/>
       <data android:scheme="https"/>
     </intent>
+  </queries>
+  <queries>
     <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="about"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="supertoss"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="kakaotalk"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="kakaopay"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="naversearchapp"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="npay"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="payco"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="lpay"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="com.samsung.android.spay"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="ispmobile"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="shinhan-sr-ansimclick"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="kb-acp"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="mpocket.online.ansimclick"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="hdcardappcardansimclick"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="lotteappcard"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="cloudpay"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="nhallonepayansimclick"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="hanaskcard"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="citiaps"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="wooripay"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="tauthlink"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="skpay"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="nhb-blp"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="kbstar"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="shinhan-s-bank"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="wooribank"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="hanawalletmembers"/>
-    </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="com.ibk.pds"/>
+      <action>android.intent.action.VIEW</action>
+      <data>
+        <scheme>tosspay</scheme>
+        <scheme>ispmobile</scheme>
+        <scheme>shinhan-sr-ansimclick</scheme>
+        <scheme>kb-acp</scheme>
+        <scheme>mpocket.online.ansimclick</scheme>
+        <scheme>lotteappcard</scheme>
+        <scheme>nonghyupcardansimclick</scheme>
+        <scheme>citispay</scheme>
+        <scheme>citimobileapp</scheme>
+        <scheme>kakaotalk</scheme>
+        <scheme>payco</scheme>
+        <scheme>lpayapp</scheme>
+        <scheme>hanamopay</scheme>
+        <scheme>wooripay</scheme>
+        <scheme>nhallonepayansimclick</scheme>
+        <scheme>hanawalletmembers</scheme>
+      </data>
     </intent>
   </queries>
   <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true">
