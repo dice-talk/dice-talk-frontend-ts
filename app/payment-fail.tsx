@@ -1,54 +1,58 @@
 import { failTossPayment } from '@/api/paymentApi';
-import { useGlobalSearchParams, useNavigation } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useGlobalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 /**
  * 결제 실패 처리 페이지
  */
 export default function PaymentFailScreen() {
   const params = useGlobalSearchParams();
-  const navigation = useNavigation<any>();
+  const router = useRouter();
 
   useEffect(() => {
+    // 백엔드에 실패 사실을 알리는 로직 (선택적)
     const reportFailure = async () => {
       try {
         const { orderId, message, code } = params;
-        if (!orderId || !message || !code) {
-          throw new Error('필수 실패 정보가 누락되었습니다.');
+        if (orderId && message && code) {
+          await failTossPayment({
+            orderId: String(orderId),
+            message: String(message),
+            code: String(code),
+          });
         }
-
-        // 백엔드에 결제 실패 사실 전송
-        await failTossPayment({
-          orderId: String(orderId),
-          message: String(message),
-          code: String(code),
-        });
-
       } catch (error: any) {
-        // 실패 전송 API 호출 자체의 에러는 일단 콘솔에만 기록
         console.error("결제 실패 정보 전송 실패:", error);
-      } finally {
-        // 백엔드 전송 성공 여부와 관계 없이 사용자에게는 실패 사실을 알리고 돌려보냄
-        Alert.alert(
-          '결제 실패',
-          `오류가 발생하여 결제에 실패했습니다. (코드: ${params.code})`,
-          [{ text: '확인', onPress: () => navigation.navigate('profile/ChargePage') }]
-        );
       }
     };
 
     reportFailure();
-  }, [params, navigation]);
+
+    // 3초 후에 충전 페이지로 자동 이동
+    const timer = setTimeout(() => {
+      router.replace('/profile/ChargePage');
+    }, 3000);
+
+    return () => clearTimeout(timer); // 컴포넌트 언마운트 시 타이머 제거
+  }, [params, router]);
+
+  const errorMessage = params.message ? String(params.message) : '알 수 없는 오류가 발생했습니다.';
+  const errorCode = params.code ? `(코드: ${params.code})` : '';
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>결제 처리 중 오류가 발생했습니다.</Text>
+      <Ionicons name="alert-circle" size={80} color="#FBC02D" />
+      <Text style={styles.title}>결제를 실패했어요</Text>
+      <Text style={styles.subtitle}>{`${errorMessage} ${errorCode}`.trim()}</Text>
+      <Text style={styles.subtitle}>3초 후 충전 페이지로 이동합니다.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  text: { fontSize: 16, color: 'red' },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 20 },
+  title: { fontSize: 24, fontWeight: 'bold' },
+  subtitle: { fontSize: 16, color: '#6c757d', textAlign: 'center' },
 }); 

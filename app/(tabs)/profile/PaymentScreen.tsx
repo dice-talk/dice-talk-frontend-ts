@@ -1,3 +1,4 @@
+import { ConvertUrl } from '@tosspayments/widget-sdk-react-native/src/utils/convertUrl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, StyleSheet } from 'react-native';
@@ -14,6 +15,10 @@ const TossPaymentWebView = () => {
     clientKey: string;
   }>();
 
+  // 벡엔드 키 검증 및 UI 렌더링을 위한 임시 조치
+  // 백엔드에서 올바른 '위젯용 클라이언트 키'를 제공하면 이 줄은 삭제해야 합니다.
+  const temporaryFixedClientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+
   // customerKey는 WebView 내에서 임의로 생성하거나,
   // 필요 시 백엔드 응답에 포함시켜서 전달받을 수 있습니다.
   const customerKey = `user_${Math.random().toString(36).substring(7)}`;
@@ -22,9 +27,9 @@ const TossPaymentWebView = () => {
 
   useEffect(() => {
     // 모든 필수 파라미터가 있는지 확인
-    if (isWebViewLoaded && webViewRef.current && amount && orderId && orderName && clientKey) {
+    if (isWebViewLoaded && webViewRef.current && amount && orderId && orderName && temporaryFixedClientKey) {
       const paymentInfo = {
-        clientKey,
+        clientKey: temporaryFixedClientKey, // 임시 키 사용
         customerKey,
         amount: Number(amount),
         orderId,
@@ -32,67 +37,89 @@ const TossPaymentWebView = () => {
         successUrl: 'dicetalkts://payment-success',
         failUrl: 'dicetalkts://payment-fail',
       };
-      console.log("WebView로 전달하는 결제 정보:", paymentInfo);
+      console.log("WebView로 전달하는 결제 정보 (임시 키 사용):", paymentInfo);
       webViewRef.current.postMessage(JSON.stringify(paymentInfo));
     }
-  }, [isWebViewLoaded, amount, orderId, orderName, clientKey]);
+  }, [isWebViewLoaded, amount, orderId, orderName, temporaryFixedClientKey]);
 
   const handleWebViewMessage = (event: any) => {
     try {
+      // event.nativeEvent.data가 문자열이 아닐 수도 있으므로 확인
+      if (typeof event.nativeEvent.data !== 'string') {
+        console.log('[WebView] Received non-string message:', event.nativeEvent.data);
+        return;
+      }
       const message = JSON.parse(event.nativeEvent.data);
-      if (message.type === 'LOG') {
-        console.log('WebView LOG:', ...message.data);
-      } else if (message.type === 'ERROR') {
-        console.error('WebView ERROR:', ...message.data);
+      const { type, data } = message;
+
+      // 데이터가 배열이 아니면 배열로 감싸서 spread operator(...) 사용시 에러 방지
+      const logData = Array.isArray(data) ? data : [data];
+
+      switch (type) {
+        case 'LOG':
+        case 'INFO':
+          console.log('[WebView]', ...logData);
+          break;
+        case 'WARN':
+          console.warn('[WebView]', ...logData);
+          break;
+        case 'ERROR':
+          console.error('[WebView]', ...logData);
+          break;
+        default:
+          console.log('[WebView Message]', message);
+          break;
       }
     } catch (e) {
-      // JSON 형식이 아닌 메시지는 무시
+      // JSON 파싱 실패 시 원본 메시지 출력
+      console.log('[Raw WebView message]', event.nativeEvent.data);
     }
   };
 
   const onShouldStartLoadWithRequest = (event: any) => {
     const { url } = event;
 
+    // 1. 결제 성공/실패 후 우리 앱으로 돌아오는 URL 처리
     const successUrl = 'dicetalkts://payment-success';
     const failUrl = 'dicetalkts://payment-fail';
 
     if (url.startsWith(successUrl)) {
-      const urlObj = new URL(url.replace('dicetalkts:/', 'https:/'));
-      const params = Object.fromEntries(urlObj.searchParams.entries());
-      router.replace({ pathname: '/payment-success', params });
-      return false;
+      // URLSearchParams를 사용하여 쿼리 파라미터 파싱
+      const searchParams = new URL(url.replace('dicetalkts:/', 'https:/')).searchParams;
+      const paymentKey = searchParams.get('paymentKey');
+      const orderId = searchParams.get('orderId');
+      const amount = searchParams.get('amount');
+      router.replace({ pathname: '/payment-success', params: { paymentKey, orderId, amount } });
+      return false; // WebView 내에서 이동하지 않음
     }
     if (url.startsWith(failUrl)) {
-      const urlObj = new URL(url.replace('dicetalkts:/', 'https:/'));
-      const params = Object.fromEntries(urlObj.searchParams.entries());
-      router.replace({ pathname: '/payment-fail', params });
-      return false;
-    }
-    
-    // http, https, about:blank가 아니면 외부 앱으로 간주하고 Linking.openURL 시도
-    if (!url.startsWith('http') && !url.startsWith('about:blank')) {
-      // intent:// URL의 경우, 안드로이드에서만 특별 처리가 필요할 수 있음
-      if (Platform.OS === 'android' && url.startsWith('intent:')) {
-        // intent URL을 파싱하여 market URL을 찾거나 직접 실행
-        // 이 예제에서는 Linking API에 직접 맡겨봅니다.
-        Linking.openURL(url).catch(() => {
-          // 실패 시, intent URL에서 패키지명을 파싱하여 마켓으로 보내는 로직 추가 가능
-          const appPackage = url.match(/package=([^;]+)/);
-          if (appPackage?.[1]) {
-            Linking.openURL(`market://details?id=${appPackage[1]}`);
-          } else {
-            Alert.alert('알림', '결제 앱 실행에 실패했습니다. 설치 여부를 확인해주세요.');
-          }
-        });
-      } else {
-        // 일반적인 앱 스킴 (예: ispmobile://) 또는 iOS 처리
-        Linking.openURL(url).catch(() => {
-          Alert.alert('알림', '앱 실행에 실패했습니다. 설치 여부를 확인해주세요.');
-        });
-      }
-      return false; // WebView의 URL 이동 중단
+      const searchParams = new URL(url.replace('dicetalkts:/', 'https:/')).searchParams;
+      const code = searchParams.get('code');
+      const message = searchParams.get('message');
+      router.replace({ pathname: '/payment-fail', params: { code, message } });
+      return false; // WebView 내에서 이동하지 않음
     }
 
+    // 2. 외부 앱(카드사, 간편결제 앱)을 실행해야 하는 URL 처리 (intent, market 등)
+    if (Platform.OS === 'android' && (url.startsWith('intent://') || url.startsWith('market://'))) {
+      const convertUrl = new ConvertUrl(url); // 공식 유틸리티 사용
+      convertUrl.launchApp().catch(error => {
+        console.error("앱 실행 또는 마켓 이동에 실패했습니다.", error);
+        Alert.alert("알림", "결제 앱을 실행할 수 없습니다. 설치 여부를 확인해주세요.");
+      });
+      return false; // WebView 내에서 이동하지 않음
+    }
+
+    // 3. 그 외 모든 외부 앱 스킴 처리 (iOS 등)
+    if (!url.startsWith('http') && !url.startsWith('about:blank')) {
+      Linking.openURL(url).catch(error => {
+        console.error("앱 실행에 실패했습니다.", error);
+        Alert.alert("알림", "앱을 열 수 없습니다. 설치 여부를 확인해주세요.");
+      });
+      return false; // WebView 내에서 이동하지 않음
+    }
+    
+    // 4. 위 모든 경우에 해당하지 않으면 WebView 내에서 정상적으로 페이지 이동 허용
     return true;
   };
 

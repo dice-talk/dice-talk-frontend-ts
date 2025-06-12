@@ -46,45 +46,77 @@
     <button id="payment-button" disabled>결제하기</button>
 
     <script>
-      // 이 스크립트 블록이 실행되는지 확인하는 최상위 로그
+      // React Native WebView로 로그를 전달하기 위해 console 오버라이드
+      const postLog = (type, ...args) => {
+        try {
+          const serializedArgs = args.map(arg => {
+            if (arg instanceof Error) {
+              // Error 객체는 바로 JSON.stringify가 안되므로, 주요 속성을 가진 객체로 변환
+              return { message: arg.message, stack: arg.stack, name: arg.name };
+            }
+            return arg;
+          });
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: type,
+            data: serializedArgs
+          }));
+        } catch (e) {
+          // 순환 참조 등 JSON.stringify 오류는 무시
+        }
+      };
+
+      console.log = (...args) => postLog('LOG', ...args);
+      console.info = (...args) => postLog('INFO', ...args);
+      console.warn = (...args) => postLog('WARN', ...args);
+      console.error = (...args) => postLog('ERROR', ...args);
+      
+      // 잡히지 않은 모든 에러를 처리하기 위한 전역 핸들러
+      window.onerror = (message, source, lineno, colno, error) => {
+        console.error("Uncaught Error:", { message, source, lineno, colno, errorName: error ? error.name : 'N/A' });
+        return true; // true를 반환하여 브라우저 기본 에러 처리를 막음
+      };
+
       console.log('HTML: Script block started.');
 
       let paymentWidget;
       let paymentParams;
 
       // React Native 앱으로부터 메시지(결제 정보) 수신
-      // message 이벤트 리스너가 등록되는지 확인
       console.log('HTML: Adding message event listener.');
       document.addEventListener('message', (event) => {
+        console.log('HTML: Message event received.');
         try {
-          console.log('HTML: Message event received.', event.data);
+          const receivedData = JSON.parse(event.data);
+          console.log('HTML: Parsed data', receivedData);
+          const { clientKey, customerKey, amount, orderId, orderName, successUrl, failUrl } = receivedData;
 
-          const { clientKey, customerKey, amount, orderId, orderName, successUrl, failUrl } = JSON.parse(event.data);
-          console.log('HTML: Parsed data', { clientKey, customerKey, amount, orderId, orderName, successUrl, failUrl });
-
-          if (!clientKey) {
-            console.error('HTML: Client key is missing.');
+          if (!clientKey || !customerKey || amount == null || !orderId || !orderName) {
+            console.error('HTML: One or more required parameters are missing.', receivedData);
             return;
           }
 
-          // successUrl, failUrl을 포함하여 paymentParams를 구성
+          // paymentParams 구성
           paymentParams = { amount, orderId, orderName, successUrl, failUrl };
+          console.log('HTML: Payment params set', paymentParams);
 
           // 결제위젯 초기화
-          console.log('HTML: Initializing PaymentWidget with clientKey:', clientKey, 'and customerKey:', customerKey);
+          console.log('HTML: Initializing PaymentWidget with clientKey and customerKey.');
           paymentWidget = PaymentWidget(clientKey, customerKey);
           console.log('HTML: PaymentWidget initialized successfully.');
 
           // 결제 UI 렌더링
-          console.log('HTML: Rendering payment methods for amount:', amount);
+          console.log('HTML: Attempting to render payment methods...');
           paymentWidget.renderPaymentMethods('#payment-method', { value: amount });
+          console.log('HTML: renderPaymentMethods call finished.');
 
-          console.log('HTML: Rendering agreement.');
+          console.log('HTML: Attempting to render agreement...');
           paymentWidget.renderAgreement('#agreement');
+          console.log('HTML: renderAgreement call finished.');
 
           // UI 렌더링이 완료되면 결제 버튼 활성화
-          console.log('HTML: Enabling payment button.');
           document.getElementById('payment-button').disabled = false;
+          console.log('HTML: Payment button enabled.');
+
         } catch (e) {
           console.error('HTML: Error in message event listener.', e);
         }
@@ -97,15 +129,12 @@
       if (payButton) {
         console.log('HTML: Adding click event listener to payment button.');
         payButton.addEventListener('click', () => {
-            if (paymentWidget && paymentParams) {
-                // 결제 요청
-                console.log('HTML: Requesting payment with params:', paymentParams);
-                // successUrl, failUrl은 React Native에서 주입된 함수가 자동으로 처리하므로
-                // 여기서는 paymentParams만 전달하면 됩니다. injectedJavaScript 로직이 정상 동작해야 합니다.
-                paymentWidget.requestPayment(paymentParams);
-            } else {
-                console.error('HTML: Payment widget is not initialized or params are missing.');
-            }
+          if (paymentWidget && paymentParams) {
+              console.log('HTML: Requesting payment with params:', paymentParams);
+              paymentWidget.requestPayment(paymentParams);
+          } else {
+              console.error('HTML: Payment widget is not initialized or params are missing.');
+          }
         });
       } else {
         console.error('HTML: Payment button not found.');

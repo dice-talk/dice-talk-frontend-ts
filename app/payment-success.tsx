@@ -1,18 +1,21 @@
 import { confirmTossPayment } from '@/api/paymentApi';
+import { Ionicons } from '@expo/vector-icons';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 
 console.log('--- [ROUTING] payment-success.tsx 파일 로드됨 ---');
 
+type PaymentStatus = 'pending' | 'success' | 'error';
+
 /**
- * 결제 성공 처리 페이지
+ * 결제 결과 처리 페이지
  */
 export default function PaymentSuccessScreen() {
   const params = useGlobalSearchParams();
   const router = useRouter();
-
-  console.log('--- [DATA] 수신된 파라미터:', JSON.stringify(params, null, 2));
+  const [status, setStatus] = useState<PaymentStatus>('pending');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const processPayment = async () => {
@@ -20,48 +23,74 @@ export default function PaymentSuccessScreen() {
         const { paymentKey, orderId, amount } = params;
 
         if (!paymentKey || !orderId || !amount) {
-          // 이 페이지는 토스 결제 후 돌아오는 리디렉션 URL이므로,
-          // 파라미터가 없다면 잘못된 접근으로 간주하고 메인으로 보냅니다.
           Alert.alert("잘못된 접근", "올바르지 않은 경로입니다.", [
             { text: '확인', onPress: () => router.replace('/(tabs)/home') },
           ]);
           return;
         }
 
-        // 백엔드에 최종 결제 승인 요청
         await confirmTossPayment({
           paymentKey: String(paymentKey),
           orderId: String(orderId),
           amount: Number(amount),
         });
 
-        Alert.alert('결제 성공', '결제가 성공적으로 완료되었습니다.', [
-          { text: '확인', onPress: () => router.replace('/(tabs)/home') }, // 성공 시 홈 화면으로 이동
-        ]);
+        setStatus('success');
 
       } catch (error: any) {
-        // 에러 로그를 콘솔에 상세히 출력하여 디버깅
-        console.error("결제 승인 에러:", JSON.stringify(error, null, 2));
-
-        const errorMessage = error?.response?.data?.message || '알 수 없는 오류가 발생했습니다.';
-        Alert.alert('결제 승인 실패', `${errorMessage}\n다시 시도해주세요.`, [
-          { text: '확인', onPress: () => router.replace('/profile/ChargePage') }, // 실패 시 다시 충전 페이지로 이동
-        ]);
+        const message = error?.response?.data?.message || '알 수 없는 오류가 발생했습니다.';
+        setErrorMessage(message);
+        setStatus('error');
       }
     };
 
     processPayment();
   }, [params, router]);
 
+  // 결제 상태가 변경되면 3초 후 페이지 이동
+  useEffect(() => {
+    if (status === 'success' || status === 'error') {
+      const timer = setTimeout(() => {
+        router.replace('/profile/ChargePage');
+      }, 2000);
+
+      return () => clearTimeout(timer); // 컴포넌트 언마운트 시 타이머 제거
+    }
+  }, [status, router]);
+
+  if (status === 'pending') {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#007bff" />
+        <Text style={styles.text}>결제 승인 중입니다. 잠시만 기다려주세요...</Text>
+      </View>
+    );
+  }
+
+  if (status === 'success') {
+    return (
+      <View style={styles.container}>
+        <Ionicons name="checkmark-circle" size={80} color="#007bff" />
+        <Text style={styles.title}>결제를 완료했어요</Text>
+        <Text style={styles.subtitle}>2초 후 충전 페이지로 이동합니다.</Text>
+      </View>
+    );
+  }
+
+  // status === 'error'
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#007bff" />
-      <Text style={styles.text}>결제 승인 중입니다. 잠시만 기다려주세요...</Text>
+      <Ionicons name="alert-circle" size={80} color="#FBC02D" />
+      <Text style={styles.title}>결제를 실패했어요</Text>
+      <Text style={styles.subtitle}>{errorMessage}</Text>
+      <Text style={styles.subtitle}>3초 후 충전 페이지로 이동합니다.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 20 },
   text: { fontSize: 16 },
+  title: { fontSize: 24, fontWeight: 'bold' },
+  subtitle: { fontSize: 16, color: '#6c757d', textAlign: 'center' },
 }); 

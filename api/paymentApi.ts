@@ -22,7 +22,7 @@ export interface PaymentResponseData {
 }
 
 /**
- * 결제 승인을 위해 백엔드에 보내는 데이터 타입
+ * 결제 승인에 필요한 데이터 타입
  */
 interface ConfirmPaymentData {
   paymentKey: string;
@@ -53,7 +53,7 @@ export const requestTossPayment = async (data: RequestPaymentData): Promise<Paym
  * @param data - paymentKey, orderId, amount
  */
 export const confirmTossPayment = async (data: ConfirmPaymentData): Promise<void> => {
-  await axiosWithToken.post('/api/v1/payments/toss/confirm', data);
+  await axiosWithToken.post('/api/v1/payments/toss/confirm', data, { timeout: 10000 });
 };
 
 /**
