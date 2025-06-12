@@ -6,6 +6,7 @@ import PurchasableFunctionItem from '@/components/charge/PurchasableFunctionItem
 import GradientHeader from '@/components/common/GradientHeader';
 import { Product } from '@/types/Product';
 import useHomeStore, { Item as StoreItem } from '@/zustand/stores/HomeStore';
+import useSharedProfileStore from '@/zustand/stores/sharedProfileStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -48,6 +49,8 @@ export default function ChargePage() {
   
   // HomeStore에서 아이템 목록 가져오기
   const storeItems = useHomeStore((state) => state.items);
+  // Zustand 스토어에서 totalDice 가져오기
+  const totalDice = useSharedProfileStore((state) => state.totalDice);
 
   // 스토어 아이템을 FunctionItemData 형식으로 변환 (useMemo 사용)
   const purchasableFunctionsData: FunctionItemData[] = useMemo(() => {
@@ -130,7 +133,7 @@ export default function ChargePage() {
         </View>
       )}
       <ScrollView>
-        <CurrentDiceInfo currentDiceCount={0} />
+        <CurrentDiceInfo currentDiceCount={totalDice} />
 
         {purchasableFunctionsData.length > 0 ? (
           <View style={styles.sectionContainer}>

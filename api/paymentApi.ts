@@ -31,6 +31,13 @@ interface ConfirmPaymentData {
 }
 
 /**
+ * 결제 승인 성공 후 백엔드로부터 받는 응답 데이터 타입
+ */
+export interface ConfirmPaymentResponse {
+  totalDice: number;
+}
+
+/**
  * 결제 실패 정보를 백엔드에 보내는 데이터 타입
  */
 interface FailPaymentData {
@@ -51,9 +58,11 @@ export const requestTossPayment = async (data: RequestPaymentData): Promise<Paym
 /**
  * 2. 결제 성공 후, 백엔드에 최종 승인을 요청하는 API
  * @param data - paymentKey, orderId, amount
+ * @returns {Promise<ConfirmPaymentResponse>} - 업데이트된 주사위 개수를 포함한 응답
  */
-export const confirmTossPayment = async (data: ConfirmPaymentData): Promise<void> => {
-  await axiosWithToken.post('/api/v1/payments/toss/confirm', data, { timeout: 10000 });
+export const confirmTossPayment = async (data: ConfirmPaymentData): Promise<ConfirmPaymentResponse> => {
+  const response = await axiosWithToken.post('/api/v1/payments/toss/confirm', data, { timeout: 10000 });
+  return response.data; // 백엔드는 { "totalDice": 120 } 형태의 JSON을 반환해야 함
 };
 
 /**

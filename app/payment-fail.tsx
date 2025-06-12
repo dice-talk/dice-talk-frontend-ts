@@ -14,7 +14,7 @@ export default function PaymentFailScreen() {
   useEffect(() => {
     // 백엔드에 실패 사실을 알리는 로직 (선택적)
     const reportFailure = async () => {
-      try {
+      try { 
         const { orderId, message, code } = params;
         if (orderId && message && code) {
           await failTossPayment({

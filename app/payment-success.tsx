@@ -1,4 +1,5 @@
 import { confirmTossPayment } from '@/api/paymentApi';
+import { useSharedProfileActions } from '@/zustand/stores/sharedProfileStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -14,6 +15,7 @@ type PaymentStatus = 'pending' | 'success' | 'error';
 export default function PaymentSuccessScreen() {
   const params = useGlobalSearchParams();
   const router = useRouter();
+  const { setTotalDice } = useSharedProfileActions();
   const [status, setStatus] = useState<PaymentStatus>('pending');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -29,11 +31,13 @@ export default function PaymentSuccessScreen() {
           return;
         }
 
-        await confirmTossPayment({
+        const response = await confirmTossPayment({
           paymentKey: String(paymentKey),
           orderId: String(orderId),
           amount: Number(amount),
         });
+
+        setTotalDice(response.totalDice);
 
         setStatus('success');
 
@@ -45,7 +49,7 @@ export default function PaymentSuccessScreen() {
     };
 
     processPayment();
-  }, [params, router]);
+  }, [params, router, setTotalDice]);
 
   // 결제 상태가 변경되면 3초 후 페이지 이동
   useEffect(() => {
