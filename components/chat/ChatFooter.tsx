@@ -1,6 +1,5 @@
 import ChatExit from "@/assets/images/chat/chatExit.svg";
-import ChatNoticeOnOff from "@/assets/images/chat/chatNoticeOnOff.svg";
-import Silence from "@/assets/images/chat/silence.svg";
+
 import Siren from "@/assets/images/chat/siren.svg";
 import ExitCostModal from "@/components/chat/ExitCostModal";
 import { getItemDetails } from "@/api/ItemApi"; // getItemDetails 임포트
@@ -27,8 +26,6 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
   const iconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const confirmButtonColor = curThemeId === 2 ? "#6DA0E1" : "#D9B2D3";
   const textColor = curThemeId === 2 ? "#5C5279" : "#8A5A7A";
-  
-  const [isSilenced, setIsSilenced] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const [costModalVisible, setCostModalVisible] = useState(false);
   // CustomCostModal에 전달할 상태 추가
@@ -122,10 +119,6 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
     setCostModalVisible(false);
   };
 
-  const toggleSilence = () => {
-    setIsSilenced(!isSilenced);
-  };
-
   const handleSirenPress = () => {
     if (onClose) {
       onClose();
@@ -151,12 +144,6 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
       <ChatExit color={iconColor} />
         </Pressable>
         <View style={styles.rightContainer}>
-          <Pressable 
-            onPress={toggleSilence}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            {isSilenced ? <Silence color={iconColor} /> : <ChatNoticeOnOff color={iconColor} />}
-          </Pressable>
           <Pressable 
             onPress={handleSirenPress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

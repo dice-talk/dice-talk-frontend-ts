@@ -28,11 +28,17 @@ const ChatMessageRight = ({
   const curThemeId = useHomeStore((state) => state.curThemeId);
 
   const bubbleColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  const profileBorderColor = curThemeId === 2 ? "#6DA0E1" : "#F9BCC1";
+  let profileBorderColor = curThemeId === 2 ? "#6DA0E1" : "#F9BCC1";
   const nicknameColor = curThemeId === 2 ? "#5C5279" : "#F9BCC1";
   const timeColor = curThemeId === 2 ? "#5C5279" : "#A88B9D";
-  const profileIconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
-  
+  let profileIconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
+  // 특정 닉네임 목록
+  const specialNicknames = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
+   // 요청된 조건: themeId가 1이고, 닉네임이 specialNicknames에 포함될 경우
+  if (curThemeId === 1 && specialNicknames.includes(nickname)) {
+    profileBorderColor = "#9FC9FF";
+    profileIconColor = "#9FC9FF";
+  }
   return (
     <View style={[
       styles.container, 

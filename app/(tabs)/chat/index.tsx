@@ -6,7 +6,7 @@ import useChat from '@/utils/useChat'; // useChat 훅 import
 import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; 
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
 import { useRouter, useFocusEffect } from "expo-router"; // useFocusEffect 추가
-import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가
+import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가w
 import { ActivityIndicator, Button, Dimensions, StyleSheet, Text, View } from "react-native";
 
 export default function Chat() {
@@ -24,6 +24,7 @@ export default function Chat() {
   // ChatRoomStore의 상태 및 액션은 채팅방 상세 정보(테마, 남은 시간 등) 관리에 계속 사용됩니다.
   const themeIdFromStore = useChatRoomStore((state) => state.themeId);
   // Zustand 액션 함수들의 참조 안정성을 위해 직접 선택하거나,
+  const roomStatusFromChatRoomStore = useChatRoomStore((state) => state.roomStatus);
   // actions 객체가 안정적인 참조를 반환하도록 보장해야 합니다.
   // 예시: const setChatRoomDetails = useChatRoomStore(state => state.setChatRoomDetails);
   // 예시: const setRemainingTimeForTimer = useChatRoomStore(state => state.setRemainingTimeForTimer);
@@ -91,8 +92,8 @@ export default function Chat() {
 
             // 타이머 로직
             const localDate = new Date(detailedRoomInfo.createdAt.replace(' ', 'T'));
-            const kstDate = new Date(localDate.getTime() + (9 * 60 * 60 * 1000)); // KST 변환
-            const roomCreationTime = kstDate.getTime();
+            // DB에서 이미 KST로 저장되므로 +9시간 로직 제거
+            const roomCreationTime = localDate.getTime();
             const currentTime = Date.now();
             const elapsedTimeSeconds = (currentTime - roomCreationTime) / 1000;
             let timeLeftSeconds = CHAT_ROOM_VALID_DURATION_SECONDS - elapsedTimeSeconds;
@@ -148,7 +149,7 @@ export default function Chat() {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>오류: {error}</Text>
         </View>
-      ) : chatRoomIdFromHomeStore === 0 ? ( // HomeStore의 chatRoomId가 0이면 참여 중인 방이 없음
+      ) : chatRoomIdFromHomeStore === 0 || roomStatusFromChatRoomStore === "ROOM_DEACTIVE" ? ( // HomeStore의 chatRoomId가 0이거나 ChatRoomStore의 roomStatus가 "ROOM_DEACTIVE"이면 참여 중인 방이 없음
         <View style={styles.noChatRoomContainer}>
           <Text style={styles.noChatRoomText}>참여중인 채팅방이 없습니다.</Text>
         </View>
