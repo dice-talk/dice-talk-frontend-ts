@@ -24,7 +24,6 @@ const LendingPage = ( ) => {
             <MediumButton title="로그인" onPress={() => router.push('/Login')} size="max" />
             <MediumButton title="회원가입" onPress={() => router.push('/(onBoard)/register')} size="max" />
           </View>
-
           <TouchableOpacity onPress={() => router.push('/(onBoard)/FindInfo')} style={styles.findInfoContainer}>
             <Text style={styles.findInfoText}>이메일/비밀번호를 잊으셨나요?</Text>
           </TouchableOpacity>
