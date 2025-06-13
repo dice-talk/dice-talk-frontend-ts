@@ -20,6 +20,9 @@
       "edgeToEdgeEnabled": true,
       "package": "com.yeoseunga.dicetalkts",
       "googleServicesFile": "./google-services.json",
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResources": true,
+      "enableR8": true,
       "queries": [
         {
           "intent": [

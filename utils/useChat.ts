@@ -1,16 +1,17 @@
+import { BASE_URL } from '@/api/axios/axios';
+import { joinMatchingQueue } from '@/api/MatchingApi';
 import useAuthStore from '@/zustand/stores/authStore'; // AuthStore import
 import useChatRoomStore, { ChatMessage } from '@/zustand/stores/ChatRoomStore';
 import { Client } from '@stomp/stompjs';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TextStyle, ViewStyle } from 'react-native';
 import SockJS from 'sockjs-client';
-import { joinMatchingQueue } from '@/api/MatchingApi';
 interface UseChatOptions {
   autoConnect?: boolean;
 }
 
 export default function useChat(roomId?: number | null, initialMessages: ChatMessage[] = [], options: UseChatOptions = {}) {
-  console.log('[useChat] Hook initialized. roomId:', roomId, 'Options:', options); // <--- 이 로그를 추가합니다.
+  //console.log('[useChat] Hook initialized. roomId:', roomId, 'Options:', options); // <--- 이 로그를 추가합니다.
   const { autoConnect = true } = options; // 기본값은 true
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -122,7 +123,7 @@ export default function useChat(roomId?: number | null, initialMessages: ChatMes
     setError(null);
     console.log('useChat: connectSocket - Attempting STOMP connection...');
 
-    const newSocket = new SockJS('https://www.dicetalk.co.kr/ws-stomp');
+    const newSocket = new SockJS(BASE_URL + '/ws-stomp');
     const stompClientInstance = new Client({
       webSocketFactory: () => newSocket,
       connectHeaders: { Authorization: `Bearer ${token}` },
