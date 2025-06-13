@@ -33,6 +33,7 @@ export interface ChatRoomDetails {
   chatParts: ChatParticipant[];
   roomEvents: RoomEvent[];
   remainingTimeForTimer: number | null; // 타이머를 위한 남은 시간 (초)
+  roomStatus: string;
 }
 
 interface ChatRoomState extends ChatRoomDetails {
@@ -53,6 +54,7 @@ const initialState: ChatRoomDetails = {
   chatParts: [],
   roomEvents: [],
   remainingTimeForTimer: null, // 초기값 null
+  roomStatus: '',
 };
 
 const useChatRoomStore = create<ChatRoomState>((set) => ({

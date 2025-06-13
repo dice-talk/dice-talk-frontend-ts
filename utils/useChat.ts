@@ -10,7 +10,7 @@ interface UseChatOptions {
 }
 
 export default function useChat(roomId?: number | null, initialMessages: ChatMessage[] = [], options: UseChatOptions = {}) {
-  console.log('[useChat] Hook initialized. roomId:', roomId, 'Options:', options); // <--- 이 로그를 추가합니다.
+
   const { autoConnect = true } = options; // 기본값은 true
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -123,6 +123,7 @@ export default function useChat(roomId?: number | null, initialMessages: ChatMes
     console.log('useChat: connectSocket - Attempting STOMP connection...');
 
     const newSocket = new SockJS('https://www.dicetalk.co.kr/ws-stomp');
+    // const newSocket = new SockJS('http://192.168.0.30:8080/ws-stomp');
     const stompClientInstance = new Client({
       webSocketFactory: () => newSocket,
       connectHeaders: { Authorization: `Bearer ${token}` },

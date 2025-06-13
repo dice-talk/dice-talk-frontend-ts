@@ -1,7 +1,7 @@
-import { createReport, getChatRoomDetailsForReport, ReportChatMessageDto, ReportCreationDto } from "@/api/reportApi";
+import { createReport, ReportChatMessageDto, ReportCreationDto } from "@/api/reportApi";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -17,62 +17,50 @@ import {
 // import ReportModal from "@/components/chat/ReportModal"; 
 // import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 사용 제거
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore import 추가
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 사용 제거
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-// ReportModal props가 아직 없으므로 임시 타입 정의
-interface ReportModalProps {
-  visible: boolean;
-  onSubmitReport: (reason: string) => void;
-  onDismiss: () => void;
-  themeId?: number;
-}
 
 // 신고 페이지에서 사용할 메시지 타입 (isChecked와 memberId 포함)
 interface ReportableChatMessage extends ReportChatMessageDto {
   isChecked: boolean;
-  profileImageUri?: string; // 프로필 이미지 URI (SVG 또는 일반 이미지)
+  nickName: string | null;
 }
 
 const ChatReportPage = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const chatRoomId = params.id ? parseInt(params.id as string) : null;
+  const chatRoomId = useChatRoomStore((state) => state.chatRoomId);
   const themeId = useHomeStore((state) => state.curThemeId) || 1; // HomeStore에서 curThemeId 가져오기
+  const chatsFromStore = useChatRoomStore((state) => state.chats);
 
   const [messages, setMessages] = useState<ReportableChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showReportModal, setShowReportModal] = useState(false);
 
-  // API를 통해 채팅 메시지 로드
-  const fetchMessages = useCallback(async () => {
-    if (!chatRoomId) {
-      setError("채팅방 ID가 유효하지 않습니다.");
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      // TODO: 페이지네이션 구현 시 page, size 파라미터 추가 고려
-      const chatRoomData = await getChatRoomDetailsForReport({ chatRoomId });
-      const reportableMessages = chatRoomData.chats.map((chat) => ({
-        ...chat,
-        isChecked: false,
-        // profileImageUri: chat.member?.profileImageUrl, // 실제 프로필 이미지 경로로 수정 필요
-      }));
-      setMessages(reportableMessages);
-    } catch (err: any) {
-      console.error("Failed to fetch chat messages for report:", err);
-      setError(err.message || "메시지를 불러오는 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [chatRoomId]);
 
   useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
+    if (!chatRoomId) {
+      setError("채팅방 ID가 유효하지 않습니다.");
+      setMessages([]);
+      return;
+    }
+    setError(null);
+    setIsLoading(true);
+
+    if (chatsFromStore && chatsFromStore.length > 0) {
+      const reportableMessages: ReportableChatMessage[] =
+        chatsFromStore.map((chat) => ({
+          ...chat,
+          isChecked: false,
+          chatRoomId: chatRoomId,
+          nickName: chat.nickname ?? null,
+        }));
+      setMessages(reportableMessages ?? []);
+    } else {
+      setMessages([]);
+    }
+    setIsLoading(false);
+  }, [chatRoomId, chatsFromStore]);
 
   // 메시지 체크 상태 토글 함수
   const toggleCheck = (chatId: number) => {
@@ -108,7 +96,7 @@ const ChatReportPage = () => {
       Alert.alert("신고 완료", "신고가 성공적으로 접수되었습니다.", [
         { text: "확인", onPress: () => router.back() },
       ]);
-      setShowReportModal(false);
+      // setShowReportModal(false);
     } catch (err: any) {
       console.error("Error creating report:", err);
       const errorMessage = err.fieldErrors 
@@ -122,7 +110,7 @@ const ChatReportPage = () => {
   
   const handleConfirmSelection = () => {
     if (getSelectedMessages().length > 0) {
-      setShowReportModal(true);
+      // setShowReportModal(true);
     } else {
       Alert.alert("알림", "신고할 메시지를 하나 이상 선택해주세요.");
     }
@@ -192,9 +180,6 @@ const ChatReportPage = () => {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>오류: {error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchMessages}>
-            <Text style={styles.retryButtonText}>재시도</Text>
-        </TouchableOpacity>
       </View>
     );
   }
