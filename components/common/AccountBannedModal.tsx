@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons'; // 경고 아이콘용
 import React from 'react';
 import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router'; // useRouter 임포트
 
 interface AccountBannedModalProps {
   isVisible: boolean;
@@ -10,6 +11,12 @@ interface AccountBannedModalProps {
 const { width, height } = Dimensions.get('window');
 
 const AccountBannedModal: React.FC<AccountBannedModalProps> = ({ isVisible, onConfirm }) => {
+  const router = useRouter();
+
+  const handleConfirmPress = () => {
+    onConfirm(); // 기존 onConfirm (모달 닫기 등) 실행
+    router.replace('/(onBoard)'); // (onBoard)/index로 이동
+  };
   return (
     <Modal
       transparent={true}
@@ -25,7 +32,7 @@ const AccountBannedModal: React.FC<AccountBannedModalProps> = ({ isVisible, onCo
           <Text style={styles.messageText}>문의 사항이 있으면 고객센터로</Text>
           <Text style={styles.messageText}>연락하세요</Text>
           
-          <TouchableOpacity style={styles.confirmButton} onPress={onConfirm} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmPress} activeOpacity={0.8}>
             <Text style={styles.confirmButtonText}>확인</Text>
           </TouchableOpacity>
         </View>
