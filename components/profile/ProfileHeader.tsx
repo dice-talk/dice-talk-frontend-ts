@@ -1,7 +1,6 @@
 // src/components/Profile/ProfileHeader.tsx
 import Dice from "@/assets/images/profile/dice.svg";
 import { Ionicons } from "@expo/vector-icons";
-import React from 'react';
 import { Dimensions, Image, ImageSourcePropType, StyleSheet, Text, View } from "react-native";
 import GradientButton from "../common/GradientButton";
 import GradientLine from "../common/GradientLine";
@@ -11,12 +10,9 @@ import GradientLine from "../common/GradientLine";
 // 만약 ProfileScreen의 defaultProfileImage를 props로 받는다면 이 부분은 필요 없습니다.
 const fallbackDefaultImage = require("@/assets/images/profile/profile_default.png");
 
-// SvgComponent 타입을 추가합니다.
-type SvgComponent = React.FC<React.SVGProps<SVGSVGElement>>;
-
 type ProfileHeaderProps = {
   nickname: string;
-  profileImage: ImageSourcePropType | SvgComponent | string | null | undefined;
+  profileImage: ImageSourcePropType | string | null | undefined;
   diceCount: number;
   isInChat: boolean;
   mode?: "profile" | "myInfo" | "question";
@@ -34,40 +30,29 @@ export default function ProfileHeader({
 }: ProfileHeaderProps) {
   console.log("ProfileHeader received nickname (restoring Dimensions & all styles):", nickname, "type:", typeof nickname);
 
-  const renderProfileImage = () => {
-    // profileImage가 SVG 컴포넌트(함수)인 경우
-    if (typeof profileImage === 'function') {
-      const ProfileSvg = profileImage;
-      return <ProfileSvg width={PROFILE_SIZE - 8} height={PROFILE_SIZE - 8} />;
-    }
-
-    // 기존 이미지 처리 로직
-    let imageSourceToUse: ImageSourcePropType = fallbackDefaultImage;
-    if (profileImage) {
-      if (typeof profileImage === 'string') {
-        if (profileImage.startsWith('http')) {
-          imageSourceToUse = { uri: profileImage };
-        }
-      } else if (typeof profileImage === 'number') {
-        imageSourceToUse = profileImage;
-      } else if (typeof profileImage === 'object' && profileImage !== null && 'uri' in profileImage) {
-        imageSourceToUse = profileImage;
+  let imageSourceToUse: ImageSourcePropType = fallbackDefaultImage;
+  if (profileImage) {
+    if (typeof profileImage === 'string') {
+      if (profileImage.startsWith('http')) {
+        imageSourceToUse = { uri: profileImage };
+      } else {
+        imageSourceToUse = fallbackDefaultImage;
       }
+    } else if (typeof profileImage === 'number') {
+      imageSourceToUse = profileImage;
+    } else if (typeof profileImage === 'object' && profileImage !== null && 'uri' in profileImage) {
+      imageSourceToUse = profileImage;
     }
-    
-    return (
-      <Image 
-        source={imageSourceToUse}
-        style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} 
-        onError={(e) => console.log("ProfileHeader Image Error:", e.nativeEvent.error, "Source was:", imageSourceToUse)}
-      />
-    );
-  };
+  }
 
   return (
     <View style={[styles.container, { marginTop: height * 0.12 }]}>
       <View style={[styles.profileImageContainer, { width: PROFILE_SIZE, height: PROFILE_SIZE, borderRadius: PROFILE_SIZE / 2 }]}> 
-        {renderProfileImage()}
+        <Image 
+          source={imageSourceToUse}
+          style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} 
+          onError={(e) => console.log("ProfileHeader Image Error:", e.nativeEvent.error, "Source was:", imageSourceToUse)}
+        />
       </View>
       <Text style={styles.nickname}>{(typeof nickname === 'string' ? nickname : String(nickname ?? '')).trim()}</Text>
       
