@@ -75,6 +75,7 @@ export default function TabLayout() {
   const isChatRoomScreen = pathname.startsWith('/chat/ChatRoom');
   const isLoadingScreen = pathname === '/home/LoadingScreen';
   const isPaymentScreen = pathname === '/profile/PaymentScreen';
+  const isReportScreen = pathname.startsWith('/chat/report'); // 신고 페이지 경로 확인 추가
 
   return (
     <View style={styles.container}>
@@ -83,8 +84,8 @@ export default function TabLayout() {
           <View style={styles.content}>
             <Slot />
           </View>
-          {/* [수정] isPaymentScreen 조건을 추가하여 해당 화면에서 Footer를 숨깁니다. */}
-          {!isChatRoomScreen && !isLoadingScreen && !isPaymentScreen && (
+          {/* [수정] isReportScreen 조건을 추가하여 해당 화면에서 Footer를 숨깁니다. */}
+          {!isChatRoomScreen && !isLoadingScreen && !isPaymentScreen && !isReportScreen && (
           <Footer currentTab={currentTab} onTabPress={handleTabPress} />
           )}
         </View>
