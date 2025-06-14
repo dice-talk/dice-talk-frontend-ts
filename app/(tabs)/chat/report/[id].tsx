@@ -6,12 +6,12 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 // ReportModal을 임시로 주석 처리 (다음 단계에서 생성 및 연동)
 // import ReportModal from "@/components/chat/ReportModal"; 
@@ -42,39 +42,59 @@ const ChatReportPage = () => {
   const themeId = useHomeStore((state) => state.curThemeId) || 1; // HomeStore에서 curThemeId 가져오기
 
   const [messages, setMessages] = useState<ReportableChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1); // 페이지 번호 상태 (1부터 시작하도록 수정)
+  const [hasNextPage, setHasNextPage] = useState(true); // 다음 페이지 존재 여부 상태 추가
+  const [isLoading, setIsLoading] = useState(true); // 초기 로딩 상태는 true로 설정
+  const [isFetchingMore, setIsFetchingMore] = useState(false); // 추가 로딩 상태
   const [error, setError] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
 
-  // API를 통해 채팅 메시지 로드
+  // API를 통해 채팅 메시지 로드 (페이지네이션 적용)
   const fetchMessages = useCallback(async () => {
-    if (!chatRoomId) {
-      setError("채팅방 ID가 유효하지 않습니다.");
+    // 추가 데이터를 가져오는 중이거나, 더 이상 가져올 페이지가 없으면 함수 중단
+    if (isFetchingMore || !hasNextPage) {
       return;
     }
-    setIsLoading(true);
+
+    // 처음이 아닌, 추가 로딩일 경우에만 isFetchingMore를 true로 설정
+    if (page > 1) {
+      setIsFetchingMore(true);
+    }
     setError(null);
+
     try {
-      // TODO: 페이지네이션 구현 시 page, size 파라미터 추가 고려
-      const chatRoomData = await getChatRoomDetailsForReport({ chatRoomId });
-      const reportableMessages = chatRoomData.chats.map((chat) => ({
+      const chatRoomData = await getChatRoomDetailsForReport({
+        chatRoomId: chatRoomId!,
+        page,
+        size: 30, // 요청대로 30개씩 로드
+      });
+      
+      const newMessages = chatRoomData.chats.content.map((chat) => ({
         ...chat,
         isChecked: false,
-        // profileImageUri: chat.member?.profileImageUrl, // 실제 프로필 이미지 경로로 수정 필요
       }));
-      setMessages(reportableMessages);
+
+      // 기존 메시지 앞에 새로운 메시지를 추가 (오래된 메시지를 위로 쌓음)
+      setMessages((prev) => [...newMessages, ...prev]);
+      setPage((prev) => prev + 1);
+      setHasNextPage(!chatRoomData.chats.last);
+
     } catch (err: any) {
       console.error("Failed to fetch chat messages for report:", err);
       setError(err.message || "메시지를 불러오는 중 오류가 발생했습니다.");
     } finally {
+      // 모든 종류의 로딩 상태를 false로 설정하여 로딩 완료를 알림
       setIsLoading(false);
+      setIsFetchingMore(false);
     }
-  }, [chatRoomId]);
+  }, [chatRoomId, page, hasNextPage, isFetchingMore]);
 
   useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
-
+    if (chatRoomId) {
+      fetchMessages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatRoomId]); // 의도적으로 fetchMessages를 제외하여 최초 마운트 시에만 실행
 
   // 메시지 체크 상태 토글 함수
   const toggleCheck = (chatId: number) => {
@@ -228,18 +248,27 @@ const ChatReportPage = () => {
         <View style={{ width: 24 }} />{/* 오른쪽 정렬을 위한 빈 공간 */}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {messages.length === 0 && !isLoading ? (
-          <Text style={styles.noMessagesText}>표시할 메시지가 없습니다.</Text>
-        ) : (
-          messages.map(renderMessageItem)
+      <FlatList
+        inverted // 채팅 UI처럼 아래부터 위로 콘텐츠를 표시
+        data={messages}
+        renderItem={({ item }) => renderMessageItem(item)}
+        keyExtractor={(item) => item.chatId.toString()}
+        contentContainerStyle={styles.scrollContainer}
+        onEndReached={fetchMessages} // 스크롤이 끝(가장 위)에 도달하면 다음 페이지 로드
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={isFetchingMore ? <ActivityIndicator size="small" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} /> : null}
+        ListEmptyComponent={() => (
+          !isLoading && (
+            <View style={styles.centered}>
+              <Text style={styles.noMessagesText}>표시할 메시지가 없습니다.</Text>
+            </View>
+          )
         )}
-      </ScrollView>
+      />
       
-      {isLoading && messages.length > 0 && ( // 메시지 로드 후 API 호출(신고) 시 로딩 인디케이터
-        <View style={styles.inlineLoadingContainer}>
-          <ActivityIndicator size="small" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} />
-          <Text style={styles.inlineLoadingText}>처리 중...</Text>
+      {isLoading && messages.length === 0 && ( // 전체 화면 로딩
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} />
         </View>
       )}
 
