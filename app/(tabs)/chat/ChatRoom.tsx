@@ -24,11 +24,11 @@ import useChat from "@/utils/useChat"; // 실제 경로에 맞춰 조정
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
-import React, { useEffect, useState } from "react";
-import { Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { Animated, Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, KeyboardEvent } from "react-native";
 import { SvgProps } from "react-native-svg";
 
 
@@ -108,8 +108,14 @@ const ChatRoom = () => {
   const [matchedPair, setMatchedPair] = useState<{ myProfile?: ProfileInfo; partnerProfile?: ProfileInfo } | null>(null); 
   const [fixedReadingTagAtMessageId, setFixedReadingTagAtMessageId] = useState<number | null>(null); // ReadingTag 고정 위치 상태
 
-  // Keyboard offset for input adjustment
+  const scrollViewRef = useRef<ScrollView>(null); // ScrollView 참조 생성
+  // Keyboard offset state for logic (e.g., scrollToEnd dependency)
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+  // Animated values for smooth transition
+  const animatedKeyboardOffset = useRef(new Animated.Value(0)).current;
+  const baseScrollViewMarginBottom = useMemo(() => SCREEN_HEIGHT * 0.07, []);
+  const animatedScrollViewMarginBottom = useRef(new Animated.Value(baseScrollViewMarginBottom)).current;
 
   // const setSelectionsForAnimation = useArrowEventStore((state) => state.setSelectionsForAnimation); // Result 컴포넌트에서 직접 API 호출하므로 제거
   // const chatParts = useChatRoomStore((state) => state.chatParts); // Result 컴포넌트에서 직접 스토어 사용
@@ -193,6 +199,16 @@ const ChatRoom = () => {
       saveLastReadOnUnmount();
     };
   }, [messages, currentChatRoomId]); // messages나 currentChatRoomId가 변경될 때마다 cleanup 함수가 이전 상태로 저장할 수 있도록 설정
+
+  // 새 메시지 도착 시 스크롤 맨 아래로 이동
+  useEffect(() => {
+    // 새 메시지가 있거나 키보드 상태가 변경되어 ScrollView의 가용 높이가 변경될 때
+    // 맨 아래로 스크롤하여 최신 메시지 또는 변경된 뷰의 하단을 보여줍니다.
+    // messages.length > 0 조건은 초기 로드 시 빈 메시지 목록에 대해 스크롤하지 않도록 유지할 수 있습니다.
+    if (scrollViewRef.current && (messages && messages.length > 0 || keyboardOffset > 0)) {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [messages, keyboardOffset]); // messages 또는 keyboardOffset이 변경될 때마다 실행
 
   useEffect(() => {
     if (chatRoomIdFromParams) {
@@ -285,17 +301,49 @@ const ChatRoom = () => {
 
   // Keyboard listeners for adjusting input position
   useEffect(() => {
-    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
-      setKeyboardOffset(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
-      setKeyboardOffset(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
+    const KEYBOARD_ANIMATION_DURATION = Platform.OS === 'ios' ? 250 : 10; // 애니메이션 속도 조절 (ms)
+
+    const handleKeyboardDidShow = (e: KeyboardEvent) => {
+      const keyboardHeight = e.endCoordinates.height;
+      setKeyboardOffset(keyboardHeight); // Update state for other logic if needed
+      Animated.parallel([
+        Animated.timing(animatedKeyboardOffset, {
+          toValue: keyboardHeight,
+          duration: KEYBOARD_ANIMATION_DURATION,
+          useNativeDriver: false, // 'bottom' is a layout property
+        }),
+        Animated.timing(animatedScrollViewMarginBottom, {
+          toValue: baseScrollViewMarginBottom + keyboardHeight,
+          duration: KEYBOARD_ANIMATION_DURATION,
+          useNativeDriver: false, // 'marginBottom' is a layout property
+        }),
+      ]).start();
     };
-  }, []);
+
+    const handleKeyboardDidHide = () => {
+      setKeyboardOffset(0); // Update state for other logic
+      Animated.parallel([
+        Animated.timing(animatedKeyboardOffset, {
+          toValue: 0,
+          duration: KEYBOARD_ANIMATION_DURATION,
+          useNativeDriver: false,
+        }),
+        Animated.timing(animatedScrollViewMarginBottom, {
+          toValue: baseScrollViewMarginBottom,
+          duration: KEYBOARD_ANIMATION_DURATION,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    };
+
+    const showSubscription = Keyboard.addListener("keyboardDidShow", handleKeyboardDidShow);
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", handleKeyboardDidHide);
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [animatedKeyboardOffset, animatedScrollViewMarginBottom, baseScrollViewMarginBottom]);
   
   const hideNotice = () => {
     setShowNotice(false);
@@ -525,9 +573,10 @@ const ChatRoom = () => {
             )}
 
         </View>
-        <ScrollView 
-          style={[styles.scrollView, { marginTop: scrollViewMarginTop }]}
-          contentContainerStyle={styles.scrollContent}
+        <Animated.ScrollView 
+          ref={scrollViewRef} // ScrollView에 ref 할당
+          style={[styles.scrollViewBase, { marginTop: scrollViewMarginTop, marginBottom: animatedScrollViewMarginBottom }]} // styles.scrollViewBase 사용 및 animated 값 적용
+          contentContainerStyle={styles.scrollContent} // styles.scrollView 대신 styles.scrollViewBase 사용
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -584,7 +633,7 @@ const ChatRoom = () => {
               </React.Fragment>
             );
           })}
-        </ScrollView>
+        </Animated.ScrollView>
         {/* 사이드바 표시 */}
         <SideBar
             visible={sidebarOpen}
@@ -592,9 +641,9 @@ const ChatRoom = () => {
             onProfilePress={handleSidebarProfilePress}
         />
         {/* 하단 영역: ChatInput */}
-         <View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
+         <Animated.View style={[styles.inputContainer, { bottom: animatedKeyboardOffset }]}>
             <ChatInput onSendMessage={sendMessage} />
-          </View>
+          </Animated.View>
         {/* 프로필 팝업 - z-index를 높게 설정하여 최상위에 표시 */}
         {selectedProfile && (
           <View style={styles.profileOverlay}>
@@ -745,9 +794,13 @@ const styles = StyleSheet.create({
     zIndex: 2,
     backgroundColor: '#fff',
   },
-  scrollView: {
+  scrollViewBase: { // styles.scrollView에서 marginBottom 제거 후 이름 변경
     flex: 1,
-    marginBottom: SCREEN_HEIGHT * 0.07, // ChatInput 높이만큼 여백 추가
+    // marginBottom: SCREEN_HEIGHT * 0.07, // 이 부분을 animatedScrollViewMarginBottom으로 대체
+  },
+  scrollView: { // 기존 스타일 유지 (참조용, 실제 사용은 scrollViewBase)
+    flex: 1,
+    marginBottom: SCREEN_HEIGHT * 0.07, 
   },
   scrollContent: {
     paddingHorizontal: SCREEN_WIDTH * 0.025, // 양쪽 여백 약간 늘림
