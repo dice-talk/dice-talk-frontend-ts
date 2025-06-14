@@ -9,6 +9,7 @@ import TossAuth from "@/components/common/TossAuth";
 import RegionDropDown from "@/components/profile/RegionDropDown";
 import MyInfoField from "@/components/profile/myInfoPage/MyInfoField";
 // import { useMemberInfoStore } from "@/zustand/stores/memberInfoStore"; // 기존 스토어 제거
+import { getProfileSvg } from "@/utils/getProfileSvg";
 import useAuthStore from "@/zustand/stores/authStore"; // authStore 임포트
 import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // sharedProfileStore 임포트
 import { Ionicons } from '@expo/vector-icons';
@@ -83,9 +84,10 @@ export default function MyInfoPage() {
                 try {
                     const apiData = await getAnonymousInfo(memberId); // memberId 전달
                     if (apiData) {
+                        const profileSvg = getProfileSvg(apiData.nickname);
                         setSharedProfile({
                             nickname: apiData.nickname,
-                            profileImage: apiData.profile,
+                            profileImage: profileSvg,
                             totalDice: apiData.totalDice,
                             isInChat: apiData.roomStatus === 'IN_CHAT' || apiData.exitStatus !== "ROOM_EXIT",
                         });
@@ -144,7 +146,7 @@ export default function MyInfoPage() {
         router.back();
     };
 
-    const handleAuthSuccess = (userInfo: { name: string; phone: string }) => {
+    const handleAuthSuccess = (userInfo: { name: string;}) => {
         console.log("MyInfoPage: Toss 인증 성공:", userInfo);
         if (userInfo.name !== myDetailedInfo.name) {
             setMyDetailedInfo(prev => ({
@@ -157,8 +159,8 @@ export default function MyInfoPage() {
         setShowTossAuth(false);
     };
 
-    const handleAuthFailure = () => {
-        console.log("MyInfoPage: Toss 인증 실패");
+    const handleAuthFailure = (error?: any) => {
+        console.log("MyInfoPage: Toss 인증 실패", error);
         setShowTossAuth(false);
     };
 

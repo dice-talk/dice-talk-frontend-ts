@@ -1,7 +1,8 @@
 import { Region, RegionType } from "@/dummyData/Region";
 import { Picker } from "@react-native-picker/picker";
 import { useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import ConfirmModal from "./ConfirmModal";
 
 interface RegionDropDownProps {
   city: string | null;
@@ -12,6 +13,7 @@ interface RegionDropDownProps {
 export default function RegionDropDown({ city: initialCity, district: initialDistrict, onChange }: RegionDropDownProps) {
     const [selectedCity, setSelectedCity] = useState<keyof RegionType | "">((initialCity as keyof RegionType | "") || "");
     const [selectedDistrict, setSelectedDistrict] = useState<string>(initialDistrict || "");
+    const [isModalVisible, setIsModalVisible] = useState(false);
     
     const handleCityChange = (newCityValue: string) => {
         const newCity = newCityValue as keyof RegionType | "";
@@ -27,24 +29,7 @@ export default function RegionDropDown({ city: initialCity, district: initialDis
         
         setSelectedDistrict(newDistrictValue);
         if (selectedCity && newDistrictValue) { 
-            Alert.alert(
-                "지역 선택 완료",
-                `${selectedCity} ${newDistrictValue}로 지역을 설정합니다.`,
-                [
-                    {
-                        text: "취소",
-                        style: "cancel",
-                        onPress: () => {}
-                    },
-                    {
-                        text: "확인",
-                        onPress: () => {
-                            onChange(selectedCity, newDistrictValue);
-                        },
-                    },
-                ],
-                { cancelable: false } 
-            )
+            setIsModalVisible(true);
         }
       };
 
@@ -79,6 +64,18 @@ export default function RegionDropDown({ city: initialCity, district: initialDis
             ))}
             </Picker>
         </View>
+        <ConfirmModal
+            visible={isModalVisible}
+            title="지역 선택 완료"
+            message={`${selectedCity} ${selectedDistrict}로 지역을 설정합니다.`}
+            onCancel={() => setIsModalVisible(false)}
+            onConfirm={() => {
+                setIsModalVisible(false);
+                if (selectedCity && selectedDistrict) {
+                    onChange(selectedCity, selectedDistrict);
+                }
+            }}
+        />
     </View>
   );
 }
