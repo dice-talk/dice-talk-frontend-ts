@@ -120,6 +120,33 @@ export const getChatRoomDetailsForReport = async (
   }
 };
 
+// --- 신고 사유 조회 관련 인터페이스 및 함수 ---
+export interface ReportReasonDto {
+  code: string;
+  description: string;
+}
+
+interface ReportReasonsResponseDto {
+  data: ReportReasonDto[];
+}
+
+/**
+ * 신고 사유 목록을 조회합니다.
+ * @returns Promise<ReportReasonDto[]> - 신고 사유 목록
+ */
+export const getReportReasons = async (): Promise<ReportReasonDto[]> => {
+  try {
+    console.log("📡 GET /reports/reasons");
+    const response = await axiosWithToken.get<ReportReasonsResponseDto>("/reports/reasons");
+    console.log("✅ Report reasons fetched successfully");
+    return response.data.data;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || "Unknown error";
+    console.error("🚨 Error fetching report reasons:", errorMessage, error.response?.status);
+    throw error;
+  }
+};
+
 // --- 신고 등록 관련 인터페이스 및 함수 ---
 
 /**
@@ -133,7 +160,8 @@ interface ChatReportDto {
  * 신고 생성 요청 DTO
  */
 export interface ReportCreationDto {
-  reason: string; // 신고 사유 (단일 문자열)
+  reportReason: string; // 신고 사유 (단일 문자열)
+  reporterId: number; // 신고자 ID 추가
   chatReports: ChatReportDto[]; // 신고할 채팅 ID 목록
   reportedMemberIds: number[]; // 신고 대상 사용자 ID 목록
 }

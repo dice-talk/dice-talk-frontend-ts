@@ -1,6 +1,7 @@
 import { createReport, getChatRoomDetailsForReport, ReportChatMessageDto, ReportCreationDto } from "@/api/reportApi";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft"; // 왼쪽 말풍선
 import ChatMessageRight from "@/components/chat/ChatMessageRight"; // 오른쪽 말풍선
+import ReportModal from "@/components/chat/ReportModal"; // 신고 모달 임포트
 import { getProfileComponent } from "@/utils/getProfileComponent"; // 프로필 변환 함수 임포트
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore import 추가
 import useAuthStore from "@/zustand/stores/authStore"; // 현재 사용자 정보 가져오기
@@ -116,7 +117,13 @@ const ChatReportPage = () => {
 
   const getSelectedMessages = () => messages.filter(msg => msg.isChecked);
 
-  const handleReportSubmit = async (reason: string) => {
+  const handleReportSubmit = async (reasonCode: string[]) => {
+    // 모달을 닫고, 이유가 선택되지 않았으면 여기서 중단
+    setShowReportModal(false);
+    if (reasonCode.length === 0) {
+      return;
+    }
+
     const selectedMessages = getSelectedMessages();
     if (selectedMessages.length === 0 || !chatRoomId) {
       Alert.alert("오류", "신고할 메시지를 선택해주세요 또는 채팅방 ID가 유효하지 않습니다.");
@@ -124,21 +131,20 @@ const ChatReportPage = () => {
     }
 
     const reportData: ReportCreationDto = {
-      reason,
+      reportReason: reasonCode[0],
+      reporterId: myMemberId!,
       chatReports: selectedMessages.map(msg => ({ chatId: msg.chatId })),
-      reportedMemberIds: Array.from(new Set(selectedMessages.map(msg => msg.memberId))), // 중복 제거
+      reportedMemberIds: Array.from(new Set(selectedMessages.map(msg => msg.memberId))),
     };
 
     console.log("Submitting report with data:", JSON.stringify(reportData, null, 2));
     
     try {
-      setIsLoading(true); // API 호출 중 로딩 상태 표시
+      setIsLoading(true);
       await createReport(reportData);
       Alert.alert("신고 완료", "신고가 성공적으로 접수되었습니다.", [
         { text: "확인", onPress: () => router.back() },
       ]);
-      setShowReportModal(false);
-
     } catch (err: any) {
       console.error("Error creating report:", err);
       const errorMessage = err.fieldErrors 
@@ -270,6 +276,12 @@ const ChatReportPage = () => {
           <Text style={styles.footerButtonText}>신고하기</Text>
         </Pressable>
       </View>
+
+      <ReportModal
+        visible={showReportModal}
+        onSubmitReport={handleReportSubmit}
+        onDismiss={() => setShowReportModal(false)}
+      />
     </View>
   );
 };

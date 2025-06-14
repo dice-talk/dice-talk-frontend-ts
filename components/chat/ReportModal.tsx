@@ -1,52 +1,51 @@
+import { getReportReasons, ReportReasonDto } from "@/api/reportApi";
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const reportReasons = [
-  "스팸 · 유사투자자문 등",
-  "음란 · 성적 행위",
-  "아동 · 청소년 대상 성범죄",
-  "욕설 · 폭력 · 혐오",
-  "불법 상품 · 서비스",
-  "개인정보 무단 수집 · 유포",
-  "비정상적인 서비스 이용",
-  "자살 · 자해",
-  "사기 · 사칭",
-  "명예훼손 · 저작권 등 권리침해",
-];
-
 interface ReportModalProps {
   visible: boolean;
-  onSubmitReport: (reasons: string[]) => void; // 신고 사유를 전달하며 실제 신고 처리 요청
+  onSubmitReport: (reasonCode: string[]) => void; // 신고 사유를 전달하며 실제 신고 처리 요청
   onDismiss: () => void; // 모달을 단순히 닫는 경우
 }
 
 const ReportModal: React.FC<ReportModalProps> = ({ visible, onSubmitReport, onDismiss }) => {
-  const [selectedReason, setSelectedReason] = useState<string | null>(null); // 단일 선택으로 변경
+  const [reasons, setReasons] = useState<ReportReasonDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedReasonCode, setSelectedReasonCode] = useState<string | null>(null);
   const curThemeId = useHomeStore((state) => state.curThemeId);
 
   useEffect(() => {
-    // 모달이 화면에 표시될 때 (visible 프롭이 true가 될 때)
-    // 이전에 선택했던 사유들을 초기화합니다.
     if (visible) {
-      setSelectedReason(null); // 단일 선택 초기화
-    }
-  }, [visible]);
+      setSelectedReasonCode(null);
+      setIsLoading(true);
 
-  const toggleReason = (reason: string) => {
-    // 이미 선택된 사유를 다시 클릭하면 선택 해제, 아니면 새로운 사유로 변경
-    setSelectedReason(prevSelectedReason =>
-      prevSelectedReason === reason ? null : reason
-    ); 
+      const fetchReasons = async () => {
+        try {
+          const fetchedReasons = await getReportReasons();
+          setReasons(fetchedReasons);
+        } catch (error) {
+          console.error("Failed to load report reasons", error);
+          onDismiss(); // 에러 시 모달 닫기
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchReasons();
+    }
+  }, [visible, onDismiss]);
+
+  const toggleReason = (reasonCode: string) => {
+    setSelectedReasonCode(prev => (prev === reasonCode ? null : reasonCode));
   };
 
   const handleConfirm = () => {
-    // 선택된 항목(selectedReason)으로 실제 신고 처리 로직 호출 (배열로 전달)
-    onSubmitReport(selectedReason ? [selectedReason] : []);
+    onSubmitReport(selectedReasonCode ? [selectedReasonCode] : []);
   };
 
   const handleCancel = () => {
@@ -54,7 +53,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onSubmitReport, onDi
   };
 
   // 확인 버튼 활성화 여부
-  const isConfirmEnabled = selectedReason !== null; // 단일 선택 여부로 변경
+  const isConfirmEnabled = selectedReasonCode !== null;
   
   // 테마에 따른 색상 설정
   const confirmButtonColor = curThemeId === 2 ? "#6DA0E1" : "#EF5A52";
@@ -75,20 +74,24 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onSubmitReport, onDi
             </Text>
           </View>
           <ScrollView contentContainerStyle={styles.reasonList}>
-            {reportReasons.map((reason, idx) => (
-              <Pressable
-                key={idx}
-                style={styles.reasonBox}
-                onPress={() => toggleReason(reason)}
-              >
-                {selectedReason === reason ? ( // 단일 선택 비교로 변경
-                  <Ionicons name="checkmark-circle" size={SCREEN_WIDTH * 0.06} color="#EF5A52" />
-                ) : (
-                  <Ionicons name="ellipse-outline" size={SCREEN_WIDTH * 0.06} color="#EF5A52" />
-                )}
-                <Text style={styles.reasonText}>{reason}</Text>
-              </Pressable>
-            ))}
+            {isLoading ? (
+              <ActivityIndicator color={confirmButtonColor} style={{ paddingVertical: 20 }} />
+            ) : (
+              reasons.map((reason) => (
+                <Pressable
+                  key={reason.code}
+                  style={styles.reasonBox}
+                  onPress={() => toggleReason(reason.code)}
+                >
+                  {selectedReasonCode === reason.code ? (
+                    <Ionicons name="checkmark-circle" size={SCREEN_WIDTH * 0.06} color="#EF5A52" />
+                  ) : (
+                    <Ionicons name="ellipse-outline" size={SCREEN_WIDTH * 0.06} color="#CCCCCC" />
+                  )}
+                  <Text style={styles.reasonText}>{reason.description}</Text>
+                </Pressable>
+              ))
+            )}
           </ScrollView>
           <View style={styles.buttonContainer}>
           <Pressable 
@@ -124,7 +127,7 @@ const styles = StyleSheet.create({
   },
   modalView: {
     borderWidth: 1,
-    borderColor: "red",
+    borderColor: "#E6543B",
     width: "85%",
     backgroundColor: "white",
     borderRadius: 16,
@@ -158,23 +161,23 @@ const styles = StyleSheet.create({
   reasonBox: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 6,
+    marginVertical: 8,
+    width: "100%",
   },
   reasonText: {
-    fontSize: 15,
+    fontSize: 13,
     marginLeft: 8,
+    flex: 1,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    paddingHorizontal: 20,
+    paddingTop: 10,
     gap: 10,
   },
   button: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 0,
+    paddingVertical: 12,
     borderRadius: 20,
     flex: 1,
     alignItems: "center",
@@ -190,6 +193,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontWeight: "bold",
+    fontSize: 16,
   },
   cancelButtonText: {
     color: "#333333", // 취소 버튼 텍스트 색상
