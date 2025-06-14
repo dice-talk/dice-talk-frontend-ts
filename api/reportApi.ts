@@ -34,6 +34,22 @@ export interface ReportRoomEventDto {
   modifiedAt: string | null;
 }
 
+// --- 페이지네이션 응답을 위한 인터페이스 ---
+/**
+ * 페이징된 응답 데이터 구조
+ */
+export interface Page<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  last: boolean;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  first: boolean;
+  empty: boolean;
+}
+
 // 채팅방 상세 정보 (API 응답의 data 필드 내부)
 export interface ChatRoomDetailDataDto {
   chatRoomId: number;
@@ -41,7 +57,7 @@ export interface ChatRoomDetailDataDto {
   notice: string;
   roomStatus: string;
   themeName: string;
-  chats: ReportChatMessageDto[]; // 이 부분이 신고할 메시지 목록에 해당합니다.
+  chats: Page<ReportChatMessageDto>; // 페이지네이션 객체를 포함하도록 수정
   chatParts: ReportChatParticipantDto[];
   roomEvents: ReportRoomEventDto[];
   createdAt: string;
@@ -88,10 +104,10 @@ export const getChatRoomDetailsForReport = async (
     const queryString = Object.keys(queryParams).length > 0 
       ? `?${new URLSearchParams(queryParams as Record<string, string>).toString()}` 
       : "";
-    console.log(`📡 GET /chat-room/${chatRoomId}${queryString}`);
+    console.log(`📡 GET /chat-rooms/${chatRoomId}${queryString}`);
     
     const response = await axiosWithToken.get<ChatRoomDetailResponseDto>(
-      `/chat-room/${chatRoomId}`, 
+      `/chat-rooms/${chatRoomId}`, 
       { params: queryParams }
     );
     
@@ -101,6 +117,33 @@ export const getChatRoomDetailsForReport = async (
     const errorMessage = error.response?.data?.message || error.response?.data || error.message || "Unknown error";
     console.error(`🚨 Error fetching chat room details for report (room ${chatRoomId}):`, errorMessage, error.response?.status);
     throw error; 
+  }
+};
+
+// --- 신고 사유 조회 관련 인터페이스 및 함수 ---
+export interface ReportReasonDto {
+  code: string;
+  description: string;
+}
+
+interface ReportReasonsResponseDto {
+  data: ReportReasonDto[];
+}
+
+/**
+ * 신고 사유 목록을 조회합니다.
+ * @returns Promise<ReportReasonDto[]> - 신고 사유 목록
+ */
+export const getReportReasons = async (): Promise<ReportReasonDto[]> => {
+  try {
+    console.log("📡 GET /reports/reasons");
+    const response = await axiosWithToken.get<ReportReasonsResponseDto>("/reports/reasons");
+    console.log("✅ Report reasons fetched successfully");
+    return response.data.data;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || "Unknown error";
+    console.error("🚨 Error fetching report reasons:", errorMessage, error.response?.status);
+    throw error;
   }
 };
 
@@ -117,7 +160,8 @@ interface ChatReportDto {
  * 신고 생성 요청 DTO
  */
 export interface ReportCreationDto {
-  reason: string; // 신고 사유 (단일 문자열)
+  reportReason: string; // 신고 사유 (단일 문자열)
+  reporterId: number; // 신고자 ID 추가
   chatReports: ChatReportDto[]; // 신고할 채팅 ID 목록
   reportedMemberIds: number[]; // 신고 대상 사용자 ID 목록
 }

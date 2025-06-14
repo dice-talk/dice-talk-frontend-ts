@@ -1,4 +1,10 @@
 import { createReport, getChatRoomDetailsForReport, ReportChatMessageDto, ReportCreationDto } from "@/api/reportApi";
+import ChatMessageLeft from "@/components/chat/ChatMessageLeft"; // 왼쪽 말풍선
+import ChatMessageRight from "@/components/chat/ChatMessageRight"; // 오른쪽 말풍선
+import ReportModal from "@/components/chat/ReportModal"; // 신고 모달 임포트
+import { getProfileComponent } from "@/utils/getProfileComponent"; // 프로필 변환 함수 임포트
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore import 추가
+import useAuthStore from "@/zustand/stores/authStore"; // 현재 사용자 정보 가져오기
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -6,17 +12,13 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-// ReportModal을 임시로 주석 처리 (다음 단계에서 생성 및 연동)
-// import ReportModal from "@/components/chat/ReportModal"; 
-// import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 사용 제거
-import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore import 추가
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -35,46 +37,72 @@ interface ReportableChatMessage extends ReportChatMessageDto {
   profileImageUri?: string; // 프로필 이미지 URI (SVG 또는 일반 이미지)
 }
 
+// 사용자 정보를 담을 타입
+interface ParticipantInfo {
+  nickname: string;
+  profile: string;
+}
+
 const ChatReportPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const chatRoomId = params.id ? parseInt(params.id as string) : null;
   const themeId = useHomeStore((state) => state.curThemeId) || 1; // HomeStore에서 curThemeId 가져오기
+  const myMemberId = useAuthStore((state) => state.memberId); // 현재 사용자 ID
 
   const [messages, setMessages] = useState<ReportableChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [participants, setParticipants] = useState<Map<number, ParticipantInfo>>(new Map());
+  const [page, setPage] = useState(1); // 페이지 번호 상태 (1부터 시작하도록 수정)
+  const [hasNextPage, setHasNextPage] = useState(true); // 다음 페이지 존재 여부 상태 추가
+  const [isLoading, setIsLoading] = useState(true); // 초기 로딩 상태는 true로 설정
+  const [isFetchingMore, setIsFetchingMore] = useState(false); // 추가 로딩 상태
   const [error, setError] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
 
-  // API를 통해 채팅 메시지 로드
+  // API를 통해 채팅 메시지 로드 (페이지네이션 적용)
   const fetchMessages = useCallback(async () => {
-    if (!chatRoomId) {
-      setError("채팅방 ID가 유효하지 않습니다.");
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
+    if (isFetchingMore || !hasNextPage) return;
+    if (page > 1) setIsFetchingMore(true);
+
     try {
-      // TODO: 페이지네이션 구현 시 page, size 파라미터 추가 고려
-      const chatRoomData = await getChatRoomDetailsForReport({ chatRoomId });
-      const reportableMessages = chatRoomData.chats.map((chat) => ({
+      const chatRoomData = await getChatRoomDetailsForReport({
+        chatRoomId: chatRoomId!,
+        page,
+        size: 30,
+      });
+
+      // 참여자 정보 업데이트 (최초 한 번만 실행되도록)
+      if (page === 1) {
+        const newParticipants = new Map<number, ParticipantInfo>();
+        chatRoomData.chatParts.forEach(p => {
+          newParticipants.set(p.memberId, { nickname: p.nickname, profile: p.profile });
+        });
+        setParticipants(newParticipants);
+      }
+      
+      const newMessages = chatRoomData.chats.content.map((chat) => ({
         ...chat,
         isChecked: false,
-        // profileImageUri: chat.member?.profileImageUrl, // 실제 프로필 이미지 경로로 수정 필요
       }));
-      setMessages(reportableMessages);
+
+      setMessages((prev) => [...newMessages, ...prev]);
+      setPage((prev) => prev + 1);
+      setHasNextPage(!chatRoomData.chats.last);
     } catch (err: any) {
       console.error("Failed to fetch chat messages for report:", err);
       setError(err.message || "메시지를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
+      setIsFetchingMore(false);
     }
-  }, [chatRoomId]);
+  }, [chatRoomId, page, hasNextPage, isFetchingMore]);
 
   useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
-
+    if (chatRoomId) {
+      fetchMessages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatRoomId]);
 
   // 메시지 체크 상태 토글 함수
   const toggleCheck = (chatId: number) => {
@@ -89,7 +117,13 @@ const ChatReportPage = () => {
 
   const getSelectedMessages = () => messages.filter(msg => msg.isChecked);
 
-  const handleReportSubmit = async (reason: string) => {
+  const handleReportSubmit = async (reasonCode: string[]) => {
+    // 모달을 닫고, 이유가 선택되지 않았으면 여기서 중단
+    setShowReportModal(false);
+    if (reasonCode.length === 0) {
+      return;
+    }
+
     const selectedMessages = getSelectedMessages();
     if (selectedMessages.length === 0 || !chatRoomId) {
       Alert.alert("오류", "신고할 메시지를 선택해주세요 또는 채팅방 ID가 유효하지 않습니다.");
@@ -97,21 +131,20 @@ const ChatReportPage = () => {
     }
 
     const reportData: ReportCreationDto = {
-      reason,
+      reportReason: reasonCode[0],
+      reporterId: myMemberId!,
       chatReports: selectedMessages.map(msg => ({ chatId: msg.chatId })),
-      reportedMemberIds: Array.from(new Set(selectedMessages.map(msg => msg.memberId))), // 중복 제거
+      reportedMemberIds: Array.from(new Set(selectedMessages.map(msg => msg.memberId))),
     };
 
     console.log("Submitting report with data:", JSON.stringify(reportData, null, 2));
     
     try {
-      setIsLoading(true); // API 호출 중 로딩 상태 표시
+      setIsLoading(true);
       await createReport(reportData);
       Alert.alert("신고 완료", "신고가 성공적으로 접수되었습니다.", [
         { text: "확인", onPress: () => router.back() },
       ]);
-      setShowReportModal(false);
-
     } catch (err: any) {
       console.error("Error creating report:", err);
       const errorMessage = err.fieldErrors 
@@ -133,56 +166,40 @@ const ChatReportPage = () => {
 
   // 각 메시지 렌더링 함수
   const renderMessageItem = (message: ReportableChatMessage) => {
-    // TODO: 실제 프로필 이미지 타입 및 경로에 따라 SvgUri 또는 Image 컴포넌트 사용 결정
-    // const ProfileComponent = message.profileImageUri && message.profileImageUri.endsWith('.svg') ? SvgUri : Image;
+    const isMyMessage = message.memberId === myMemberId;
+    const senderInfo = participants.get(message.memberId);
     
-    // 임시 프로필 아이콘 스타일 (실제 프로필 이미지 핸들링 필요)
-    const profileIconColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
-    const profileBorderColor = themeId === 2 ? "#9FC9FF" : "#D4B6D4";
-    const bubbleColor = themeId === 2 ? "#B8C5E0" : "#DEBBDF";
-    const nicknameColor = themeId === 2 ? "#5C5279" : "#984A78";
-    const timeColor = themeId === 2 ? "#5C5279" : "#A88B9D";
+    const messageProps = {
+        message: message.message,
+        time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        nickname: senderInfo?.nickname || "알 수 없는 사용자",
+        profileImage: getProfileComponent(senderInfo?.profile), // 프로필 이름으로 SVG 컴포넌트 가져오기
+    };
 
     return (
-      <View style={styles.messageItemContainer} key={message.chatId}>
-        <TouchableOpacity
-          style={styles.checkCircle}
-          onPress={() => toggleCheck(message.chatId)}
-        >
-          {message.isChecked ? (
-            <Ionicons name="checkmark-circle" size={SCREEN_WIDTH * 0.07} color="#EF5A52" />
-          ) : (
-            <Ionicons name="ellipse-outline" size={SCREEN_WIDTH * 0.07} color="#CCCCCC" />
-          )}
-        </TouchableOpacity>
-        <View style={[styles.profileImagePlaceholder, { borderColor: profileBorderColor, backgroundColor: profileIconColor }]} />
-        {/* 실제 프로필 이미지 예시 (주석 처리)
-        {message.profileImageUri ? (
-          <ProfileComponent
-            uri={message.profileImageUri} // SvgUri의 경우 uri prop 사용
-            // source={{ uri: message.profileImageUri }} // Image의 경우 source prop 사용
-            style={styles.profileImage}
-            width={SCREEN_WIDTH * 0.09} // SvgUri의 경우 width/height 직접 지정
-            height={SCREEN_WIDTH * 0.09}
-          />
-        ) : (
-          <View style={[styles.profileImagePlaceholder, { borderColor: profileBorderColor, backgroundColor: profileIconColor }]} />
+      <View style={styles.messageRow}>
+        {!isMyMessage && (
+            <TouchableOpacity style={styles.checkCircle} onPress={() => toggleCheck(message.chatId)}>
+                {message.isChecked ? <Ionicons name="checkmark-circle" size={24} color="#EF5A52" /> : <Ionicons name="ellipse-outline" size={24} color="#CCCCCC" />}
+            </TouchableOpacity>
         )}
-        */}
-        <View style={styles.messageContent}>
-          <Text style={[styles.nickname, { color: nicknameColor }]}>{message.nickName || "알 수 없는 사용자"}</Text>
-          <View style={[styles.bubble, { backgroundColor: bubbleColor }]}>
-            <Text style={styles.messageText}>{message.message}</Text>
-          </View>
+        <View style={{ flex: 1 }}>
+            {isMyMessage ? (
+                <ChatMessageRight {...messageProps} />
+            ) : (
+                <ChatMessageLeft {...messageProps} />
+            )}
         </View>
-        <Text style={[styles.timeText, { color: timeColor }]}>
-          {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
+        {isMyMessage && (
+            <TouchableOpacity style={styles.checkCircle} onPress={() => toggleCheck(message.chatId)}>
+                {message.isChecked ? <Ionicons name="checkmark-circle" size={24} color="#EF5A52" /> : <Ionicons name="ellipse-outline" size={24} color="#CCCCCC" />}
+            </TouchableOpacity>
+        )}
       </View>
     );
   };
 
-  if (isLoading && messages.length === 0) { // 첫 로딩 시 전체 화면 로딩 인디케이터
+  if (isLoading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} />
@@ -215,7 +232,6 @@ const ChatReportPage = () => {
 
   const titleColor = themeId === 2 ? "#5C5279" : "#984A78";
   const confirmButtonColor = themeId === 2 ? "#6DA0E1" : "#D9B2D3";
-  const cancelButtonColor = "#AAAAAA";
   const hasCheckedMessages = getSelectedMessages().length > 0;
 
   return (
@@ -228,21 +244,24 @@ const ChatReportPage = () => {
         <View style={{ width: 24 }} />{/* 오른쪽 정렬을 위한 빈 공간 */}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {messages.length === 0 && !isLoading ? (
-          <Text style={styles.noMessagesText}>표시할 메시지가 없습니다.</Text>
-        ) : (
-          messages.map(renderMessageItem)
+      <FlatList
+        inverted
+        data={[...messages].reverse()} // Inverted FlatList는 데이터 순서도 뒤집어야 함
+        renderItem={({ item }) => renderMessageItem(item)}
+        keyExtractor={(item) => item.chatId.toString()}
+        contentContainerStyle={styles.scrollContainer}
+        onEndReached={fetchMessages}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={isFetchingMore ? <ActivityIndicator style={{ marginVertical: 10 }} size="small" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} /> : null}
+        ListEmptyComponent={() => (
+          !isLoading && (
+            <View style={styles.centered}>
+              <Text style={styles.noMessagesText}>표시할 메시지가 없습니다.</Text>
+            </View>
+          )
         )}
-      </ScrollView>
+      />
       
-      {isLoading && messages.length > 0 && ( // 메시지 로드 후 API 호출(신고) 시 로딩 인디케이터
-        <View style={styles.inlineLoadingContainer}>
-          <ActivityIndicator size="small" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} />
-          <Text style={styles.inlineLoadingText}>처리 중...</Text>
-        </View>
-      )}
-
       <View style={styles.footer}>
         <Pressable
           style={[
@@ -257,15 +276,12 @@ const ChatReportPage = () => {
           <Text style={styles.footerButtonText}>신고하기</Text>
         </Pressable>
       </View>
-      
-      {/* ReportModal 임시 주석 처리
+
       <ReportModal
         visible={showReportModal}
         onSubmitReport={handleReportSubmit}
         onDismiss={() => setShowReportModal(false)}
-        themeId={themeId}
       />
-      */}
     </View>
   );
 };
@@ -311,6 +327,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   noMessagesText: {
     textAlign: 'center',
@@ -318,59 +335,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888888',
   },
-  messageItemContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: SCREEN_WIDTH * 0.03,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
   },
   checkCircle: {
-    paddingRight: SCREEN_WIDTH * 0.03, // 체크박스와 프로필 이미지 사이 간격
-  },
-  profileImage: { // SvgUri, Image 공통 스타일
-    width: SCREEN_WIDTH * 0.09,
-    height: SCREEN_WIDTH * 0.09,
-    borderRadius: SCREEN_WIDTH * 0.045,
-    marginRight: SCREEN_WIDTH * 0.02,
-  },
-  profileImagePlaceholder: { // 실제 이미지 없을 때 사용
-    width: SCREEN_WIDTH * 0.09,
-    height: SCREEN_WIDTH * 0.09,
-    borderRadius: SCREEN_WIDTH * 0.045,
-    marginRight: SCREEN_WIDTH * 0.02,
-    borderWidth: 1,
-  },
-  messageContent: {
-    flex: 1, // 메시지 내용이 남은 공간을 모두 차지하도록
-    marginRight: SCREEN_WIDTH * 0.02,
-  },
-  nickname: {
-    fontSize: SCREEN_WIDTH * 0.034,
-    fontWeight: "bold",
-    marginBottom: 2,
-  },
-  bubble: {
-    paddingVertical: SCREEN_HEIGHT * 0.008,
-    paddingHorizontal: SCREEN_WIDTH * 0.025,
-    borderRadius: SCREEN_WIDTH * 0.03,
-    alignSelf: 'flex-start', // 말풍선이 내용물 크기에 맞게
-  },
-  messageText: {
-    fontSize: SCREEN_WIDTH * 0.038,
-    color: "#FFFFFF",
-  },
-  timeText: {
-    fontSize: SCREEN_WIDTH * 0.028,
-    color: "#888888",
-    alignSelf: 'flex-end', // 시간 오른쪽 끝으로
+    paddingHorizontal: 8,
   },
   footer: {
     padding: SCREEN_WIDTH * 0.04,
     borderTopWidth: 1,
     borderTopColor: "#EEEEEE",
     backgroundColor: "#FFFFFF",
+    paddingBottom: 30, // SafeArea 고려
   },
   footerButton: {
     paddingVertical: SCREEN_HEIGHT * 0.018,
@@ -399,17 +377,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
   },
-  inlineLoadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-  },
-  inlineLoadingText: {
-    marginLeft: 10,
-    fontSize: 14,
-    color: '#555555',
-  }
 });
 
 export default ChatReportPage; 
