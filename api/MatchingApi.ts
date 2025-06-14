@@ -1,7 +1,7 @@
 
+import useChatOptionStore from '@/zustand/stores/ChatOptionStore';
 import axios from 'axios';
 import { axiosWithToken } from "./axios/axios";
-import useChatOptionStore from '@/zustand/stores/ChatOptionStore';
 /**
  * 채팅방 매칭 요청 API
  * POST /matching/join

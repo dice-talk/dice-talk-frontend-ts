@@ -3,11 +3,11 @@ import ChatCustomButton from "@/components/chat/ChatCustomButton";
 import ChatMain from "@/components/chat/ChatMain";
 import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent"; // HomeStore는 이미 아래에서 chatRoomIdFromHomeStore로 사용됩니다.
 import useChat from '@/utils/useChat'; // useChat 훅 import
-import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; 
+import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore";
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
-import { useRouter, useFocusEffect } from "expo-router"; // useFocusEffect 추가
-import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가w
-import { ActivityIndicator, Button, Dimensions, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router"; // useFocusEffect 추가
+import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가
+import { Dimensions, StyleSheet, Text, View } from "react-native";
 
 export default function Chat() {
   const router = useRouter();

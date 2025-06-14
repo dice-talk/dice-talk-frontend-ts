@@ -9,7 +9,8 @@ export default function ProfileLayout() {
         <Stack.Screen name="UsagePage" />
         <Stack.Screen name="ChargePage" />
         <Stack.Screen name="ChangePasswordPage" />
-
+        <Stack.Screen name="PaymentScreen" />
+        
         <Stack.Screen name="question/_layout" />
       </Stack>
     );

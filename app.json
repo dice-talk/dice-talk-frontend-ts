@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yeoseunga.dicetalkts"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,40 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.yeoseunga.dicetalkts"
+      "package": "com.yeoseunga.dicetalkts",
+      "googleServicesFile": "./google-services.json",
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResources": true,
+      "enableR8": true,
+      "queries": [
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": [
+                  "tosspay",
+                  "ispmobile",
+                  "shinhan-sr-ansimclick",
+                  "kb-acp",
+                  "mpocket.online.ansimclick",
+                  "lotteappcard",
+                  "nonghyupcardansimclick",
+                  "citispay",
+                  "citimobileapp",
+                  "kakaotalk",
+                  "payco",
+                  "lpayapp",
+                  "hanamopay",
+                  "wooripay",
+                  "nhallonepayansimclick",
+                  "hanawalletmembers"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -25,6 +59,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withAndroidQueries.js",
       "expo-router",
       [
         "expo-splash-screen",

@@ -9,7 +9,6 @@ import uuid from "react-native-uuid";
 // ✅ 사용자 정보 타입 정의
 type TossUserInfo = {
   name: string;
-  phone: string;
   birth: string;
   gender: string;
 };
@@ -36,10 +35,6 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
   useEffect(() => {
     const requestToss = async () => {
       try {
-        // 테스트용 간단한 GET 요청
-      const testResponse = await axiosWithoutToken.get("/"); // 또는 서버의 간단한 GET 엔드포인트
-      console.log("✅ Simple GET Test Response:", testResponse.status, testResponse.data);
-      
         // ✅ axios를 사용하여 인증 요청
         const { data } = await axiosWithoutToken.post("/auth/request");
         console.log("✅ 인증 요청 응답:", data);
@@ -49,10 +44,12 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
         const appUriRes = await fetch(
           `https://cert.toss.im/api-client/v1/transactions/${data.txId}`
         );
+        console.log("appUriRes", appUriRes);
         const appUriData = await appUriRes.json();
-
+        console.log("appUriData", appUriData);
         if (appUriData.resultType === "SUCCESS") {
           const tossUri = appUriData.success.appUri.ios;
+          console.log("🚀 Linking.openURL으로 열려는 최종 URI:", tossUri);
           await Linking.openURL(tossUri); // Toss 앱 실행
         } else {
           throw new Error(appUriData.error?.reason || "Toss 인증 오류");
@@ -122,27 +119,52 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
     }
   };
 
-  // ✅ 앱 복귀 감지 + 딥링크 확인
+  // ✅ 앱 복귀 감지 (AppState) 및 초기/실행 중 URL 처리 (Linking)
   useEffect(() => {
+    // 앱 상태 변경 처리 (백그라운드 -> 포그라운드)
     const handleAppStateChange = async (nextState: AppStateStatus) => {
-      // ✅ 앱이 백그라운드 -> 활성화될 때 딥링크 확인
       if (appState.current.match(/inactive|background/) && nextState === "active") {
-        console.log("📱 앱 복귀 감지됨");
-        const url = await Linking.getInitialURL();
-        console.log("🔗 Retrieved Initial URL:", url); 
-        if (url) {
-          console.log("🔗 복귀 URL:", url);
-          setPendingUrl(url);
-        } else {
-          console.log("🔗 복귀 URL을 가져오지 못했습니다.");
+        console.log("📱 앱 복귀 감지됨 (AppState)");
+        try {
+          const initialUrl = await Linking.getInitialURL();
+          console.log("🔗 Retrieved Initial URL (on AppState change):", initialUrl);
+          if (initialUrl && !pendingUrl) { 
+            // pendingUrl이 이미 다른 경로(addEventListener)로 설정되지 않았을 경우에만 설정
+            console.log("🔗 초기 URL 설정 (AppState):", initialUrl);
+            setPendingUrl(initialUrl);
+          }
+        } catch (e) {
+          console.warn("🔗 AppState change: Failed to get initial URL", e);
         }
       }
       appState.current = nextState;
     };
 
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
-    return () => subscription.remove();
-  }, []);
+    const appStateSubscription = AppState.addEventListener("change", handleAppStateChange);
+
+    // 실행 중인 앱으로 들어오는 딥링크 처리
+    const handleDeepLink = (event: { url: string }) => {
+      console.log("🔗 딥링크 이벤트 수신 (addEventListener):", event.url);
+      if (event.url) {
+        setPendingUrl(event.url);
+      }
+    };
+
+    const linkingSubscription = Linking.addEventListener('url', handleDeepLink);
+
+    // 컴포넌트 마운트 시 초기 URL 확인
+    Linking.getInitialURL().then(url => {
+      if (url && !pendingUrl) { // pendingUrl이 이미 설정되지 않았을 경우에만
+        console.log("🔗 Retrieved Initial URL (on mount):", url);
+        setPendingUrl(url);
+      }
+    }).catch(err => console.warn("🔗 Mount: Failed to get initial URL", err));
+
+    return () => {
+      appStateSubscription.remove();
+      linkingSubscription.remove();
+    };
+  }, [pendingUrl]); // pendingUrl을 디펜던시 배열에 추가하여 중복 설정을 방지
 
   // ✅ txId와 복귀 URL이 모두 준비됐을 때 실행
   useEffect(() => {
@@ -150,18 +172,24 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
       console.log("✅ txId와 복귀 URL이 모두 준비됐을 때 실행", txId, pendingUrl);
       if (!txId || !pendingUrl) return;
 
+      // pendingUrl에 txId가 포함되어 있는지, 또는 특정 경로인지 등을 확인하여
+      // 정말 Toss 인증 후 돌아온 URL인지 검증하는 로직을 추가할 수 있습니다.
+      // 예: if (!pendingUrl.includes("success")) return; 
+
       if (txId) {
         console.log("🚀 Toss 인증 성공 처리 시작");
         await fetchUserInfo();
       } else {
         Alert.alert("인증 실패", "다시 시도해주세요.");
+
+        if (onAuthFailure) onAuthFailure(); // 실패 콜백 호출
       }
 
       setPendingUrl(null); // ✅ 중복 방지
     };
 
     tryProcess();
-  }, [txId, pendingUrl]);
+  }, [txId, pendingUrl, fetchUserInfo]); // fetchUserInfo를 디펜던시 배열에 추가
 
   return (
     <View style={{ flex: 1 }}>

@@ -5,7 +5,8 @@ import { axiosWithoutToken } from "./axios/axios";
 // AsyncStorage import는 스토어 저장 로직을 loginApi 내부에 유지한다면 필요할 수 있습니다.
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const loginMember = async (email: string, password: string): Promise<{ success: boolean; response: any }> => {
+export const loginMember = async (email: string, password: string): Promise<boolean> => {
+
     try{
         const response = await axiosWithoutToken.post("/auth/login", { username: email, password: password });
         console.log('로그인 API 응답 전체:', response);
@@ -50,7 +51,8 @@ export const loginMember = async (email: string, password: string): Promise<{ su
             console.log('AsyncStorage 및 스토어 저장 완료. AccessToken:', accessToken, 'RefreshToken:', refreshToken, 'MemberId:', memberId);
             // console.log('스토어 상태:', useMemberInfoStore.getState());
             console.log('authStore 상태:', useAuthStore.getState()); // authStore 상태 로깅
-            return { success: true, response };
+            return true;
+
         } else {
             console.error("🚨 로그인 실패: 응답에서 memberId, accessToken 또는 refreshToken(header)을 찾을 수 없습니다.", 
                           { memberId, accessToken, refreshToken, responseData: response.data, responseHeaders: response.headers });

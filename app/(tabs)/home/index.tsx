@@ -1,5 +1,6 @@
 import { getNotifications, getUnreadNotificationCount } from '@/api/AlertApi';
 import { getHomeApi } from '@/api/HomeApi';
+import AlertIcon from '@/assets/images/chat/chatNoticeOnOff.svg';
 import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
 import ExLoveIcon from '@/assets/images/home/exLoveIcon.svg';
 import HeartSignalIcon from '@/assets/images/home/heartSignalIcon.svg';
@@ -225,6 +226,7 @@ const HomeScreen = () => {
             }
           }}
         >
+          <AlertIcon color="#F9BCC1" />
         </TouchableOpacity>
         {unreadCount > 0 && (
           <View style={styles.redDot}>

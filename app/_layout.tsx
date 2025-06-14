@@ -7,7 +7,7 @@ import * as Notifications from 'expo-notifications'; // <<<<<< [추가]
 import { SplashScreen, Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Platform } from 'react-native'; // <<<<<< [추가]
+import { AppState, Platform } from 'react-native'; // <<<<<< [수정] AppState 임포트
 import 'react-native-reanimated';
 
 // 앱 초기 스플래시 화면을 숨기지 않도록 설정
@@ -85,6 +85,31 @@ export default function RootLayout() {
   const isAutoLoginAttempted = useAuthStore((state) => state.isAutoLoginAttempted);
   const isAppInitialized = useAuthStore((state) => state.isAppInitialized);
   const { setAppInitialized } = useAuthStore((state) => state.actions);
+
+  useEffect(() => {
+    // ############ [추가] AppState 리스너 설정 ############
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('앱이 활성 상태로 전환되었습니다. 자동 로그인을 시도합니다.');
+        // 사용자가 명시적으로 로그아웃한 상태가 아니라면, 자동 로그인을 시도합니다.
+        // accessToken이 이미 있다면, 유효성 검사를 다시 할 수도 있습니다. (여기서는 간단히 재시도)
+        if (!useAuthStore.getState().accessToken) {
+            const loginSuccess = await attemptAutoLogin();
+            if(loginSuccess) {
+                // 이미 (tabs) 내부에 있다면 굳이 이동할 필요는 없지만,
+                // 혹시 다른 페이지에 있다가 돌아온 경우를 대비해 이동시킬 수 있습니다.
+                // 현재 라우팅 로직이 복잡하므로, attemptAutoLogin이 상태를 바꾸는 것만으로도 충분할 수 있습니다.
+                // 필요하다면 router.replace('/(tabs)/home'); 추가
+            }
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+    // ######################################################
+  }, []);
 
   useEffect(() => {
     // initializeAppGlobally Promise가 완료되기를 기다립니다.
@@ -168,7 +193,9 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(onBoard)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="Loading" options={{ headerShown: false }} /> 
+        <Stack.Screen name="Loading" options={{ headerShown: false }} />
+        <Stack.Screen name="payment-success" options={{ headerShown: false }} />
+        <Stack.Screen name="payment-fail" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

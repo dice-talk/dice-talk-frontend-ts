@@ -25,9 +25,9 @@ import useAuthStore from '@/zustand/stores/authStore'; // <<<<<< 스토어 임�
 // import Constants from 'expo-constants'; // notificationUtils로 이동
 // import * as Device from 'expo-device'; // notificationUtils로 이동
 // import * as Notifications from 'expo-notifications'; // notificationUtils에서 주로 사용, 여기서는 직접 호출 X
+import AccountBannedModal from '@/components/common/AccountBannedModal'; // AccountBannedModal 임포트 (경로 확인 필요)
 import { registerForPushNotificationsAsync } from '@/utils/notificationUtils'; // << IMPORT 경로 수정
 import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView 사용
-import AccountBannedModal from '@/components/common/AccountBannedModal'; // AccountBannedModal 임포트 (경로 확인 필요)
 
 // 알림 핸들러: 앱이 실행 중일 때 알림이 오면 어떻게 처리할지 설정
 // 이 부분은 _layout.tsx 로 이동될 예정이므로 여기서는 주석 처리하거나 삭제 가능.
@@ -96,11 +96,11 @@ export default function LoginScreen() {
         // authStore.getState().memberInfo?.id 와 같이 최신 상태를 직접 가져오는 것을 고려하거나,
         // memberInfo가 확실히 업데이트된 후 이 로직을 실행하도록 보장해야 함.
         // 여기서는 loginMember 후 memberInfo가 업데이트 되었다고 가정.
-        const currentMemberId = useAuthStore.getState().memberId; // 최신 ID 가져오기 (authStore 구조에 따름)
+        const currentMemberId = useAuthStore.getState().memberId;
 
         if (expoPushToken && currentMemberId) {
           try {
-            await sendPushTokenToServer(currentMemberId, expoPushToken); // <<<<<< [수정] 주석 해제
+            await sendPushTokenToServer(expoPushToken); // <<<<<< [수정] memberId 인자 제거
             console.log('Expo 푸시 토큰 서버 전송 성공:', expoPushToken, 'for memberId:', currentMemberId);
           } catch (tokenError) {
             console.error('Expo 푸시 토큰 서버 전송 실패 (LoginScreen catch):', tokenError);
@@ -132,7 +132,6 @@ export default function LoginScreen() {
         const errMsg = error.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
         Alert.alert('로그인 실패', errMsg);
       }
-     
     } finally {
       setIsLoading(false);
     }
@@ -228,6 +227,7 @@ export default function LoginScreen() {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
       <AccountBannedModal
         isVisible={showAccountBannedModal}
         // AccountBannedModal은 onConfirm prop을 받습니다.

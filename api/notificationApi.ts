@@ -10,22 +10,20 @@ interface SendPushTokenPayload {
 
 /**
  * Expo 푸시 알림 토큰을 서버로 전송합니다.
- * @param memberId - 사용자 ID (URL 경로에 포함될 수 있음)
+ * 백엔드가 Authorization 헤더의 JWT에서 사용자 정보를 식별하므로 memberId는 인자로 필요 없습니다.
  * @param token - Expo 푸시 토큰
  */
-export const sendPushTokenToServer = async (memberId: number | string, token: string): Promise<void> => {
+export const sendPushTokenToServer = async (token: string): Promise<void> => {
   try {
     const payload: SendPushTokenPayload = {
       expoPushToken: token,
-      deviceType: Platform.OS,
+      deviceType: Platform.OS, // 'ios' 또는 'android'
     };
-    // 백엔드 엔드포인트 예시: /members/expo-push-token
-    // 실제 사용하는 엔드포인트로 수정해야 합니다.
-    // 예를 들어, PUT /api/v1/members/{memberId}/expo-push-token 형태라면:
-    // await axiosWithToken.put(`/api/v1/members/${memberId}/expo-push-token`, payload);
-    // 여기서는 POST /api/v1/members/expo-push-token 형태로 가정 (Authorization 헤더로 사용자 식별)
+    
+    // 백엔드 엔드포인트: POST /api/v1/push-notifications/token
+    // Authorization 헤더는 axiosWithToken 인터셉터에서 자동으로 추가됩니다.
     await axiosWithToken.post('/api/v1/push-notifications/token', payload); 
-    console.log(`Push token (${token.substring(0,15)}...) for member ${memberId} sent to server successfully.`);
+    console.log(`Push token (${token.substring(0,15)}...) sent to server successfully.`);
   } catch (error) {
     const axiosError = error as AxiosError; // 에러 타입을 AxiosError로 단언
     let errorMessage = 'Failed to send push token to server.';

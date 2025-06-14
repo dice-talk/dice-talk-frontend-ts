@@ -71,9 +71,10 @@ export default function TabLayout() {
     router.replace(targetPath as any); // as any로 타입 검사 우회
   };
 
-  // ChatRoom 또는 LoadingScreen 화면에서는 Footer를 표시하지 않음
+  // [수정] PaymentScreen에서도 Footer를 표시하지 않도록 조건을 추가합니다.
   const isChatRoomScreen = pathname.startsWith('/chat/ChatRoom');
-  const isLoadingScreen = pathname === '/home/LoadingScreen'; // LoadingScreen 경로 확인
+  const isLoadingScreen = pathname === '/home/LoadingScreen';
+  const isPaymentScreen = pathname === '/profile/PaymentScreen';
 
   return (
     <View style={styles.container}>
@@ -82,7 +83,8 @@ export default function TabLayout() {
           <View style={styles.content}>
             <Slot />
           </View>
-          {!isChatRoomScreen && !isLoadingScreen && ( // LoadingScreen일 때 Footer 숨김
+          {/* [수정] isPaymentScreen 조건을 추가하여 해당 화면에서 Footer를 숨깁니다. */}
+          {!isChatRoomScreen && !isLoadingScreen && !isPaymentScreen && (
           <Footer currentTab={currentTab} onTabPress={handleTabPress} />
           )}
         </View>

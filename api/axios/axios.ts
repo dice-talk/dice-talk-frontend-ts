@@ -2,13 +2,27 @@ import { refreshAccessToken } from "@/api/authApi";
 import useAuthStore from "@/zustand/stores/authStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
+import { Platform } from "react-native";
 
 // ✅ Base URL을 상단에서 직접 지정
 export const BASE_URL = "https://www.dicetalk.co.kr"; // EC2 서버
-// export const BASE_URL = "http://172.30.1.78:8080"; // 로컬 개발 서버
-// export const BASE_URL = "http://192.168.0.30:8080"; // 로컬 개발 서버"
+//export const BASE_URL = "http://172.29.40.14:8080"; // 로컬 개발 서버
 
 // export const BASE_URL = "http://localhost:8080"; // 로컬호스트
+
+/**
+ * [추가] axios 인스턴스의 기본 헤더에 토큰을 설정하거나 제거하는 함수
+ * @param token - 설정할 accessToken. null을 보내면 헤더에서 제거됨.
+ */
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    console.log("setAuthToken: axios 헤더에 새 토큰 설정.");
+    axiosWithToken.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    console.log("setAuthToken: axios 헤더에서 토큰 제거.");
+    delete axiosWithToken.defaults.headers.common['Authorization'];
+  }
+};
 
 // ✅ 기본 axios 인스턴스 (토큰 불필요)
 export const axiosWithoutToken: AxiosInstance = axios.create({
@@ -25,13 +39,16 @@ export const axiosWithToken: AxiosInstance = axios.create({
 // 요청 인터셉터: 모든 요청에 accessToken 추가
 axiosWithToken.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    const token = await AsyncStorage.getItem("accessToken"); // 요청 시점의 최신 토큰 사용
-    // console.log("📄 token:", token ? token.substring(0, 10) + "..." : "No token"); // 디버깅 시 필요하면 주석 해제
-    console.log("📡 요청 URL:", config.baseURL + (config.url ?? "")); // 디버깅 시 필요하면 주석 해제
+    if (Platform.OS !== 'web') {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("📡 요청 URL:", config.baseURL + (config.url ?? ""));
 
-    if (token) {
-        config.headers = config.headers || {};
-        (config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+      if (token) {
+          config.headers = config.headers || {};
+          (config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+      }
+    } else {
+      console.log("📡 요청 URL (Web):", config.baseURL + (config.url ?? ""));
     }
     return config;
   },
@@ -39,7 +56,6 @@ axiosWithToken.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
 // 응답 인터셉터 추가 (토큰 만료 시 재발급 로직)
 
 // 여러 요청이 동시에 토큰 재발급을 시도하는 것을 방지하기 위한 변수들

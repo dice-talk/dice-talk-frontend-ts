@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 페이지</title>
+    <!-- 사용자가 제공한 공식 문서 버전인 v1 스크립트를 사용합니다. -->
+    <script src="https://js.tosspayments.com/v1/payment-widget"></script>
+    <style>
+        /* 화면에 아무것도 안보이는 경우를 대비하여 payment-method 영역 확인용 스타일 */
+        #payment-method {
+            width: 100%;
+        }
+        body {
+            margin: 0;
+            padding: 1rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                'Helvetica Neue', Arial, sans-serif;
+            background-color: #ffffff;
+        }
+        #agreement {
+            width: 100%;
+        }
+        #payment-button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #payment-button:disabled {
+            background-color: #cdd3d8;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- 결제위젯, 이용약관 UI가 렌더링될 위치 -->
+    <div id="payment-method"></div>
+    <div id="agreement"></div>
+    <button id="payment-button" disabled>결제하기</button>
+
+    <script>
+      // React Native WebView로 로그를 전달하기 위해 console 오버라이드
+      const postLog = (type, ...args) => {
+        try {
+          const serializedArgs = args.map(arg => {
+            if (arg instanceof Error) {
+              // Error 객체는 바로 JSON.stringify가 안되므로, 주요 속성을 가진 객체로 변환
+              return { message: arg.message, stack: arg.stack, name: arg.name };
+            }
+            return arg;
+          });
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: type,
+            data: serializedArgs
+          }));
+        } catch (e) {
+          // 순환 참조 등 JSON.stringify 오류는 무시
+        }
+      };
+
+      console.log = (...args) => postLog('LOG', ...args);
+      console.info = (...args) => postLog('INFO', ...args);
+      console.warn = (...args) => postLog('WARN', ...args);
+      console.error = (...args) => postLog('ERROR', ...args);
+      
+      // 잡히지 않은 모든 에러를 처리하기 위한 전역 핸들러
+      window.onerror = (message, source, lineno, colno, error) => {
+        console.error("Uncaught Error:", { message, source, lineno, colno, errorName: error ? error.name : 'N/A' });
+        return true; // true를 반환하여 브라우저 기본 에러 처리를 막음
+      };
+
+      console.log('HTML: Script block started.');
+
+      let paymentWidget;
+      let paymentParams;
+
+      // React Native 앱으로부터 메시지(결제 정보) 수신
+      console.log('HTML: Adding message event listener.');
+      document.addEventListener('message', (event) => {
+        console.log('HTML: Message event received.');
+        try {
+          const receivedData = JSON.parse(event.data);
+          console.log('HTML: Parsed data', receivedData);
+          const { clientKey, customerKey, amount, orderId, orderName, successUrl, failUrl } = receivedData;
+
+          if (!clientKey || !customerKey || amount == null || !orderId || !orderName) {
+            console.error('HTML: One or more required parameters are missing.', receivedData);
+            return;
+          }
+
+          // paymentParams 구성
+          paymentParams = { amount, orderId, orderName, successUrl, failUrl };
+          console.log('HTML: Payment params set', paymentParams);
+
+          // 결제위젯 초기화
+          console.log('HTML: Initializing PaymentWidget with clientKey and customerKey.');
+          paymentWidget = PaymentWidget(clientKey, customerKey);
+          console.log('HTML: PaymentWidget initialized successfully.');
+
+          // 결제 UI 렌더링
+          console.log('HTML: Attempting to render payment methods...');
+          paymentWidget.renderPaymentMethods('#payment-method', { value: amount });
+          console.log('HTML: renderPaymentMethods call finished.');
+
+          console.log('HTML: Attempting to render agreement...');
+          paymentWidget.renderAgreement('#agreement');
+          console.log('HTML: renderAgreement call finished.');
+
+          // UI 렌더링이 완료되면 결제 버튼 활성화
+          document.getElementById('payment-button').disabled = false;
+          console.log('HTML: Payment button enabled.');
+
+        } catch (e) {
+          console.error('HTML: Error in message event listener.', e);
+        }
+      });
+      console.log('HTML: Message event listener added.');
+
+
+      // 결제하기 버튼 클릭 이벤트
+      const payButton = document.getElementById('payment-button');
+      if (payButton) {
+        console.log('HTML: Adding click event listener to payment button.');
+        payButton.addEventListener('click', () => {
+          if (paymentWidget && paymentParams) {
+              console.log('HTML: Requesting payment with params:', paymentParams);
+              paymentWidget.requestPayment(paymentParams);
+          } else {
+              console.error('HTML: Payment widget is not initialized or params are missing.');
+          }
+        });
+      } else {
+        console.error('HTML: Payment button not found.');
+      }
+      console.log('HTML: Script block finished.');
+    </script>
+</body>
+</html>

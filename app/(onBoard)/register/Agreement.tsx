@@ -100,7 +100,6 @@ export default function Agreement() {
 
         const signupUpdate: Partial<SignupData> = {
             name: userInfo.name,
-            phone: userInfo.phone ?? null, // phone이 undefined이면 null로 저장
             gender: storeGender,
             birth: userInfo.birth || null, // 로그에서 birth 필드 사용
             ageGroup: userInfo.ageGroup || null, // ageGroup 추가
