@@ -42,6 +42,7 @@ export interface HeartHistoryItem {
   receiverId: number;
   senderId: number;
   chatRoomId: number;
+  themeId: number;
   message: string | null;
   roomEventType: 'PICK_MESSAGE' | string; // 다양한 이벤트 타입이 있을 수 있음
   createdAt: string;
@@ -171,11 +172,24 @@ export const getMyHeartHistory = async (
   }
 };
 
+/**
+ * 하트 히스토리 아이템 삭제 API
+ * @param roomEventId 삭제할 하트 히스토리 아이템의 ID
+ */
+export const deleteHeartHistoryItem = async (roomEventId: number | string): Promise<void> => {
+  try {
+    await axiosWithToken.delete(`/room-event/history/${roomEventId}`);
+  } catch (error) {
+    console.error(`🚨 하트 내역 삭제 실패 (ID: ${roomEventId}):`, error);
+    throw error;
+  }
+};
+
 // (유지) 원본 코드의 getHeartHistory (특정 멤버 ID 기준, admin/public 용도일 수 있음)
 export const getHeartHistoryByMemberId = async (
   memberId: number,
   page: number = 0,
-  size: number = 20,
+  size: number = 10,
 ): Promise<HeartHistoryListResponse> => {
   console.log(`[API] getHeartHistoryByMemberId 호출: memberId=${memberId}`);
   try {
