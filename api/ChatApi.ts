@@ -1,7 +1,7 @@
 import useAuthStore from "@/zustand/stores/authStore"; // 경로 수정 가능성 있음
 import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; // 새로 만든 ChatRoomStore 임포트
 
-import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import axios from "axios"; // axios.isAxiosError를 사용하기 위해 임포트
 
 import { axiosWithToken } from "./axios/axios";
@@ -72,33 +72,43 @@ export const getIsPossible = async () => {
  * @returns 현재 채팅방 ID (curChatRoomId) 또는 null (참여 중인 방이 없거나 에러 발생 시).
  */
 export const getCurrentChatRoomId = async (): Promise<number | null> => {
+  const { setChatRoomDetails } = useChatRoomStore.getState().actions;
+  const { setChatRoomId: setHomeChatRoomId } = useHomeStore.getState().actions; 
   try {
     const memberId = useAuthStore.getState().memberId;
+    
     if (!memberId) {
       console.warn("🚨 getCurrentChatRoomId: memberId가 AuthStore에 없습니다. 로그인 상태를 확인해주세요.");
-      // 로그인이 되어있지 않으면 현재 채팅방이 있을 수 없으므로 null 반환 또는 에러 throw
+      setChatRoomDetails({ chatRoomId: null });
+      setHomeChatRoomId(0); // HomeStore도 업데이트 (방 없음 상태)
       return null;
     }
 
     const requestUrl = `/chat-rooms/curChatRoom`; // API 엔드포인트
     console.log(`🚀 getCurrentChatRoomId 요청 URL: ${requestUrl}`);
     // 서버가 { "data": 0 } 형태로 응답한다고 가정 (0이 curChatRoomId)
-    const response = await axiosWithToken.get<{ data: number }>(requestUrl);
+    const response = await axiosWithToken.get<number>(requestUrl); // API 응답이 숫자 자체라고 가정
+
     console.log(`🔍 현재 채팅방 ID (curChatRoomId) 조회 응답:`, { status: response.status, data: response.data }); // response.data 전체를 로깅하거나, response.data.data를 로깅
 
-    const curChatRoomId = response.data.data; // response.data.data에서 ID 추출
+    const curChatRoomId = response.data; // response.data를 직접 사용
+    console.log ("갱신된 roomId:",curChatRoomId, "그냥 리스폰스:", response.data)
 
+    // ChatRoomStore에)
     // ChatRoomStore에 curChatRoomId 저장
     // 이 액션이 ChatRoomStore에 정의되어 있어야 합니다.
     // 예: setChatRoomId: (id: number | null) => set({ chatRoomId: id })
-    const { setChatRoomDetails } = useChatRoomStore.getState().actions;
     setChatRoomDetails({ chatRoomId: curChatRoomId });
+    // HomeStore에도 curChatRoomId 저장
+    setHomeChatRoomId(curChatRoomId);
 
     return curChatRoomId;
   } catch (error) {
     console.error("🚨 현재 채팅방 ID (curChatRoomId) 조회 실패:", error);
-    // 에러 발생 시 또는 채팅방이 없는 경우 (API가 404 등을 반환할 때) null을 반환하거나 에러를 throw 할 수 있습니다.
-    // 여기서는 null을 반환하도록 처리합니다.
+    // 에러 발생 또는 방 없음(404) 시 ChatRoomStore와 HomeStore 모두 초기화/업데이트
+    setChatRoomDetails({ chatRoomId: null });
+    setHomeChatRoomId(0); // HomeStore는 0으로 설정 (방 없음 상태)
+
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       console.log("ℹ️ 현재 참여중인 채팅방이 없습니다 (404).");
       return null;

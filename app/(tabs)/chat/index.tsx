@@ -1,12 +1,12 @@
-import { getChatRoomInfo } from "@/api/ChatApi"; // getCurrentChatRoomId 제거
+import { getCurrentChatRoomId, getChatRoomInfo } from "@/api/ChatApi"; // getCurrentChatRoomId 추가
 import ChatCustomButton from "@/components/chat/ChatCustomButton";
 import ChatMain from "@/components/chat/ChatMain";
 import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent"; // HomeStore는 이미 아래에서 chatRoomIdFromHomeStore로 사용됩니다.
 import useChat from '@/utils/useChat'; // useChat 훅 import
-import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore";
+import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; 
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
-import { useFocusEffect, useRouter } from "expo-router"; // useFocusEffect 추가
-import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가
+import { useRouter, useFocusEffect } from "expo-router"; // useFocusEffect 추가
+import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가w
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 
 export default function Chat() {
@@ -66,47 +66,65 @@ export default function Chat() {
         // setRemainingTimeForTimer(null);
 
         try {
-          // getChatRoomInfo API는 내부적으로 HomeStore의 chatRoomId를 사용합니다.
-          const detailedRoomInfo = await getChatRoomInfo();
+          // 1. 현재 채팅방 ID를 가져옵니다. 이 함수는 내부적으로 ChatRoomStore와 HomeStore의 chatRoomId를 업데이트합니다.
+          const currentFetchedRoomId = await getCurrentChatRoomId();
           if (!isActive) return;
 
-          if (detailedRoomInfo && detailedRoomInfo.chatRoomId === 0) {
-            // Case 1: API 응답의 chatRoomId가 0인 경우 ("참여중인 채팅방이 없습니다." 표시)
-            setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
-            setRemainingTimeForTimer(null);
-            setHomeChatRoomId(0); // HomeStore의 ID를 0으로 설정
-            setError(null);       // 에러 상태는 없음
-          } else if (detailedRoomInfo && typeof detailedRoomInfo.createdAt === 'string' && detailedRoomInfo.chatRoomId) {
-            // Case 2: 유효한 채팅방 정보 (chatRoomId가 0이 아님)를 성공적으로 가져온 경우
-            setChatRoomDetails(detailedRoomInfo as ChatRoomDetails); // ChatRoomStore에 방 정보 저장
+          // getCurrentChatRoomId 호출 후 HomeStore의 chatRoomId가 업데이트되었으므로,
+          // chatRoomIdFromHomeStore를 다시 읽거나 currentFetchedRoomId를 사용합니다.
+          // 여기서는 currentFetchedRoomId를 기준으로 로직을 진행합니다.
 
-            // HomeStore의 chatRoomId를 API 응답의 ID와 동기화
-            // chatRoomIdFromHomeStore는 useFocusEffect의 의존성 배열에 직접 넣을 수 없으므로,
-            // 이 로직은 API 응답을 기준으로 HomeStore를 업데이트하는 것이 더 적절할 수 있습니다.
-            // 또는, chatRoomIdFromHomeStore를 useFocusEffect의 의존성으로 추가하고,
-            // 이 fetchChatData 함수를 useFocusEffect 바깥으로 빼서 useCallback으로 감싸야 합니다.
-            // 여기서는 API 응답 기준으로 HomeStore를 업데이트합니다.
-            if (useHomeStore.getState().chatRoomId !== detailedRoomInfo.chatRoomId) {
-              setHomeChatRoomId(detailedRoomInfo.chatRoomId);
+          if (currentFetchedRoomId !== null && currentFetchedRoomId !== 0) {
+            // 사용자가 채팅방에 참여 중인 경우 (currentFetchedRoomId가 실제 방 ID)
+            // HomeStore는 getCurrentChatRoomId 내부에서 이미 업데이트되었습니다.
+
+            // 2. 상세 채팅방 정보를 가져옵니다. getChatRoomInfo는 HomeStore의 chatRoomId를 사용합니다.
+            // getChatRoomInfo는 HomeStore의 chatRoomId를 사용하므로, currentFetchedRoomId를 인자로 넘길 필요가 없습니다.
+            const detailedRoomInfo = await getChatRoomInfo(); 
+            if (!isActive) return;
+
+            if (detailedRoomInfo && detailedRoomInfo.chatRoomId === currentFetchedRoomId && typeof detailedRoomInfo.createdAt === 'string') {
+              // 성공적으로 상세 정보를 가져왔고, ID가 일치하는 경우
+              // getChatRoomInfo 내부에서 ChatRoomStore의 전체 상세 정보가 업데이트됩니다.
+              // HomeStore의 chatRoomId는 getCurrentChatRoomId에서 이미 설정됨.
+
+              // 타이머 로직
+              const localDate = new Date(detailedRoomInfo.createdAt.replace(' ', 'T'));
+              const roomCreationTime = localDate.getTime();
+              const currentTime = Date.now();
+              const elapsedTimeSeconds = (currentTime - roomCreationTime) / 1000;
+              let timeLeftSeconds = CHAT_ROOM_VALID_DURATION_SECONDS - elapsedTimeSeconds;
+              timeLeftSeconds = Math.max(0, timeLeftSeconds);
+              setRemainingTimeForTimer(timeLeftSeconds);
+              setError(null);
+            } else if (detailedRoomInfo && detailedRoomInfo.chatRoomId === 0) {
+              // getChatRoomInfo가 chatRoomId: 0을 반환한 경우 (예: 방이 방금 종료됨 또는 isPossible에서 false 반환 후 getChatRoomInfo가 0을 반환)
+              console.warn(`[ChatIndex] Discrepancy or expected no room: getCurrentChatRoomId gave ${currentFetchedRoomId}, but getChatRoomInfo resulted in chatRoomId 0.`);
+              setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
+              setRemainingTimeForTimer(null);
+              // HomeStore는 getCurrentChatRoomId에서 이미 0으로 설정되었을 수 있음 (만약 isPossible=false이고 chatRoomId=0인 경우)
+              // 또는 getChatRoomInfo가 0을 반환했으므로 HomeStore도 0으로 맞춰야 함.
+              if (useHomeStore.getState().chatRoomId !== 0) {
+                setHomeChatRoomId(0);
+              }
+              setError(null); // "참여중인 채팅방이 없습니다." 상태
+            } else {
+              // getChatRoomInfo가 null을 반환했거나 (오류 발생) 또는 데이터가 일관되지 않은 경우
+              console.warn(`[ChatIndex] Failed to get consistent detailedRoomInfo for room ${currentFetchedRoomId}. detailedRoomInfo:`, detailedRoomInfo);
+              setError("채팅방 상세 정보를 가져오는 데 문제가 발생했습니다.");
+              // HomeStore는 getCurrentChatRoomId 또는 getChatRoomInfo 내부에서 이미 0 또는 null로 설정되었을 수 있음
+              // 확실하게 0으로 설정
+              if (useHomeStore.getState().chatRoomId !== 0) {
+                setHomeChatRoomId(0);
+              }
             }
-
-            // 타이머 로직
-            const localDate = new Date(detailedRoomInfo.createdAt.replace(' ', 'T'));
-            // DB에서 이미 KST로 저장되므로 +9시간 로직 제거
-            const roomCreationTime = localDate.getTime();
-            const currentTime = Date.now();
-            const elapsedTimeSeconds = (currentTime - roomCreationTime) / 1000;
-            let timeLeftSeconds = CHAT_ROOM_VALID_DURATION_SECONDS - elapsedTimeSeconds;
-            timeLeftSeconds = Math.max(0, timeLeftSeconds); // 0 미만이면 0으로
-            setRemainingTimeForTimer(timeLeftSeconds); // ChatRoomStore에 남은 시간 저장
-            setError(null); // 성공 시 이전 오류 메시지 제거
           } else {
-            // Case 3: getChatRoomInfo가 null을 반환했거나 (예: HomeStore의 ID가 null이었음),
-            // 또는 응답 데이터 형식이 올바르지 않은 경우 (chatRoomId가 0인 경우는 이미 위에서 처리됨)
+            // getCurrentChatRoomId가 null 또는 0을 반환한 경우 (참여 중인 채팅방 없음)
+            // getCurrentChatRoomId 내부에서 ChatRoomStore.chatRoomId와 HomeStore.chatRoomId는 이미 null 또는 0으로 설정됨
             setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
             setRemainingTimeForTimer(null);
-            setHomeChatRoomId(0); // UI는 "참여중인 방 없음" 또는 에러를 표시하도록 ID를 0으로 설정
-            setError(`채팅방 정보를 가져올 수 없거나 형식이 올바르지 않습니다.`);
+            // HomeStore는 getCurrentChatRoomId에서 이미 0으로 설정됨.
+            setError(null); // "참여중인 채팅방이 없습니다." 상태 (오류 아님)
           }
         } catch (apiError) {
           console.error("API 호출 오류 (fetchChatData):", apiError);
