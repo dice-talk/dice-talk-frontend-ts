@@ -6,6 +6,7 @@ import { axiosWithoutToken } from "./axios/axios";
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const loginMember = async (email: string, password: string): Promise<boolean> => {
+
     try{
         const response = await axiosWithoutToken.post("/auth/login", { username: email, password: password });
         console.log('로그인 API 응답 전체:', response);
@@ -51,6 +52,7 @@ export const loginMember = async (email: string, password: string): Promise<bool
             // console.log('스토어 상태:', useMemberInfoStore.getState());
             console.log('authStore 상태:', useAuthStore.getState()); // authStore 상태 로깅
             return true;
+
         } else {
             console.error("🚨 로그인 실패: 응답에서 memberId, accessToken 또는 refreshToken(header)을 찾을 수 없습니다.", 
                           { memberId, accessToken, refreshToken, responseData: response.data, responseHeaders: response.headers });
@@ -63,12 +65,22 @@ export const loginMember = async (email: string, password: string): Promise<bool
         }
         
     } catch (error: any) {
-        console.error("🚨 로그인 API 호출 중 에러 발생:", error.response?.data || error.message);
+        // console.error("🚨 로그인 API 호출 중 에러 발생:", error.response?.data || error.message);
+
+        // 로그인 실패 시 공통적으로 AsyncStorage 및 스토어 정리
         await AsyncStorage.removeItem('accessToken');
         await AsyncStorage.removeItem('refreshToken');
         await AsyncStorage.removeItem('memberId');
-        // 에러 발생 시 스토어도 정리
         useAuthStore.getState().actions.clearAuthInfo();
+
+        if(error.response?.data?.code === 403) {
+            // 계정 정지(403) 에러인 경우, 식별 가능한 에러를 throw
+            const bannedError = new Error(error.response?.data?.message || "이용이 제한된 계정입니다.");
+            (bannedError as any).response = error.response; // 원본 Axios 응답 객체를 에러에 첨부
+            throw bannedError; // 이 에러는 LoginScreen에서 잡히고, error.response.data.code로 확인 가능
+        }
+        
+        // 그 외 일반적인 로그인 실패 에러 throw
         throw new Error(error.response?.data?.message || error.message || "로그인 중 오류가 발생했습니다.");
     }
 };

@@ -23,6 +23,7 @@ interface ApiChatRoomInfoData {
   chats: any[]; // 실제 타입으로 변경 권장
   chatParts: any[]; // 실제 타입으로 변경 권장
   roomEvents: any[]; // 실제 타입으로 변경 권장
+  roomStatus: string;
   // 기타 필요한 필드들...
 }
 
@@ -38,30 +39,27 @@ export const getIsPossible = async () => {
     console.log(`🔍 'isPossible' API 응답:`, { status: response.status, data: response.data.data });
 
     const isPossibleData = response.data.data;
-
-    if (response.status === 200 && isPossibleData.isPossible) {
-      // 새로운 채팅방 참여 가능
-      return { canJoinNew: true, status: response.status, data: isPossibleData };
-    } else {
-      // 새로운 채팅방 참여 불가능 (이미 참여 중이거나 다른 이유).
+    console.log("이거 확인해", isPossibleData);
+    if (response.status === 200 && isPossibleData.chatRoomId === 0){
+      // 새로운 채팅방 참여 불가능 (isPossible: false)
       // HomeStore에서 chatRoomId를 확인합니다. isPossible API 응답의 chatRoomId는 사용하지 않습니다.
       const homeChatRoomId = useHomeStore.getState().chatRoomId;
-
       if (homeChatRoomId) {
-        console.log(`ℹ️ 새로운 방 참여 불가. HomeStore에서 가져온 chatRoomId=${homeChatRoomId}로 기존 방 정보 로드 시도.`);
+        console.log(`ℹ️ 'isPossible' API 응답: 참여 불가. HomeStore의 chatRoomId=${homeChatRoomId}로 기존 방 정보 로드 시도.`);
         try {
           // getChatRoomInfo는 이제 HomeStore의 chatRoomId를 직접 사용하므로 인수 없이 호출합니다.
           const roomInfo = await getChatRoomInfo();
           return { canJoinNew: false, status: response.status, data: isPossibleData, existingRoomDetails: roomInfo };
         } catch (roomInfoError) {
           console.error(`🚨 기존 방 정보(HomeStore chatRoomId: ${homeChatRoomId}) 로드 실패:`, roomInfoError);
-          // 기존 방 정보 로드에 실패했더라도, isPossible 결과는 반환
+          // 기존 방 정보 로드에 실패했더라도, isPossible 결과(참여 불가)는 반환
           return { canJoinNew: false, status: response.status, data: isPossibleData, errorFetchingExistingRoom: true };
         }
       }
-      // HomeStore에 chatRoomId가 없는 경우.
-      console.warn(` 'isPossible' API가 참여 불가를 반환했고, HomeStore에서 유효한 chatRoomId를 찾지 못했습니다. (API 응답 isPossible: ${isPossibleData.isPossible}, API 응답 chatRoomId: ${isPossibleData.chatRoomId} - 이 값은 사용되지 않음)`);
-      return { canJoinNew: false, status: response.status, data: isPossibleData };
+    } else if (response.status === 200 && isPossibleData) {
+      // 새로운 채팅방 참여 가능 (isPossible: true)
+      console.log(`ℹ️ 'isPossible' API 응답: 새로운 방 참여 가능.`);
+      return { canJoinNew: true, status: response.status, data: isPossibleData };
     }
   } catch (error) {
     console.error("🚨 'isPossible' API 호출 실패:", error);
@@ -180,6 +178,7 @@ export const getChatRoomInfo = async (
       roomType: apiData.roomType,
       themeId: apiData.themeId ?? null,
       themeName: apiData.themeName,
+      roomStatus: apiData.roomStatus,
       chats: apiData.chats || [],
       chatParts: apiData.chatParts || [],
       roomEvents: apiData.roomEvents || [],
@@ -233,10 +232,10 @@ export const getChatRoomInfo = async (
         chatParts: [],
         roomEvents: [],
         remainingTimeForTimer: null,
+        roomStatus: "ROOM_ACTIVE"
       };
     }
     // 그 외의 에러 (HomeStore의 chatRoomId가 0이 아니었을 때 발생한 에러)는 null을 반환합니다.
     return null;
   }
 };
-

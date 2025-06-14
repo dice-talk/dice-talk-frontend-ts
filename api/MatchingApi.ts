@@ -1,4 +1,5 @@
 
+import useChatOptionStore from '@/zustand/stores/ChatOptionStore';
 import axios from 'axios';
 import { axiosWithToken } from "./axios/axios";
 /**
@@ -7,10 +8,15 @@ import { axiosWithToken } from "./axios/axios";
  * @returns Promise<{ message: string; chatRoomId?: number }> - 매칭 결과 메시지와 성공 시 채팅방 ID
  */
 export const joinMatchingQueue = async (): Promise<{ message: string; chatRoomId?: number }> => {
+  const { themeId, region, ageGroup } = useChatOptionStore.getState();
   try {
     // 인증된 요청이므로 axiosWithToken 사용
     // 컨트롤러에서 @RequestBody를 사용하지 않으므로, 요청 본문은 비워둡니다.
-    const response = await axiosWithToken.post<{ message: string; chatRoomId?: number }>("/matching/join");
+   const response = await axiosWithToken.post("/matching/join", {
+      themeId,
+      region,
+      ageGroup, // 서버에서 받는 파라미터 이름이 birth라면 'birth: ageGroup'으로 변경
+    });
 
     console.log("🤝 매칭 요청 API 응답:", response.data);
 

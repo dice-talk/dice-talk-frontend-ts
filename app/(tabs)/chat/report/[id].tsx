@@ -3,15 +3,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 // ReportModal을 임시로 주석 처리 (다음 단계에서 생성 및 연동)
 // import ReportModal from "@/components/chat/ReportModal"; 
@@ -31,6 +31,7 @@ interface ReportModalProps {
 // 신고 페이지에서 사용할 메시지 타입 (isChecked와 memberId 포함)
 interface ReportableChatMessage extends ReportChatMessageDto {
   isChecked: boolean;
+  nickName: string | null;
   profileImageUri?: string; // 프로필 이미지 URI (SVG 또는 일반 이미지)
 }
 
@@ -74,6 +75,7 @@ const ChatReportPage = () => {
     fetchMessages();
   }, [fetchMessages]);
 
+
   // 메시지 체크 상태 토글 함수
   const toggleCheck = (chatId: number) => {
     setMessages((prevMessages) =>
@@ -109,6 +111,7 @@ const ChatReportPage = () => {
         { text: "확인", onPress: () => router.back() },
       ]);
       setShowReportModal(false);
+
     } catch (err: any) {
       console.error("Error creating report:", err);
       const errorMessage = err.fieldErrors 

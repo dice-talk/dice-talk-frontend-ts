@@ -11,7 +11,6 @@ interface UseChatOptions {
 }
 
 export default function useChat(roomId?: number | null, initialMessages: ChatMessage[] = [], options: UseChatOptions = {}) {
-  //console.log('[useChat] Hook initialized. roomId:', roomId, 'Options:', options); // <--- 이 로그를 추가합니다.
   const { autoConnect = true } = options; // 기본값은 true
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -122,7 +121,6 @@ export default function useChat(roomId?: number | null, initialMessages: ChatMes
     setIsLoading(true);
     setError(null);
     console.log('useChat: connectSocket - Attempting STOMP connection...');
-
     const newSocket = new SockJS(BASE_URL + '/ws-stomp');
     const stompClientInstance = new Client({
       webSocketFactory: () => newSocket,

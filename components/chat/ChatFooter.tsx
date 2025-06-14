@@ -1,18 +1,18 @@
+import { getItemDetails } from "@/api/ItemApi"; // getItemDetails 임포트
 import ChatExit from "@/assets/images/chat/chatExit.svg";
 import ChatNoticeOnOff from "@/assets/images/chat/chatNoticeOnOff.svg";
 import Silence from "@/assets/images/chat/silence.svg";
 import Siren from "@/assets/images/chat/siren.svg";
 import ExitCostModal from "@/components/chat/ExitCostModal";
-import { getItemDetails } from "@/api/ItemApi"; // getItemDetails 임포트
 import CustomCostModal from "@/components/common/CustomCostModal";
 
 import { deleteChatRoomMember } from "@/api/ChatApi"; // API 함수 임포트
-import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import useAuthStore from "@/zustand/stores/authStore"; // 사용자 ID 가져오기
 import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // 채팅방 ID 가져오기
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 
 import { useRouter } from "expo-router";
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 
 interface ChatFooterProps {
@@ -27,7 +27,6 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
   const iconColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const confirmButtonColor = curThemeId === 2 ? "#6DA0E1" : "#D9B2D3";
   const textColor = curThemeId === 2 ? "#5C5279" : "#8A5A7A";
-  
   const [isSilenced, setIsSilenced] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const [costModalVisible, setCostModalVisible] = useState(false);

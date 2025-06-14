@@ -35,10 +35,6 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
   useEffect(() => {
     const requestToss = async () => {
       try {
-        // 테스트용 간단한 GET 요청
-      // const testResponse = await axiosWithoutToken.get("/"); // 또는 서버의 간단한 GET 엔드포인트
-      // console.log("✅ Simple GET Test Response:", testResponse.status, testResponse.data);
-      
         // ✅ axios를 사용하여 인증 요청
         const { data } = await axiosWithoutToken.post("/auth/request");
         console.log("✅ 인증 요청 응답:", data);
@@ -185,6 +181,7 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
         await fetchUserInfo();
       } else {
         Alert.alert("인증 실패", "다시 시도해주세요.");
+
         if (onAuthFailure) onAuthFailure(); // 실패 콜백 호출
       }
 
@@ -194,7 +191,6 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
     tryProcess();
   }, [txId, pendingUrl, fetchUserInfo]); // fetchUserInfo를 디펜던시 배열에 추가
 
- 
   return (
     <View style={{ flex: 1 }}>
       {/* ✅ 로딩 모달 */}

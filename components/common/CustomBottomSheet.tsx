@@ -1,10 +1,11 @@
-import React from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
-import IsPlanned from '@/assets/images/home/isPlanned.svg';
-import CustomButton from '../home/CustomButton';
-import { useRouter } from 'expo-router';
+import { getIsPossible } from '@/api/ChatApi'; // ChatApi.ts의 getIsPossible 함수 임포트
 import { getMember } from '@/api/memberApi'; // memberApi.ts의 getMember 함수 임포트
+import IsPlanned from '@/assets/images/home/isPlanned.svg';
 import useUserStore from '@/zustand/stores/UserStore'; // UserStore 임포트
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CustomButton from '../home/CustomButton';
 
 interface CustomBottomSheetProps {
   isPlanned: boolean;
@@ -34,6 +35,12 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = ({
 
   const handleParticipate = async () => {
     try {
+      // 1. getIsPossible 호출
+      const possibleResponse = await getIsPossible();
+      if (!possibleResponse) {
+        Alert.alert('알림', '이미 참여중인 채팅방이 있습니다.');
+        return; // 함수 실행 중단
+      }
       console.log('📞 참여하기 버튼 클릭: getMember 호출 시도');
       const memberData = await getMember(); // memberApi.ts의 getMember 호출
       console.log('👤 getMember 응답:', memberData);

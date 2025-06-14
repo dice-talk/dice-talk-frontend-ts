@@ -122,6 +122,7 @@ export default function ChargePage() {
     } finally {
       setIsRequestingPayment(false);
     }
+
   };
 
   return (

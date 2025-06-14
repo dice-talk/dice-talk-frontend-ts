@@ -25,6 +25,7 @@ import useAuthStore from '@/zustand/stores/authStore'; // <<<<<< 스토어 임�
 // import Constants from 'expo-constants'; // notificationUtils로 이동
 // import * as Device from 'expo-device'; // notificationUtils로 이동
 // import * as Notifications from 'expo-notifications'; // notificationUtils에서 주로 사용, 여기서는 직접 호출 X
+import AccountBannedModal from '@/components/common/AccountBannedModal'; // AccountBannedModal 임포트 (경로 확인 필요)
 import { registerForPushNotificationsAsync } from '@/utils/notificationUtils'; // << IMPORT 경로 수정
 import { SafeAreaView } from 'react-native-safe-area-context'; // SafeAreaView 사용
 
@@ -60,6 +61,7 @@ export default function LoginScreen() {
   const [isPasswordValid, setIsPasswordValid] = useState<boolean>(false);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showAccountBannedModal, setShowAccountBannedModal] = useState<boolean>(false); // 모달 표시 상태
 
   const validateEmail = (text: string): void => {
     setEmail(text);
@@ -121,9 +123,15 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       // loginMember 함수에서 throw된 에러를 여기서 처리합니다.
-      console.error('로그인 요청 실패 (LoginScreen catch):', error);
-      const errMsg = error.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
-      Alert.alert('로그인 실패', errMsg);
+      // console.error('로그인 요청 실패 (LoginScreen catch):', error);
+
+      // 사용자가 요청한 조건: error.response.data.code가 403인지 확인
+      if(error.response?.data?.code === 403) {
+        setShowAccountBannedModal(true);
+      } else {
+        const errMsg = error.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
+        Alert.alert('로그인 실패', errMsg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -219,6 +227,12 @@ export default function LoginScreen() {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      <AccountBannedModal
+        isVisible={showAccountBannedModal}
+        // AccountBannedModal은 onConfirm prop을 받습니다.
+        onConfirm={() => setShowAccountBannedModal(false)} 
+      />
     </SafeAreaView>
   );
 }
