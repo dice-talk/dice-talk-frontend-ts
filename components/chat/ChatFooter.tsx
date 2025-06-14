@@ -1,7 +1,7 @@
 import { getItemDetails } from "@/api/ItemApi"; // getItemDetails 임포트
 import ChatExit from "@/assets/images/chat/chatExit.svg";
-import ChatNoticeOnOff from "@/assets/images/chat/chatNoticeOnOff.svg";
-import Silence from "@/assets/images/chat/silence.svg";
+
+
 import Siren from "@/assets/images/chat/siren.svg";
 import ExitCostModal from "@/components/chat/ExitCostModal";
 import CustomCostModal from "@/components/common/CustomCostModal";
@@ -150,12 +150,6 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
       <ChatExit color={iconColor} />
         </Pressable>
         <View style={styles.rightContainer}>
-          <Pressable 
-            onPress={toggleSilence}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            {isSilenced ? <Silence color={iconColor} /> : <ChatNoticeOnOff color={iconColor} />}
-          </Pressable>
           <Pressable 
             onPress={handleSirenPress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
