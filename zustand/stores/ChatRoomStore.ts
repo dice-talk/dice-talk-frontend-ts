@@ -26,6 +26,17 @@ interface RoomEvent {
   [key: string]: any; // 실제 이벤트 구조에 맞게 수정
 }
 
+// 아이템 데이터 타입을 정의합니다.
+export interface ChatItem { // export 키워드 추가
+  itemId: number;
+  itemName: string;
+  description: string;
+  itemImage: string;
+  dicePrice: number;
+  createdAt: string;
+  modifiedAt: string;
+}
+
 export interface ChatRoomDetails {
   chatRoomId: number | null;
   createdAt: string | null;
@@ -36,6 +47,7 @@ export interface ChatRoomDetails {
   chatParts: ChatParticipant[];
   roomEvents: RoomEvent[];
   remainingTimeForTimer: number | null; // 타이머를 위한 남은 시간 (초)
+  items: ChatItem[]; // 아이템 목록 추가
   roomStatus: string;
 }
 
@@ -57,6 +69,7 @@ const initialState: ChatRoomDetails = {
   chatParts: [],
   roomEvents: [],
   remainingTimeForTimer: null, // 초기값 null
+  items: [], // 아이템 목록 초기값 추가
   roomStatus: '',
 };
 
@@ -90,6 +103,7 @@ const useChatRoomStore = create<ChatRoomState>((set) => ({
         // Partial 업데이트 시 배열이 null 또는 undefined로 덮어쓰이는 것을 방지
         chats: details.chats != null ? (details.chats as any).content || details.chats : state.chats,
         chatParts: details.chatParts != null ? details.chatParts : state.chatParts,
+        items: details.items != null ? details.items : state.items, // items 배열 업데이트 로직 추가
         roomEvents: details.roomEvents != null ? details.roomEvents : state.roomEvents,
       }));
     },

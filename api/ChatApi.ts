@@ -1,5 +1,5 @@
 import useAuthStore from "@/zustand/stores/authStore"; // 경로 수정 가능성 있음
-import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; // 새로 만든 ChatRoomStore 임포트
+import useChatRoomStore, { ChatItem, ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; // 새로 만든 ChatRoomStore 임포트, ChatItem 추가
 
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import axios from "axios"; // axios.isAxiosError를 사용하기 위해 임포트
@@ -24,6 +24,7 @@ interface ApiChatRoomInfoData {
   chatParts: any[]; // 실제 타입으로 변경 권장
   roomEvents: any[]; // 실제 타입으로 변경 권장
   roomStatus: string;
+  items?: ChatItem[]; // API 응답에 items가 포함될 수 있도록 추가 (선택적 필드로 정의)
   // 기타 필요한 필드들...
 }
 
@@ -138,7 +139,40 @@ export const deleteChatRoomMember = async (
     const requestUrl = `/chat-rooms/${chatRoomId}/${memberId}`;
 
     const response = await axiosWithToken.delete(requestUrl);
-    // console.log("🟢 응답 상태코드:", response); // 여기가 실제 찍히는 지 확인 필요
+    console.log("🟢 원본 나가기 response:", response); // 여기가 실제 찍히는 지 확인 필요
+    return response.status;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return error.response.status;
+    }
+    throw error;
+  }
+};
+
+/**
+ * 특정 채팅방에서 특정 멤버를 강제로 내보내고 HTTP 응답 상태 코드를 반환하는 API (DELETE 요청).
+ * @returns HTTP 응답 상태 코드. 서버 응답이 없는 에러 발생 시 에러 throw.
+ * chatRoomId는 ChatRoomStore에서, memberId는 AuthStore에서 가져옵니다.
+ */
+export const forceDeleteChatRoomMember = async (): Promise<number> => {
+  const chatRoomId = useChatRoomStore.getState().chatRoomId;
+  const memberId = useAuthStore.getState().memberId;
+
+  try {
+    if (chatRoomId === null || chatRoomId === undefined) {
+      console.warn("🚨 forceDeleteChatRoomMember: ChatRoomStore에 chatRoomId가 없습니다.");
+      throw new Error("chatRoomId가 ChatRoomStore에 없습니다.");
+    }
+    if (memberId === null || memberId === undefined) {
+      console.warn("🚨 forceDeleteChatRoomMember: AuthStore에 memberId가 없습니다.");
+      throw new Error("memberId가 AuthStore에 없습니다.");
+    }
+
+    const requestUrl = `/chat-rooms/force/${chatRoomId}/${memberId}`;
+    console.log(`🚀 forceDeleteChatRoomMember 요청 URL: ${requestUrl}`);
+
+    const response = await axiosWithToken.delete(requestUrl);
+    console.log("🟢 강제 나가기 response:", response);
     return response.status;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -188,6 +222,7 @@ export const getChatRoomInfo = async (
       roomType: apiData.roomType,
       themeId: apiData.themeId ?? null,
       themeName: apiData.themeName,
+      items: apiData.items || [],
       roomStatus: apiData.roomStatus,
       chats: apiData.chats || [],
       chatParts: apiData.chatParts || [],
@@ -241,6 +276,7 @@ export const getChatRoomInfo = async (
         chats: [],
         chatParts: [],
         roomEvents: [],
+        items: [],
         remainingTimeForTimer: null,
         roomStatus: "ROOM_ACTIVE"
       };
