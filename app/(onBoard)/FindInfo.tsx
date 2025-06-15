@@ -2,11 +2,12 @@ import { findEmailByTxId, requestPasswordResetUriAfterToss, resetPasswordAfterTo
 import AlertModal from '@/components/common/AlertModal';
 import PasswordInput from '@/components/common/NewPassword';
 import Tab from '@/components/common/Tab';
+import Toast from '@/components/common/Toast';
 import TossAuth, { TossAuthSuccessData } from '@/components/common/TossAuth';
 import MediumButton from '@/components/profile/myInfoPage/MediumButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react'; // useEffect 제거
+import { useCallback, useState } from 'react'; // useCallback 추가
 import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -33,15 +34,18 @@ export default function FindInfoScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordResetLoading, setPasswordResetLoading] = useState(false); // 최종 비밀번호 변경 로딩
-  const [showFailureScreen, setShowFailureScreen] = useState(false); // 실패 화면 표시 상태
   
+  // Toast 상태 추가
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
   // AlertModal 상태
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [alertOnConfirm, setAlertOnConfirm] = useState<(() => void) | null>(null);
 
-  const showAlert = (title: string, message: string, onConfirm?: () => void) => {
+  const showAlert = useCallback((title: string, message: string, onConfirm?: () => void) => {
     setAlertTitle(title);
     setAlertMessage(message);
     if (onConfirm) {
@@ -50,10 +54,10 @@ export default function FindInfoScreen() {
       setAlertOnConfirm(null);
     }
     setIsAlertVisible(true);
-  };
+  }, []); // state setter는 안정적이므로 의존성 배열은 비워둡니다.
 
   // 아이디 찾기 - Toss 인증 성공 콜백
-  const handleFindIdAuthSuccess = async (tossAuthResult: TossAuthSuccessData) => {
+  const handleFindIdAuthSuccess = useCallback(async (tossAuthResult: TossAuthSuccessData) => {
     setShowTossAuthForId(false);
     const { txId } = tossAuthResult;
     if (txId) { 
@@ -63,26 +67,31 @@ export default function FindInfoScreen() {
         const response = await findEmailByTxId(txId);
         if (response && response.email) {
           setFoundEmail(response.email);
+          setToastMessage('인증이 완료되었습니다.');
+          setIsToastVisible(true);
         } else {
           showAlert('아이디 찾기 실패', '가입된 이메일 정보를 찾을 수 없습니다.');
         }
       } catch (error: any) {
         const message = error.response?.data?.error || '아이디를 찾는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-        setShowFailureScreen(true);
-        showAlert('아이디 찾기 오류', message, () => router.replace('/(onBoard)/FindInfo'));
+        showAlert('아이디 찾기 오류', message);
       } finally {
         setIdFindingLoading(false);
       }
     } else {
-      showAlert('인증 오류', '인증 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
+      // 이젠 TossAuth 컴포넌트가 내부적으로 AlertModal을 띄우므로, 여기서는 아무것도 하지 않습니다.
     }
-  };
+  }, []); // 의존성 배열에서 showAlert 제거
 
-  const handleFindIdAuthFailure = () => {
+  const handleFindIdAuthFailure = useCallback(() => {
     setShowTossAuthForId(false);
-    setShowFailureScreen(true);
-    showAlert('인증 실패', 'Toss 본인 인증에 실패했습니다.', () => router.replace('/(onBoard)/FindInfo'));
-  };
+    if (router.canGoBack()) {
+      router.back();
+    }
+    // TossAuth 컴포넌트가 AlertModal을 띄우고, 
+    // 사용자가 '확인'을 누르면 onAuthFailure가 호출되어 이 함수가 실행됩니다.
+    // 여기서는 TossAuth 컴포넌트를 화면에서 숨기는 역할만 수행합니다.
+  }, []); // 의존성 배열에서 showAlert 제거
 
   // 비밀번호 찾기 - "Toss 본인 인증" 버튼 클릭 로직
   const handleInitiatePasswordTossAuth = () => {
@@ -99,7 +108,7 @@ export default function FindInfoScreen() {
   };
 
   // 비밀번호 찾기 - Toss 인증 성공 콜백 (requestPasswordResetUriAfterToss 호출)
-  const handlePasswordTossSuccess = async (tossAuthResult: TossAuthSuccessData) => {
+  const handlePasswordTossSuccess = useCallback(async (tossAuthResult: TossAuthSuccessData) => {
     setShowTossAuthForPassword(false);
     const { txId } = tossAuthResult;
     if (!txId) {
@@ -115,22 +124,29 @@ export default function FindInfoScreen() {
           return;
       }
       setPasswordResetContext({ memberId: response.memberId, email: response.email });
-      showAlert('인증 완료', '본인 인증이 완료되었습니다. 새 비밀번호를 설정해주세요.');
+      if (router.canGoBack()) {
+        router.back();
+      }
+      setToastMessage('본인 인증이 완료되었습니다.');
+      setIsToastVisible(true);
     } catch (error: any) {
-      const message = error.response?.data?.error || '본인 인증 처리 중 오류가 발생했습니다. 문제가 지속되면 고객센터로 문의해주세요.';
-      setShowFailureScreen(true);
-      showAlert('오류 발생', message, () => router.replace('/(onBoard)/FindInfo'));
+      if (error.response?.status === 401) {
+        showAlert('오류 발생', '입력하신 이메일과 일치하는 가입 정보를 찾을 수 없습니다.');
+      } else {
+        const message = error.response?.data?.error || '본인 인증 처리 중 오류가 발생했습니다. 문제가 지속되면 고객센터로 문의해주세요.';
+        showAlert('오류 발생', message);
+      }
     } finally {
       setPasswordAuthLoading(false);
     }
-  };
+  }, [emailForPassword, showAlert]);
 
   // 비밀번호 찾기 - Toss 인증 실패 콜백
-  const handlePasswordTossFailure = () => {
+  const handlePasswordTossFailure = useCallback(() => {
     setShowTossAuthForPassword(false);
-    setShowFailureScreen(true);
-    showAlert('인증 실패', 'Toss 본인 인증에 실패했습니다.', () => router.replace('/(onBoard)/FindInfo'));
-  };
+    // 이 함수는 TossAuth 내부의 AlertModal에서 '확인'을 눌렀을 때 호출됩니다.
+    // 여기서는 TossAuth 컴포넌트를 숨기는 역할만 합니다.
+  }, []); // 의존성 배열에서 showAlert 제거
   
   // 비밀번호 찾기 - 새 비밀번호 변경 (resetPasswordAfterTossAuth 호출)
   const handleChangePassword = async () => {
@@ -164,8 +180,7 @@ export default function FindInfoScreen() {
       setPasswordResetContext(null);
     } catch (error: any) {
       const message = error.response?.data?.error || '비밀번호 변경 중 오류가 발생했습니다. 문제가 지속되면 고객센터로 문의해주세요.';
-      setShowFailureScreen(true);
-      showAlert('오류 발생', message, () => router.replace('/(onBoard)/FindInfo'));
+      showAlert('오류 발생', message);
     } finally {
       setPasswordResetLoading(false);
     }
@@ -265,7 +280,6 @@ export default function FindInfoScreen() {
     setConfirmNewPassword('');
     setPasswordResetContext(null);
     setPasswordResetLoading(false);
-    setShowFailureScreen(false); // 실패 상태 초기화
   };
 
   return (
@@ -291,7 +305,7 @@ export default function FindInfoScreen() {
         contentContainerStyle={styles.scrollContentContainer}
         keyboardShouldPersistTaps="handled" // 중요: 키보드 열린 상태에서 다른 영역 터치 시 키보드 닫기
       >
-        { !showFailureScreen && (activeTab === 'findId' ? renderFindIdContent() : renderFindPasswordContent())}
+        { activeTab === 'findId' ? renderFindIdContent() : renderFindPasswordContent() }
       </ScrollView>
       <AlertModal
         visible={isAlertVisible}
@@ -303,6 +317,11 @@ export default function FindInfoScreen() {
             alertOnConfirm();
           }
         }}
+      />
+      <Toast
+        message={toastMessage}
+        visible={isToastVisible}
+        onHide={() => setIsToastVisible(false)}
       />
     </SafeAreaView>
   );
