@@ -75,3 +75,56 @@ export const getMemberDiceLogs = async (
     throw error.response?.data || new Error('Failed to fetch dice logs');
   }
 };
+
+// --- Record Dice Usage ---
+
+/**
+ * API 요청 시 사용될 페이로드 타입
+ */
+interface RecordDiceUsagePayload {
+  quantity: number;
+  logType: "DICE_USED"; // 고정값
+  info: string;
+
+  itemId: number;
+}
+
+/**
+ * recordDiceUsage 함수에 전달될 파라미터 타입
+ */
+export interface RecordDiceUsageParams {
+  quantity?: number;
+  info?: string;
+
+  itemId?: number;
+}
+
+export interface RecordDiceUsageResponse {
+  status: number;
+  data: any; // 실제 API 응답 데이터 타입으로 교체 권장
+}
+
+/**
+ * 다이스 사용 내역을 기록하는 API
+ * POST /dices/used
+ */
+export const recordDiceUsage = async (params: RecordDiceUsageParams): Promise<RecordDiceUsageResponse> => {
+  const payload: RecordDiceUsagePayload = {
+    quantity: params.quantity ?? 0, // 기본값 0
+    logType: "DICE_USED", // 고정값
+    info: params.info ?? "", // 기본값 ""
+
+    itemId: params.itemId ?? 0, // 기본값 0
+  };
+
+  try {
+    const response = await axiosWithToken.post('/dices/used', payload);
+    console.log("Dice usage recorded successfully. Status:", response.status, "Data:", response.data);
+    return { status: response.status, data: response.data };
+  } catch (error: any) {
+    console.error("Error recording dice usage:", error.response?.data);
+    // Axios 에러인 경우 상태 코드와 함께 에러를 throw 하거나, 특정 형태로 반환할 수 있습니다.
+    // 여기서는 에러 객체 자체를 throw 합니다. 호출부에서 error.response.status 등으로 확인 가능.
+    throw error;
+  }
+};

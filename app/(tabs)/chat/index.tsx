@@ -30,7 +30,7 @@ export default function Chat() {
   // 예시: const setRemainingTimeForTimer = useChatRoomStore(state => state.setRemainingTimeForTimer);
   const { setChatRoomDetails, setRemainingTimeForTimer } = useChatRoomStore((state) => state.actions);
 
-  const CHAT_ROOM_VALID_DURATION_SECONDS = 48 * 60 * 60; // 채팅방 유효 기간 (48시간)
+  const CHAT_ROOM_MAX_LIFESPAN_SECONDS = 49 * 60 * 60; // 채팅방 최대 수명 (49시간)
 
   const eventBannersForDisplay: EventBannerData[] = useMemo(() => {
     if (!noticesFromStore) return [];
@@ -86,17 +86,36 @@ export default function Chat() {
             if (detailedRoomInfo && detailedRoomInfo.chatRoomId === currentFetchedRoomId && typeof detailedRoomInfo.createdAt === 'string') {
               // 성공적으로 상세 정보를 가져왔고, ID가 일치하는 경우
               // getChatRoomInfo 내부에서 ChatRoomStore의 전체 상세 정보가 업데이트됩니다.
-              // HomeStore의 chatRoomId는 getCurrentChatRoomId에서 이미 설정됨.
 
               // 타이머 로직
-              const localDate = new Date(detailedRoomInfo.createdAt.replace(' ', 'T'));
+              // createdAt (예: "YYYY-MM-DD HH:MM:SS")이 UTC 시간 문자열이라고 가정합니다.
+              // 'Z'를 추가하여 JavaScript Date 객체가 이를 UTC로 명시적으로 파싱하도록 합니다.
+              // 이렇게 하지 않으면, 클라이언트의 로컬 시간대(예: KST)로 해석되어
+              // UTC와의 시간 차이(KST의 경우 +9시간)만큼 오차가 발생하여 타이머가 짧게 표시될 수 있습니다.
+              const createdAtUTC = detailedRoomInfo.createdAt.replace(' ', 'T') + 'Z';
+              const localDate = new Date(createdAtUTC);
               const roomCreationTime = localDate.getTime();
               const currentTime = Date.now();
-              const elapsedTimeSeconds = (currentTime - roomCreationTime) / 1000;
-              let timeLeftSeconds = CHAT_ROOM_VALID_DURATION_SECONDS - elapsedTimeSeconds;
-              timeLeftSeconds = Math.max(0, timeLeftSeconds);
-              setRemainingTimeForTimer(timeLeftSeconds);
-              setError(null);
+              const elapsedTimeSeconds = Math.floor((currentTime - roomCreationTime) / 1000);
+
+              if (elapsedTimeSeconds >= CHAT_ROOM_MAX_LIFESPAN_SECONDS) {
+                // 방이 49시간 경과로 만료됨
+                if (isActive) {
+                  console.log(`[ChatIndex] Room ${currentFetchedRoomId} has expired. Elapsed: ${elapsedTimeSeconds}s. Max lifespan: ${CHAT_ROOM_MAX_LIFESPAN_SECONDS}s.`);
+                  setHomeChatRoomId(0); // HomeStore에서 방이 없는 것으로 처리
+                  setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
+                  setRemainingTimeForTimer(null); // 타이머 정보 없음
+                  setError(null); // 오류 상태는 아님
+                }
+              } else {
+                // 방이 아직 유효함
+                let timeLeftSeconds = CHAT_ROOM_MAX_LIFESPAN_SECONDS - elapsedTimeSeconds;
+                timeLeftSeconds = Math.max(0, timeLeftSeconds);
+                setRemainingTimeForTimer(timeLeftSeconds); // ChatRoomStore의 타이머 업데이트
+                // HomeStore의 chatRoomId는 currentFetchedRoomId로 이미 설정되어 있어야 함
+                // ChatRoomStore의 상세 정보는 getChatRoomInfo에 의해 이미 업데이트됨
+                setError(null);
+              }
             } else if (detailedRoomInfo && detailedRoomInfo.chatRoomId === 0) {
               // getChatRoomInfo가 chatRoomId: 0을 반환한 경우 (예: 방이 방금 종료됨 또는 isPossible에서 false 반환 후 getChatRoomInfo가 0을 반환)
               console.warn(`[ChatIndex] Discrepancy or expected no room: getCurrentChatRoomId gave ${currentFetchedRoomId}, but getChatRoomInfo resulted in chatRoomId 0.`);

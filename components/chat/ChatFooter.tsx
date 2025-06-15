@@ -31,7 +31,7 @@ const ChatFooter: React.FC<ChatFooterProps> = ({ onClose }) => {
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const [costModalVisible, setCostModalVisible] = useState(false);
   // CustomCostModal에 전달할 상태 추가
-  const [modalDiceCount, setModalDiceCount] = useState(7); // 기본값
+  const [modalDiceCount, setModalDiceCount] = useState(0); // 기본값
   const [modalContent, setModalContent] = useState("하루에 2번 이상 \n채팅방을 나가셨습니다."); // 기본값
 
 

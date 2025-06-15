@@ -99,7 +99,7 @@ const ChatEventNotice = ({
         newPhase = "PRE_CUPID_MAIN";
       } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) {
         newTitle = curThemeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
-        newNoticeText = curThemeId === 2 ? "우정의 짝대기 결과 확인 종료까지" : "큐피드의 짝대기 결과 확인 종료까지";
+        newNoticeText = curThemeId === 2 ? "매칭 결과 확인 종료까지" : "매칭 결과 확인 종료까지";
         targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_END_OFFSET * 1000;
         newPhase = "CUPID_MAIN";
       } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) {
