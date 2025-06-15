@@ -3,8 +3,10 @@ import { Animated, Easing, StyleSheet, Text, TextStyle, View, ViewStyle } from '
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import useChat from '@/utils/useChat';
 import Logo from '@/assets/images/login/logo_icon.svg';
-import useHomeStore from '@/zustand/stores/HomeStore';
+import { getChatRoomInfo } from '@/api/ChatApi'; // getChatRoomInfo 임포트
 import { router } from 'expo-router';
+import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore 임포트 (actions 접근 위해)
+import useChatOptionStore from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 임포트
 
 export default function LoadingScreen() {
   console.log('--- LoadingScreen Component Render Start ---');
@@ -15,30 +17,69 @@ export default function LoadingScreen() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const textColorAnim = useRef(new Animated.Value(0)).current;
 
-  const setHomeChatRoomId = useHomeStore((state) => state.actions.setChatRoomId);
+  const { setChatRoomId: setHomeChatRoomId } = useHomeStore((state) => state.actions);
 
   useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    const handleMatchingSuccess = async (matchedChatRoomId: number) => {
+      setMatchingStatusMessage('매칭 성공! 채팅방 정보를 가져오는 중...');
+      // 1. HomeStore에 chatRoomId 설정
+      setHomeChatRoomId(matchedChatRoomId);
+
+      try {
+        // 2. ChatOptionStore에서 themeId 가져오기
+        const themeIdFromOptionStore = useChatOptionStore.getState().themeId;
+
+        // 3. getChatRoomInfo 호출하여 ChatRoomStore 업데이트 (ChatRoom 진입에 필요)
+        //    이 함수는 HomeStore의 chatRoomId를 사용하며, ChatRoomStore를 채웁니다.
+        //    반환되는 roomDetails는 ChatRoomStore가 잘 채워졌는지 확인하는 용도로 사용할 수 있습니다.
+        const roomDetails = await getChatRoomInfo();
+
+        if (roomDetails && themeIdFromOptionStore !== null && themeIdFromOptionStore !== undefined) {
+          setMatchingStatusMessage('채팅방 정보 로드 완료! 이동합니다...');
+          router.replace({
+            pathname: '/chat/ChatRoom', // ChatRoom.tsx 파일의 경로
+            params: {
+              chatRoomId: String(matchedChatRoomId),
+              themeId: String(themeIdFromOptionStore), // ChatOptionStore에서 가져온 themeId 사용
+            },
+          });
+        } else {
+          console.error(
+            '[LoadingScreen] 채팅방 상세 정보 로드 실패 또는 ChatOptionStore에 themeId가 없습니다.',
+            { roomDetails, themeIdFromOptionStore }
+          );
+          setMatchingStatusMessage('채팅방 정보를 준비하는데 실패했습니다. 홈으로 이동합니다.');
+          router.replace('/(tabs)/home');
+        }
+      } catch (error) {
+        console.error('[LoadingScreen] getChatRoomInfo 호출 중 오류 발생:', error);
+        setMatchingStatusMessage('채팅방 정보를 가져오는 중 오류가 발생했습니다. 홈으로 이동합니다.');
+        router.replace('/(tabs)/home');
+      }
+    };
+
     if (isConnected && client) {
       console.log('[LoadingScreen] WebSocket 연결됨, 대기열 등록…');
       joinQueue();
       setMatchingStatusMessage('✨ 매칭 상대를 찾고 있어요...');
-
-      const subscription = client.subscribe('/sub/matching/status', (frame) => {
+      subscription = client.subscribe('/sub/matching/status', (frame) => {
         const data = JSON.parse(frame.body);
         
-        if (data.type === 'MATCHED') {
+        if (data.type === 'MATCHED' && data.chatRoomId) {
           console.log('[LoadingScreen] 매칭 완료:', data.chatRoomId);
-          setHomeChatRoomId(data.chatRoomId);
-          setMatchingStatusMessage('매칭 성공! 홈으로 이동합니다...');
-          router.replace('/(tabs)/home');
+          handleMatchingSuccess(data.chatRoomId);
         }
       });
-
-      return () => {
-        subscription.unsubscribe();
-      };
     }
-  }, [client, isConnected, joinQueue, setHomeChatRoomId]);
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+        console.log('[LoadingScreen] Unsubscribed from /sub/matching/status');
+      }
+    };
+  }, [client, isConnected, joinQueue, setHomeChatRoomId]); // 의존성 배열에 setHomeChatRoomId 추가
 
   useEffect(() => {
     Animated.loop(
