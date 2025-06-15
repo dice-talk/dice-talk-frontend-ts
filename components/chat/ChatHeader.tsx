@@ -29,7 +29,7 @@ export default function ChatHeader({
   
   return (
     <View style={[styles.container, { backgroundColor }]}>
-      <Pressable onPress={() => router.back()}>
+      <Pressable onPress={() => router.push('/(tabs)/chat')}>
         <BackIcon width={28} height={28} color={backIconColor} />
       </Pressable>
       <Text style={[styles.title, { color: displayFontColor }]}>{displayTitle}</Text>
