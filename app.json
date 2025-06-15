@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "dice-talk-ts",
+    "name": "다이스톡",
     "slug": "dice-talk-ts",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -74,8 +74,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#ffffff",
-          "sounds": ["./assets/sounds/notification.wav"]
+          "color": "#ffffff"
         }
       ]
     ],

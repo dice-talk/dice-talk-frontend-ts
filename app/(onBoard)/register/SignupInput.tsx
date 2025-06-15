@@ -125,6 +125,7 @@ export default function SignupInput() {
             router.replace('/(onBoard)/register/Congratulate');
         } catch (err: any) {
             console.error('회원가입 실패:', err);
+            console.log('회원가입 실패:', err.status);
             let errMsg = '회원가입 중 문제가 발생했습니다.';
             if (err.response) {
                 const { status, data } = err.response;

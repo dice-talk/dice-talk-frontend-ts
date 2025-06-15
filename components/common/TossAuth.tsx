@@ -165,9 +165,6 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
           // data (사용자 정보)와 현재 컴포넌트의 state인 txId를 함께 전달
           if (txId) { // txId가 유효한지 한번 더 확인
             onAuthSuccess({ ...data, txId: txId }); // txId 추가
-            if (router.canGoBack()) {
-              router.back();
-            }
           } else {
             console.error("❌ fetchUserInfo: txId가 유효하지 않아 onAuthSuccess 호출 불가");
             showAlert("인증 오류", "인증 트랜잭션 ID가 없습니다. 다시 시도해주세요.");
