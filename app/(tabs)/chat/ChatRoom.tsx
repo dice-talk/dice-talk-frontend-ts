@@ -81,11 +81,11 @@ const ChatRoom = () => {
   const router = useRouter();
   //const params = useLocalSearchParams();
   const { chatRoomId: chatRoomIdFromParams, themeId: themeIdFromParams } = useLocalSearchParams<{ chatRoomId?: string, themeId?: string }>();
-  const themeId = useSharedProfileStore((state) => state.themeId);
 
   const { setChatRoomDetails, clearChatRoomDetails } = useChatRoomStore((state) => state.actions);
   // const originalThemeIdFromChatRoomStore = useChatRoomStore((state) => state.themeId); // ChatRoomStore에서 가져오던 themeId
   const curThemeId = useHomeStore((state) => state.curThemeId as number | undefined) ?? 1; // HomeStore에서 curThemeId 가져오기, 없으면 기본값 1
+  const setSharedProfile = useSharedProfileStore((state) => state.actions.setSharedProfile);
   const createdAt = useChatRoomStore((state) => state.createdAt); // 채팅방 생성 시간
   const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
   
