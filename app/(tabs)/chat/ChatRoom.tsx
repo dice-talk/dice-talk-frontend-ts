@@ -24,11 +24,12 @@ import useChat from "@/utils/useChat"; // 실제 경로에 맞춰 조정
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+import useSharedProfileStore from "@/zustand/stores/sharedProfileStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Animated, Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, KeyboardEvent } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Dimensions, Keyboard, KeyboardEvent, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
 
@@ -80,6 +81,7 @@ const ChatRoom = () => {
   const router = useRouter();
   //const params = useLocalSearchParams();
   const { chatRoomId: chatRoomIdFromParams, themeId: themeIdFromParams } = useLocalSearchParams<{ chatRoomId?: string, themeId?: string }>();
+  const themeId = useSharedProfileStore((state) => state.themeId);
 
   const { setChatRoomDetails, clearChatRoomDetails } = useChatRoomStore((state) => state.actions);
   // const originalThemeIdFromChatRoomStore = useChatRoomStore((state) => state.themeId); // ChatRoomStore에서 가져오던 themeId

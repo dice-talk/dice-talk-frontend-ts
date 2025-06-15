@@ -5,6 +5,7 @@ import GradientBackground from "@/components/profile/GradientBackground";
 import LogoutButton from "@/components/profile/LogoutButton";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileInfoCard from "@/components/profile/ProfileInfoCard";
+import { getProfileSvg } from "@/utils/getProfileSvg";
 import useAuthStore from "@/zustand/stores/authStore";
 import useSharedProfileStore from "@/zustand/stores/sharedProfileStore";
 import { useRouter } from "expo-router";
@@ -42,11 +43,15 @@ export default function ProfileScreen() {
                     const apiData = await getAnonymousInfo(memberId); // memberId 전달
                     if (apiData) {
                         console.log("ProfileScreen: API 실제 데이터 받음:", apiData);
+                        // apiData.profile 대신 getProfileSvg를 사용하여 올바른 SVG를 가져옴
+                        const profileSvg = getProfileSvg(apiData.nickname);
+                        
                         setSharedProfile({
                             nickname: apiData.nickname,
-                            profileImage: apiData.profile,
+                            profileImage: profileSvg, // undefined 대신 SVG 컴포넌트를 저장
                             totalDice: apiData.totalDice,
                             isInChat: apiData.roomStatus === 'IN_CHAT' || apiData.exitStatus !== "ROOM_EXIT",
+                            themeId: null, // ProfileScreen에서는 특정 테마가 없으므로 null로 설정
                         });
                     } else {
                         console.log("ProfileScreen: API 응답이 없습니다 (getAnonymousInfo).");

@@ -1,5 +1,7 @@
 // src/components/Profile/ProfileHeader.tsx
 import Dice from "@/assets/images/profile/dice.svg";
+import { SvgComponent } from "@/utils/getProfileSvg";
+import useSharedProfileStore from "@/zustand/stores/sharedProfileStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Dimensions, Image, ImageSourcePropType, StyleSheet, Text, View } from "react-native";
 import GradientButton from "../common/GradientButton";
@@ -12,7 +14,7 @@ const fallbackDefaultImage = require("@/assets/images/profile/profile_default.pn
 
 type ProfileHeaderProps = {
   nickname: string;
-  profileImage: ImageSourcePropType | string | null | undefined;
+  profileImage: ImageSourcePropType | SvgComponent | string | null | undefined;
   diceCount: number;
   isInChat: boolean;
   mode?: "profile" | "myInfo" | "question";
@@ -28,31 +30,45 @@ export default function ProfileHeader({
   isInChat,
   mode = "profile",
 }: ProfileHeaderProps) {
-  console.log("ProfileHeader received nickname (restoring Dimensions & all styles):", nickname, "type:", typeof nickname);
+  const themeId = useSharedProfileStore((state) => state.themeId);
 
-  let imageSourceToUse: ImageSourcePropType = fallbackDefaultImage;
-  if (profileImage) {
-    if (typeof profileImage === 'string') {
-      if (profileImage.startsWith('http')) {
-        imageSourceToUse = { uri: profileImage };
-      } else {
-        imageSourceToUse = fallbackDefaultImage;
-      }
-    } else if (typeof profileImage === 'number') {
-      imageSourceToUse = profileImage;
-    } else if (typeof profileImage === 'object' && profileImage !== null && 'uri' in profileImage) {
-      imageSourceToUse = profileImage;
+  const renderProfileImage = () => {
+    // 1. SVG 컴포넌트인 경우 (채팅방 프로필 또는 기본 프로필)
+    if (typeof profileImage === 'function') {
+      const ProfileSvg = profileImage;
+
+      // ChatProfile.tsx 로직과 유사하게 색상 결정
+      // themeId가 1이고 특정 닉네임이거나, themeId가 2일 때 특별한 색상 적용
+      const isSpecialCase = (themeId === 1 && ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"].includes(nickname)) || themeId === 2;
+      const color = isSpecialCase ? "#9FC9FF" : (themeId === 1 ? "#F9BCC1" : "#7d7d7d");
+      
+      const svgSize = PROFILE_SIZE * 0.55; // 아이콘 크기 조절 (원의 70%)
+      return <ProfileSvg width={svgSize} height={svgSize} color={color} />;
     }
-  }
+
+    // 2. URL 문자열인 경우 (서버 기본 프로필)
+    if (typeof profileImage === 'string' && profileImage.startsWith('http')) {
+      return (
+        <Image 
+          source={{ uri: profileImage }}
+          style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} 
+        />
+      );
+    }
+
+    // 3. 그 외 (기본 PNG 이미지)
+    return (
+      <Image 
+        source={fallbackDefaultImage}
+        style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} 
+      />
+    );
+  };
 
   return (
-    <View style={[styles.container, { marginTop: height * 0.12 }]}>
+    <View style={[styles.container, { marginTop: height * 0.10 }]}>
       <View style={[styles.profileImageContainer, { width: PROFILE_SIZE, height: PROFILE_SIZE, borderRadius: PROFILE_SIZE / 2 }]}> 
-        <Image 
-          source={imageSourceToUse}
-          style={[styles.profileImage, { width: PROFILE_SIZE - 8, height: PROFILE_SIZE - 8, borderRadius: (PROFILE_SIZE - 8) / 2 }]} 
-          onError={(e) => console.log("ProfileHeader Image Error:", e.nativeEvent.error, "Source was:", imageSourceToUse)}
-        />
+        {renderProfileImage()}
       </View>
       <Text style={styles.nickname}>{(typeof nickname === 'string' ? nickname : String(nickname ?? '')).trim()}</Text>
       
