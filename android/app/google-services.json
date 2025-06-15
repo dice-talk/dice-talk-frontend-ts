@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "637582442107",
+    "project_id": "dicetalk-ae962",
+    "storage_bucket": "dicetalk-ae962.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:637582442107:android:4ea1b7a4f74209b4f96cde",
+        "android_client_info": {
+          "package_name": "com.yeoseunga.dicetalkts"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvcei1uSb2issRilGQ5umkYhwB0XMXVZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
