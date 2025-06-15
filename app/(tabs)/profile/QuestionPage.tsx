@@ -20,7 +20,7 @@ import QuestionItem from "@/components/profile/question/QuestionItem";
 import useSharedProfileStore from "@/zustand/stores/sharedProfileStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
 // 화면 크기 가져오기 (스타일에서 사용)
 const { width, height } = Dimensions.get("window");
@@ -134,6 +134,16 @@ export default function QuestionPage() {
         // fetchQuestions 내부에서 isInitialLoad=true일 때 pageToFetch를 1로 사용.
         fetchQuestions(true);
     }, [sortBy]); // fetchQuestions는 useCallback으로 memoize되어 있으므로, sortBy만 의존성으로 둠
+
+    // useFocusEffect를 사용하여 화면이 포커스될 때마다 데이터 목록을 새로고침합니다.
+    useFocusEffect(
+        useCallback(() => {
+            console.log("QuestionPage focused. Reloading questions.");
+            // isInitialLoad=true로 호출하여 목록을 초기화하고 첫 페이지부터 다시 불러옵니다.
+            // 기존의 isLoading 플래그가 중복 API 호출을 막아줍니다.
+            fetchQuestions(true);
+        }, []) // 의존성 배열은 비워두어 포커스 시에만 실행되도록 합니다. fetchQuestions는 최신 상태를 참조합니다.
+    );
 
     const handleBack = () => {
         router.back();

@@ -1,11 +1,12 @@
 import { updatePassword } from "@/api/memberApi";
 import GradientHeader from "@/components/common/GradientHeader";
 import NewPassword from "@/components/common/NewPassword";
+import Toast from "@/components/common/Toast";
 import MediumButton from "@/components/profile/myInfoPage/MediumButton";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function ChangePasswordPage() {
     const router = useRouter();
@@ -14,38 +15,43 @@ export default function ChangePasswordPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
 
 
 // ✅ 비밀번호 변경 API 요청 함수
 const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-        Alert.alert("오류", "새 비밀번호가 일치하지 않습니다.");
+        setToastMessage("새 비밀번호가 일치하지 않습니다.");
+        setShowToast(true);
         return;
     }
 
     if (!oldPassword || !newPassword) {
-        Alert.alert("오류", "현재 비밀번호와 새 비밀번호를 모두 입력해주세요.");
+        setToastMessage("현재 비밀번호와 새 비밀번호를 모두 입력해주세요.");
+        setShowToast(true);
         return;
     }
      setLoading(true);
     try {
-        await updatePassword(oldPassword, newPassword); // response 변수 사용 안 함, 에러 없으면 성공 간주
+        await updatePassword(oldPassword, newPassword); 
         
-        // 성공 시 로직 (updatePassword에서 에러가 throw되지 않으면 성공)
-        Alert.alert("성공", "비밀번호가 성공적으로 변경되었습니다.");
-        setOldPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        router.replace("/profile/MyInfoPage");
+        setToastMessage("비밀번호 변경에 성공했습니다.");
+        setShowToast(true);
+        
+        setTimeout(() => {
+            router.replace("/profile/MyInfoPage");
+        }, 1500);
         
     } catch (error: any) {
         if (error.response && error.response.status === 401) {
-            Alert.alert("오류", "현재 비밀번호가 일치하지 않습니다. 다시 한번 확인 후 요청바랍니다.");
+            setToastMessage("현재 비밀번호가 일치하지 않습니다. 다시 한번 확인 후 요청바랍니다.");
         } else if (error.response && error.response.data && error.response.data.message) {
-            Alert.alert("오류", error.response.data.message);
+            setToastMessage(error.response.data.message);
         } else {
-            Alert.alert("오류", "비밀번호 변경에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도해주세요.");
+            setToastMessage("비밀번호 변경에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도해주세요.");
         }
+        setShowToast(true);
     } finally {
         setLoading(false);
     }
@@ -87,6 +93,11 @@ const handleChangePassword = async () => {
                 />
             <MediumButton title="비밀번호 변경" onPress={handleChangePassword} />
           </View>
+          <Toast
+            visible={showToast}
+            message={toastMessage}
+            onHide={() => setShowToast(false)}
+          />
         </View>
     );
 }

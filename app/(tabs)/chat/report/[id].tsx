@@ -1,8 +1,14 @@
 import { createReport, getChatRoomDetailsForReport, ReportChatMessageDto, ReportCreationDto } from "@/api/reportApi";
+import DaoSvg from "@/assets/images/dice/dao.svg";
+import DoriSvg from "@/assets/images/dice/dori.svg";
+import HanaSvg from "@/assets/images/dice/hana.svg";
+import NemoSvg from "@/assets/images/dice/nemo.svg";
+import SezziSvg from "@/assets/images/dice/sezzi.svg";
+import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
 import ChatMessageLeft from "@/components/chat/ChatMessageLeft"; // 왼쪽 말풍선
 import ChatMessageRight from "@/components/chat/ChatMessageRight"; // 오른쪽 말풍선
 import ReportModal from "@/components/chat/ReportModal"; // 신고 모달 임포트
-import { getProfileComponent } from "@/utils/getProfileComponent"; // 프로필 변환 함수 임포트
+import Toast from "@/components/common/Toast"; // Toast 컴포넌트 임포트
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore import 추가
 import useAuthStore from "@/zustand/stores/authStore"; // 현재 사용자 정보 가져오기
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +25,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SvgProps } from "react-native-svg";
+
+const nicknameToSvgMap: Record<string, React.FC<SvgProps>> = {
+  "한가로운 하나": HanaSvg,
+  "두 얼굴의 매력 두리": DoriSvg,
+  "세침한 세찌": SezziSvg,
+  "네모지만 부드러운 네몽": NemoSvg,
+  "단호한데 다정한 다오": DaoSvg,
+  "육감적인 직감파 육땡": YukdaengSvg,
+};
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -58,6 +74,9 @@ const ChatReportPage = () => {
   const [isFetchingMore, setIsFetchingMore] = useState(false); // 추가 로딩 상태
   const [error, setError] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  // Toast 상태 추가
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   // API를 통해 채팅 메시지 로드 (페이지네이션 적용)
   const fetchMessages = useCallback(async () => {
@@ -142,9 +161,11 @@ const ChatReportPage = () => {
     try {
       setIsLoading(true);
       await createReport(reportData);
-      Alert.alert("신고 완료", "신고가 성공적으로 접수되었습니다.", [
-        { text: "확인", onPress: () => router.back() },
-      ]);
+      setToastMessage("신고처리가 완료되었습니다.");
+      setShowToast(true);
+      setTimeout(() => {
+        router.back();
+      }, 1500); // 1.5초 후 뒤로가기
     } catch (err: any) {
       console.error("Error creating report:", err);
       const errorMessage = err.fieldErrors 
@@ -169,11 +190,14 @@ const ChatReportPage = () => {
     const isMyMessage = message.memberId === myMemberId;
     const senderInfo = participants.get(message.memberId);
     
+    const nickname = senderInfo?.nickname || "알 수 없는 사용자";
+    const ProfileSvg = nicknameToSvgMap[nickname] || NemoSvg; // 닉네임으로 SVG 찾기, 없으면 Nemo
+
     const messageProps = {
         message: message.message,
         time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        nickname: senderInfo?.nickname || "알 수 없는 사용자",
-        profileImage: getProfileComponent(senderInfo?.profile), // 프로필 이름으로 SVG 컴포넌트 가져오기
+        nickname: nickname,
+        profileImage: ProfileSvg, // 수정된 SVG 컴포넌트 전달
     };
 
     return (
@@ -252,7 +276,7 @@ const ChatReportPage = () => {
         contentContainerStyle={styles.scrollContainer}
         onEndReached={fetchMessages}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isFetchingMore ? <ActivityIndicator style={{ marginVertical: 10 }} size="small" color={themeId === 2 ? "#6DA0E1" : "#D9B2D3"} /> : null}
+        ListFooterComponent={isFetchingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null}
         ListEmptyComponent={() => (
           !isLoading && (
             <View style={styles.centered}>
@@ -264,16 +288,11 @@ const ChatReportPage = () => {
       
       <View style={styles.footer}>
         <Pressable
-          style={[
-            styles.footerButton,
-            styles.confirmButton,
-            { backgroundColor: confirmButtonColor },
-            !hasCheckedMessages && styles.disabledButton,
-          ]}
-          onPress={handleConfirmSelection}
-          disabled={!hasCheckedMessages || isLoading}
+            style={[styles.confirmButton, { backgroundColor: hasCheckedMessages ? confirmButtonColor : '#CCCCCC' }]}
+            onPress={handleConfirmSelection}
+            disabled={!hasCheckedMessages}
         >
-          <Text style={styles.footerButtonText}>신고하기</Text>
+            <Text style={styles.confirmButtonText}>선택 완료</Text>
         </Pressable>
       </View>
 
@@ -281,6 +300,12 @@ const ChatReportPage = () => {
         visible={showReportModal}
         onSubmitReport={handleReportSubmit}
         onDismiss={() => setShowReportModal(false)}
+      />
+
+      <Toast 
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
       />
     </View>
   );
@@ -350,19 +375,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingBottom: 30, // SafeArea 고려
   },
-  footerButton: {
+  confirmButton: {
     paddingVertical: SCREEN_HEIGHT * 0.018,
     borderRadius: SCREEN_WIDTH * 0.03,
     alignItems: "center",
     justifyContent: "center",
   },
-  confirmButton: {
-    // backgroundColor는 동적으로 설정
-  },
-  disabledButton: {
-    backgroundColor: "#CCCCCC",
-  },
-  footerButtonText: {
+  confirmButtonText: {
     color: "#FFFFFF",
     fontSize: SCREEN_WIDTH * 0.04,
     fontWeight: "600",

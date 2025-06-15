@@ -1,17 +1,15 @@
 import { findEmailByTxId, requestPasswordResetUriAfterToss, resetPasswordAfterTossAuth } from '@/api/findApi';
-// import { sendVerificationEmail, verifyAuthCode } from '@/api/loginApi'; // 더 이상 사용하지 않음
+import AlertModal from '@/components/common/AlertModal';
 import PasswordInput from '@/components/common/NewPassword';
 import Tab from '@/components/common/Tab';
+import Toast from '@/components/common/Toast';
 import TossAuth, { TossAuthSuccessData } from '@/components/common/TossAuth';
 import MediumButton from '@/components/profile/myInfoPage/MediumButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react'; // useEffect 제거
-import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useState } from 'react'; // useCallback 추가
+import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// verifyPasswordAuthCodeApi 제거
-// resetPasswordApi (가상 함수) 제거
 
 interface PasswordResetContext {
   memberId: number;
@@ -27,7 +25,6 @@ export default function FindInfoScreen() {
   const [showTossAuthForId, setShowTossAuthForId] = useState(false);
   const [foundEmail, setFoundEmail] = useState<string | null>(null);
   const [idFindingLoading, setIdFindingLoading] = useState(false);
-  const [idFindingError, setIdFindingError] = useState<string | null>(null);
 
   // 비밀번호 찾기 관련 state (새로운 흐름에 맞게 수정)
   const [emailForPassword, setEmailForPassword] = useState('');
@@ -37,136 +34,153 @@ export default function FindInfoScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordResetLoading, setPasswordResetLoading] = useState(false); // 최종 비밀번호 변경 로딩
-  const [passwordFindingError, setPasswordFindingError] = useState<string | null>(null);
+  
+  // Toast 상태 추가
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  // AlertModal 상태
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertOnConfirm, setAlertOnConfirm] = useState<(() => void) | null>(null);
+
+  const showAlert = useCallback((title: string, message: string, onConfirm?: () => void) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    if (onConfirm) {
+      setAlertOnConfirm(() => onConfirm);
+    } else {
+      setAlertOnConfirm(null);
+    }
+    setIsAlertVisible(true);
+  }, []); // state setter는 안정적이므로 의존성 배열은 비워둡니다.
 
   // 아이디 찾기 - Toss 인증 성공 콜백
-  const handleFindIdAuthSuccess = async (tossAuthResult: TossAuthSuccessData) => {
+  const handleFindIdAuthSuccess = useCallback(async (tossAuthResult: TossAuthSuccessData) => {
     setShowTossAuthForId(false);
     const { txId } = tossAuthResult;
     if (txId) { 
       setIdFindingLoading(true);
       setFoundEmail(null);
-      setIdFindingError(null);
       try {
         const response = await findEmailByTxId(txId);
-        // API 응답에서 email이 없을 수도 있으므로 체크
         if (response && response.email) {
           setFoundEmail(response.email);
+          setToastMessage('인증이 완료되었습니다.');
+          setIsToastVisible(true);
         } else {
-          setIdFindingError('이메일 정보를 찾을 수 없습니다.'); // 보다 명확한 메시지
+          showAlert('아이디 찾기 실패', '가입된 이메일 정보를 찾을 수 없습니다.');
         }
       } catch (error: any) {
-        const message = error.message || (error.data?.message) || '아이디를 찾는 중 오류가 발생했습니다.';
-        if (message.includes("Member not found") || (error.response && error.response.status === 404)) {
-            setIdFindingError('가입된 이메일을 찾을 수 없습니다.');
-        } else {
-            setIdFindingError(message);
-        }
+        const message = error.response?.data?.error || '아이디를 찾는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        showAlert('아이디 찾기 오류', message);
       } finally {
         setIdFindingLoading(false);
       }
     } else {
-      const errorMessage = '인증 처리 중 txId를 가져오지 못했습니다. 다시 시도해주세요.';
-      setIdFindingError(errorMessage);
-      Alert.alert('인증 오류', errorMessage);
+      // 이젠 TossAuth 컴포넌트가 내부적으로 AlertModal을 띄우므로, 여기서는 아무것도 하지 않습니다.
     }
-  };
+  }, []); // 의존성 배열에서 showAlert 제거
 
-  const handleFindIdAuthFailure = () => {
+  const handleFindIdAuthFailure = useCallback(() => {
     setShowTossAuthForId(false);
-    setIdFindingError('Toss 본인 인증에 실패했습니다.');
-    // Alert.alert('인증 실패', '본인 인증 과정에서 오류가 발생했습니다. 다시 시도해주세요.'); // 에러 텍스트로 표시
-  };
+    if (router.canGoBack()) {
+      router.back();
+    }
+    // TossAuth 컴포넌트가 AlertModal을 띄우고, 
+    // 사용자가 '확인'을 누르면 onAuthFailure가 호출되어 이 함수가 실행됩니다.
+    // 여기서는 TossAuth 컴포넌트를 화면에서 숨기는 역할만 수행합니다.
+  }, []); // 의존성 배열에서 showAlert 제거
 
   // 비밀번호 찾기 - "Toss 본인 인증" 버튼 클릭 로직
   const handleInitiatePasswordTossAuth = () => {
     if (!emailForPassword.trim()) {
-      Alert.alert('입력 오류', '이메일 주소를 입력해주세요.');
+      showAlert('입력 오류', '이메일 주소를 입력해주세요.');
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForPassword)) {
-        Alert.alert('입력 오류', '올바른 이메일 형식이 아닙니다.');
+        showAlert('입력 오류', '올바른 이메일 형식이 아닙니다.');
         return;
     }
-    setPasswordFindingError(null); // 이전 에러 메시지 초기화
     setPasswordResetContext(null); // 이전 컨텍스트 초기화
     setShowTossAuthForPassword(true); // Toss 인증 UI 표시
   };
 
   // 비밀번호 찾기 - Toss 인증 성공 콜백 (requestPasswordResetUriAfterToss 호출)
-  const handlePasswordTossSuccess = async (tossAuthResult: TossAuthSuccessData) => {
+  const handlePasswordTossSuccess = useCallback(async (tossAuthResult: TossAuthSuccessData) => {
     setShowTossAuthForPassword(false);
     const { txId } = tossAuthResult;
     if (!txId) {
-      setPasswordFindingError('Toss 인증 후 txId를 받지 못했습니다.');
-      Alert.alert('인증 오류', 'Toss 인증 후 txId를 받지 못했습니다. 다시 시도해주세요.');
+      showAlert('인증 오류', 'Toss 인증 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
       return;
     }
 
     setPasswordAuthLoading(true);
-    setPasswordFindingError(null);
     try {
       const response = await requestPasswordResetUriAfterToss({ txId, email: emailForPassword });
-      // 서버에서 받은 이메일과 사용자가 입력한 이메일 비교 (대소문자 구분 없이)
       if (response.email.toLowerCase() !== emailForPassword.toLowerCase()) {
-          setPasswordFindingError('입력하신 이메일과 본인인증 정보가 일치하지 않습니다.');
-          Alert.alert('인증 오류', '입력하신 이메일과 본인인증 정보가 일치하지 않습니다.');
-          // setPasswordAuthLoading(false); // finally에서 처리
+          showAlert('인증 오류', '입력하신 이메일과 본인인증 정보가 일치하지 않습니다.');
           return;
       }
       setPasswordResetContext({ memberId: response.memberId, email: response.email });
-      Alert.alert('인증 완료', '본인 인증이 완료되었습니다. 새 비밀번호를 설정해주세요.');
+      if (router.canGoBack()) {
+        router.back();
+      }
+      setToastMessage('본인 인증이 완료되었습니다.');
+      setIsToastVisible(true);
     } catch (error: any) {
-      const message = error.message || (error.data?.message) || '본인 인증 처리 중 오류가 발생했습니다.';
-      setPasswordFindingError(message);
-      Alert.alert('오류', message);
+      if (error.response?.status === 401) {
+        showAlert('오류 발생', '입력하신 이메일과 일치하는 가입 정보를 찾을 수 없습니다.');
+      } else {
+        const message = error.response?.data?.error || '본인 인증 처리 중 오류가 발생했습니다. 문제가 지속되면 고객센터로 문의해주세요.';
+        showAlert('오류 발생', message);
+      }
     } finally {
       setPasswordAuthLoading(false);
     }
-  };
+  }, [emailForPassword, showAlert]);
 
   // 비밀번호 찾기 - Toss 인증 실패 콜백
-  const handlePasswordTossFailure = () => {
+  const handlePasswordTossFailure = useCallback(() => {
     setShowTossAuthForPassword(false);
-    setPasswordFindingError('Toss 본인 인증에 실패했습니다.');
-    // Alert.alert('인증 실패', 'Toss 본인 인증 과정에서 오류가 발생했습니다. 다시 시도해주세요.'); // 에러 텍스트로 표시
-  };
+    // 이 함수는 TossAuth 내부의 AlertModal에서 '확인'을 눌렀을 때 호출됩니다.
+    // 여기서는 TossAuth 컴포넌트를 숨기는 역할만 합니다.
+  }, []); // 의존성 배열에서 showAlert 제거
   
   // 비밀번호 찾기 - 새 비밀번호 변경 (resetPasswordAfterTossAuth 호출)
   const handleChangePassword = async () => {
     if (!passwordResetContext) {
-      Alert.alert('오류', '사용자 정보가 없습니다. 처음부터 다시 시도해주세요.');
+      showAlert('오류', '사용자 정보가 없습니다. 처음부터 다시 시도해주세요.');
       return;
     }
     if (newPassword !== confirmNewPassword) {
-      Alert.alert('입력 오류', '새 비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      showAlert('입력 오류', '새 비밀번호와 비밀번호 확인이 일치하지 않습니다.');
       return;
     }
-    // PasswordInput 컴포넌트와 유효성 검사 규칙 동기화 필요
     if (newPassword.length < 8) { 
-        Alert.alert('입력 오류', '비밀번호는 8자 이상이어야 합니다.');
+        showAlert('입력 오류', '비밀번호는 8자 이상이어야 합니다.');
         return;
     }
 
     setPasswordResetLoading(true);
-    setPasswordFindingError(null);
     try {
       const response = await resetPasswordAfterTossAuth(
         passwordResetContext.memberId,
         { email: passwordResetContext.email, newPassword: newPassword } 
       );
-      Alert.alert('성공', response.message || '비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.', [
-        { text: '확인', onPress: () => router.replace('/(onBoard)/Login') },
-      ]);
-      // 성공 후 상태 초기화
+      showAlert(
+        '성공', 
+        response.message || '비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.',
+        () => router.replace('/(onBoard)/Login')
+      );
       setEmailForPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
       setPasswordResetContext(null);
     } catch (error: any) {
-      const message = error.message || (error.data?.message) || '비밀번호 변경 중 오류가 발생했습니다.';
-      setPasswordFindingError(message);
-      Alert.alert('오류', message);
+      const message = error.response?.data?.error || '비밀번호 변경 중 오류가 발생했습니다. 문제가 지속되면 고객센터로 문의해주세요.';
+      showAlert('오류 발생', message);
     } finally {
       setPasswordResetLoading(false);
     }
@@ -181,7 +195,6 @@ export default function FindInfoScreen() {
         title="Toss 본인 인증으로 아이디 찾기" 
         onPress={() => {
           setFoundEmail(null);
-          setIdFindingError(null);
           setShowTossAuthForId(true); 
         }}
         disabled={idFindingLoading || showTossAuthForId}
@@ -193,7 +206,6 @@ export default function FindInfoScreen() {
         />
       )}
       {idFindingLoading && <ActivityIndicator size="large" color="#B28EF8" style={styles.loader} />}
-      {idFindingError && !idFindingLoading && <Text style={styles.errorText}>{idFindingError}</Text>}
       {foundEmail && (
         <View style={styles.resultContainer}>
           <Text style={styles.resultLabel}>회원님의 이메일 주소는 다음과 같습니다.</Text>
@@ -233,7 +245,6 @@ export default function FindInfoScreen() {
             />
           )}
           {passwordAuthLoading && <ActivityIndicator size="large" color="#B28EF8" style={styles.loader} />}
-          {passwordFindingError && !passwordAuthLoading && <Text style={styles.errorText}>{passwordFindingError}</Text>}
         </>
       ) : (
         // 2단계: 새 비밀번호 입력
@@ -245,7 +256,6 @@ export default function FindInfoScreen() {
             setPassword={setNewPassword}
             setConfirmPassword={setConfirmNewPassword}
           />
-          {passwordFindingError && !passwordResetLoading &&<Text style={styles.errorText}>{passwordFindingError}</Text>}
           <MediumButton 
             title="비밀번호 변경"
             onPress={handleChangePassword} 
@@ -261,7 +271,6 @@ export default function FindInfoScreen() {
   const resetAllStates = () => {
     // 아이디 찾기 상태 초기화
     setFoundEmail(null);
-    setIdFindingError(null);
     setShowTossAuthForId(false);
     setIdFindingLoading(false);
 
@@ -269,9 +278,6 @@ export default function FindInfoScreen() {
     setEmailForPassword('');
     setNewPassword('');
     setConfirmNewPassword('');
-    setPasswordFindingError(null);
-    setShowTossAuthForPassword(false);
-    setPasswordAuthLoading(false);
     setPasswordResetContext(null);
     setPasswordResetLoading(false);
   };
@@ -299,8 +305,24 @@ export default function FindInfoScreen() {
         contentContainerStyle={styles.scrollContentContainer}
         keyboardShouldPersistTaps="handled" // 중요: 키보드 열린 상태에서 다른 영역 터치 시 키보드 닫기
       >
-        {activeTab === 'findId' ? renderFindIdContent() : renderFindPasswordContent()}
+        { activeTab === 'findId' ? renderFindIdContent() : renderFindPasswordContent() }
       </ScrollView>
+      <AlertModal
+        visible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onConfirm={() => {
+          setIsAlertVisible(false);
+          if (alertOnConfirm) {
+            alertOnConfirm();
+          }
+        }}
+      />
+      <Toast
+        message={toastMessage}
+        visible={isToastVisible}
+        onHide={() => setIsToastVisible(false)}
+      />
     </SafeAreaView>
   );
 }

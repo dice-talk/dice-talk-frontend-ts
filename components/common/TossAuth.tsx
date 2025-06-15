@@ -3,8 +3,9 @@ import * as Crypto from "expo-crypto";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, AppState, AppStateStatus, Modal, StyleSheet, View } from "react-native";
+import { ActivityIndicator, AppState, AppStateStatus, Modal, StyleSheet, View } from "react-native";
 import uuid from "react-native-uuid";
+import AlertModal from "./AlertModal";
 
 // ✅ 사용자 정보 타입 정의
 type TossUserInfo = {
@@ -31,6 +32,28 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const appState = useRef(AppState.currentState);
 
+  // AlertModal 상태 추가
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setIsAlertVisible(true);
+  };
+
+  const handleAlertConfirm = () => {
+    setIsAlertVisible(false);
+    // 확인 버튼을 누르면 실패 콜백을 호출하고, 뒤로가기를 시도합니다.
+    if (onAuthFailure) {
+      onAuthFailure();
+    }
+    // if (router.canGoBack()) {
+    //   router.back();
+    // }
+  };
+
   // ✅ Toss 인증 요청
   useEffect(() => {
     const requestToss = async () => {
@@ -56,11 +79,11 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
         }
       } catch (err) {
         console.error("❌ Toss 인증 요청 실패:", err);
-        Alert.alert("오류", "Toss 인증 요청 또는 실행에 실패했습니다.");
-        if (onAuthFailure) onAuthFailure();
+        showAlert("오류", "Toss 인증 요청 또는 실행에 실패했습니다.");
       } finally {
         console.log("✅ Toss 인증 요청 종료");
-        setLoading(false);
+        // Toss 앱으로 넘어가기 직전에 로딩을 풀지 않아, 사용자가 앱으로 돌아왔을 때도 로딩 상태가 유지되도록 함
+        // setLoading(false); 
       }
     };
 
@@ -73,50 +96,6 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
     const base64Key = Buffer.from(randomBytes).toString("base64");
     const uuidKey = uuid.v4();
     return `v1$${uuidKey}$${base64Key}`;
-  };
-
-  // ✅ 사용자 정보 조회
-  const fetchUserInfo = async () => {
-    try {
-      setLoading(true);
-      console.log("✅ 사용자 정보 조회 시작");
-
-      // ✅ axios를 사용하여 사용자 정보 조회
-      const { data } = await axiosWithoutToken.post(`/auth/cert?txId=${txId}`);
-      console.log("✅ 사용자 정보:", data);
-
-      // ✅ 사용자 정보 페이지로 이동 (회원가입으로 연결)
-      if (onAuthSuccess) {
-        // data (사용자 정보)와 현재 컴포넌트의 state인 txId를 함께 전달
-        if (txId) { // txId가 유효한지 한번 더 확인
-          onAuthSuccess({ ...data, txId: txId }); // txId 추가
-        } else {
-          console.error("❌ fetchUserInfo: txId가 유효하지 않아 onAuthSuccess 호출 불가");
-          if (onAuthFailure) onAuthFailure(); // txId가 없으면 실패 처리
-        }
-      } else {
-        router.replace({
-          pathname: targetScreen,
-          params: { 
-            name: data.name,
-            phone: data.phone,
-            birth: data.birth,
-            gender: data.gender,
-            // txId도 필요하다면 여기서 params로 넘길 수 있으나, 
-            // targetScreen이 SignupInput이라면 일반적으로 txId는 직접 필요하지 않을 수 있음.
-            // 만약 SignupInput에서도 txId가 필요하다면 추가:
-            // txId: txId, 
-          },
-        });
-      }
-
-    } catch (err) {
-      console.error("❌ 사용자 정보 요청 실패:", err);
-      Alert.alert("오류", "인증 정보 확인에 실패했습니다.");
-      if (onAuthFailure) onAuthFailure();
-    } finally {
-      setLoading(false);
-    }
   };
 
   // ✅ 앱 복귀 감지 (AppState) 및 초기/실행 중 URL 처리 (Linking)
@@ -168,6 +147,51 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
 
   // ✅ txId와 복귀 URL이 모두 준비됐을 때 실행
   useEffect(() => {
+    // fetchUserInfo 로직을 useEffect 내부로 이동
+    const fetchUserInfo = async () => {
+      try {
+        setLoading(true);
+        console.log("✅ 사용자 정보 조회 시작");
+  
+        // ✅ axios를 사용하여 사용자 정보 조회
+        const { data } = await axiosWithoutToken.post(`/auth/cert?txId=${txId}`);
+        console.log("✅ 사용자 정보:", data);
+  
+        // 로딩 화면을 먼저 숨기고, 그 다음에 성공 콜백을 호출합니다.
+        setLoading(false);
+
+        // ✅ 사용자 정보 페이지로 이동 (회원가입으로 연결)
+        if (onAuthSuccess) {
+          // data (사용자 정보)와 현재 컴포넌트의 state인 txId를 함께 전달
+          if (txId) { // txId가 유효한지 한번 더 확인
+            onAuthSuccess({ ...data, txId: txId }); // txId 추가
+            if (router.canGoBack()) {
+              router.back();
+            }
+          } else {
+            console.error("❌ fetchUserInfo: txId가 유효하지 않아 onAuthSuccess 호출 불가");
+            showAlert("인증 오류", "인증 트랜잭션 ID가 없습니다. 다시 시도해주세요.");
+          }
+        } else {
+          router.replace({
+            pathname: targetScreen,
+            params: { 
+              name: data.name,
+              phone: data.phone,
+              birth: data.birth,
+              gender: data.gender,
+            },
+          });
+        }
+  
+      } catch (err) {
+        console.error("❌ 사용자 정보 요청 실패:", err);
+        setLoading(false); // 오류 발생 시에도 로딩은 중단
+        showAlert("오류", "인증 정보 확인에 실패했습니다.");
+      } 
+      // finally 블록 제거: 성공/실패 경로에서 setLoading을 개별적으로 처리
+    };
+
     const tryProcess = async () => {
       console.log("✅ txId와 복귀 URL이 모두 준비됐을 때 실행", txId, pendingUrl);
       if (!txId || !pendingUrl) return;
@@ -180,16 +204,14 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
         console.log("🚀 Toss 인증 성공 처리 시작");
         await fetchUserInfo();
       } else {
-        Alert.alert("인증 실패", "다시 시도해주세요.");
-
-        if (onAuthFailure) onAuthFailure(); // 실패 콜백 호출
+        showAlert("인증 실패", "다시 시도해주세요.");
       }
 
       setPendingUrl(null); // ✅ 중복 방지
     };
 
     tryProcess();
-  }, [txId, pendingUrl, fetchUserInfo]); // fetchUserInfo를 디펜던시 배열에 추가
+  }, [txId, pendingUrl, onAuthSuccess, onAuthFailure, router, targetScreen]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -201,6 +223,14 @@ export default function TossAuth({ onAuthSuccess, targetScreen = "/(onBoard)/reg
           </View>
         </View>
       </Modal>
+
+      {/* ✅ 오류 알림 모달 */}
+      <AlertModal
+        visible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onConfirm={handleAlertConfirm}
+      />
     </View>
   );
 }

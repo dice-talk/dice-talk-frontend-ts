@@ -4,7 +4,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 //import { useMemberStore } from "@/zustand/stores/memberStore";
-import { getAnonymousInfo, getMemberDetailsForMyInfoPage, updateRegion } from "@/api/memberApi";
+import { getMemberDetailsForMyInfoPage, updateRegion } from "@/api/memberApi";
 import TossAuth from "@/components/common/TossAuth";
 import RegionDropDown from "@/components/profile/RegionDropDown";
 import MyInfoField from "@/components/profile/myInfoPage/MyInfoField";
@@ -42,7 +42,7 @@ const initialDetailedInfo: MyDetailedInfo = {
 };
 
 // 기본 프로필 이미지
-const defaultProfileImageFromMyInfoPage = require("@/assets/images/profile/profile_default.png");
+//const defaultProfileImageFromMyInfoPage = require("@/assets/images/profile/profile_default.png");
 
 export default function MyInfoPage() {
     const router = useRouter();
@@ -53,7 +53,7 @@ export default function MyInfoPage() {
     const profileImage = useSharedProfileStore((state) => state.profileImage);
     const totalDice = useSharedProfileStore((state) => state.totalDice);
     const isInChat = useSharedProfileStore((state) => state.isInChat);
-    const setSharedProfile = useSharedProfileStore((state) => state.actions.setSharedProfile); // 특정 액션 직접 가져오기
+    //const setSharedProfile = useSharedProfileStore((state) => state.actions.setSharedProfile); // 특정 액션 직접 가져오기
 
     // MyInfoPage 상세 정보를 위한 로컬 상태
     const [myDetailedInfo, setMyDetailedInfo] = useState<MyDetailedInfo>(initialDetailedInfo);
@@ -68,38 +68,38 @@ export default function MyInfoPage() {
     // ProfileHeader를 위한 데이터 (sharedProfileStore 값 사용)
     const profileHeaderData = {
         nickname: nickname || "로딩 중...",
-        profileImage: profileImage || defaultProfileImageFromMyInfoPage,
+        profileImage: profileImage,
         diceCount: Number(totalDice || 0),
         isInChat: !!(isInChat || false),
     };
 
     const [showTossAuth, setShowTossAuth] = useState(false);
 
-    // useEffect for SharedProfile Data (선택적: 최신 정보 강제 동기화용)
-    useEffect(() => {
-        const fetchSharedProfile = async () => {
-            if (memberId) { // memberId가 유효한지 (null이 아닌지) 확인
-                console.log(`MyInfoPage: sharedProfileStore 정보 최신화 시도 (memberId: ${memberId})`);
-                try {
-                    const apiData = await getAnonymousInfo(memberId); // memberId 전달
-                    if (apiData) {
-                        setSharedProfile({
-                            nickname: apiData.nickname,
-                            profileImage: apiData.profile,
-                            totalDice: apiData.totalDice,
-                            isInChat: apiData.roomStatus === 'IN_CHAT' || apiData.exitStatus !== "ROOM_EXIT",
-                        });
-                        console.log("MyInfoPage: sharedProfileStore 업데이트 완료.");
-                    }
-                } catch (error) {
-                    console.error("MyInfoPage: sharedProfileStore 업데이트 실패:", error);
-                }
-            } else {
-                console.log("MyInfoPage: memberId 없음. sharedProfileStore 정보 최신화 건너뜀.");
-            }
-        };
-        fetchSharedProfile(); 
-    }, [memberId, setSharedProfile]);
+    // // useEffect for SharedProfile Data (선택적: 최신 정보 강제 동기화용)
+    // useEffect(() => {
+    //     const fetchSharedProfile = async () => {
+    //         if (memberId) { // memberId가 유효한지 (null이 아닌지) 확인
+    //             console.log(`MyInfoPage: sharedProfileStore 정보 최신화 시도 (memberId: ${memberId})`);
+    //             try {
+    //                 const apiData = await getAnonymousInfo(memberId); // memberId 전달
+    //                 if (apiData) {
+    //                     setSharedProfile({
+    //                         nickname: apiData.nickname,
+    //                         //profileImage: apiData.profile,
+    //                         totalDice: apiData.totalDice,
+    //                         isInChat: apiData.roomStatus === 'IN_CHAT' || apiData.exitStatus !== "ROOM_EXIT",
+    //                     });
+    //                     console.log("MyInfoPage: sharedProfileStore 업데이트 완료.");
+    //                 }
+    //             } catch (error) {
+    //                 console.error("MyInfoPage: sharedProfileStore 업데이트 실패:", error);
+    //             }
+    //         } else {
+    //             console.log("MyInfoPage: memberId 없음. sharedProfileStore 정보 최신화 건너뜀.");
+    //         }
+    //     };
+    //     fetchSharedProfile(); 
+    // }, [memberId, setSharedProfile]);
 
     // useEffect for Detailed Member Info (/my-info/{member-id})
     useEffect(() => {
@@ -144,7 +144,7 @@ export default function MyInfoPage() {
         router.back();
     };
 
-    const handleAuthSuccess = (userInfo: { name: string; phone: string }) => {
+    const handleAuthSuccess = (userInfo: { name: string; }) => {
         console.log("MyInfoPage: Toss 인증 성공:", userInfo);
         if (userInfo.name !== myDetailedInfo.name) {
             setMyDetailedInfo(prev => ({

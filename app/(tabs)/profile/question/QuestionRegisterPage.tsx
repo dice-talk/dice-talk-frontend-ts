@@ -76,9 +76,11 @@ export default function QuestionRegisterPage() {
       setToastMessage("문의가 등록되었습니다.");
       setShowToast(true);
       setTimeout(() => {
-        router.replace({
-          pathname: "/profile/QuestionPage",
-        });
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace("/profile/QuestionPage");
+        }
       }, 1000);
     } catch (error) {
       console.error("문의 등록 실패 페이지에서 에러:", error);

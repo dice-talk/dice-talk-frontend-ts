@@ -1,12 +1,13 @@
-import { ChatRoomItem, HeartHistoryItem, PageInfo, getChatHistory, getMyHeartHistory } from "@/api/historyApi";
+import { ChatRoomItem, HeartHistoryItem, PageInfo, deleteHeartHistoryItem, getChatHistory, getMyHeartHistory } from "@/api/historyApi";
 import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent";
 import Tab from "@/components/common/Tab";
 import EmptyHistoryPlaceholder from "@/components/history/EmptyHistoryPlaceholder";
 import HistoryItem, { HistoryItemProps } from "@/components/history/HistoryItem";
+import CancelModal from "@/components/profile/question/CancelModal";
 import useHomeStore from "@/zustand/stores/HomeStore";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Dimensions, FlatList, Platform, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, FlatList, Platform, StyleSheet, Text, View } from "react-native";
 
 const DUMMY_MEMBER_ID = 1;
 const TAB_BAR_HEIGHT_APPROX = Platform.OS === 'ios' ? 80 : 60; // 일반적인 탭바 높이 근사치
@@ -38,6 +39,10 @@ export default function HistoryScreen() {
 
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // 모달 상태 추가
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<number | string | null>(null);
 
   const noticesFromStore = useHomeStore((state) => state.notices);
 
@@ -130,6 +135,29 @@ export default function HistoryScreen() {
     router.push({ pathname: '/(tabs)/chat', params: { chatRoomId: chatRoomId.toString() } });
   };
 
+  const handleHeartItemLongPress = (id: number | string) => {
+    setSelectedItemId(id);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedItemId) return;
+    try {
+      await deleteHeartHistoryItem(selectedItemId);
+      setHeartHistory((prev) => prev.filter((item) => item.roomEventId !== selectedItemId));
+    } catch (error) {
+      Alert.alert("오류", "삭제 중 오류가 발생했습니다.");
+    } finally {
+      setDeleteModalVisible(false);
+      setSelectedItemId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalVisible(false);
+    setSelectedItemId(null);
+  };
+
   let currentData: HistoryItemProps[] = [];
   let listTitle = "";
 
@@ -143,8 +171,13 @@ export default function HistoryScreen() {
   } else { 
     listTitle = "내가 받은 하트";
     currentData = heartHistory.map(item => ({
-      id: item.roomEventId, type: 'heart', svgComponentName: item.senderProfileSvg || 'HanaSvg',
-      name: item.senderName || '알 수 없는 사용자', content: item.message, createdAt: item.createdAt,
+      id: item.roomEventId,
+      type: 'heart',
+      name: item.senderName || '알 수 없는 사용자',
+      content: item.message,
+      createdAt: item.createdAt,
+      themeId: item.themeId,
+      onLongPress: handleHeartItemLongPress,
     }));
   }
 
@@ -179,6 +212,14 @@ export default function HistoryScreen() {
       {loading && currentData.length === 0 && (
         <View style={styles.loaderContainer}><ActivityIndicator size="large" color="#B28EF8" /></View>
       )}
+      <CancelModal
+        visible={isDeleteModalVisible}
+        onCancel={handleCancelDelete}
+        onDelete={handleConfirmDelete}
+        message="이 하트 내역을 정말로 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+      />
     </View>
   );
 };

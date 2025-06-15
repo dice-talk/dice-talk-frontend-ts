@@ -7,7 +7,6 @@ import HeartSignalIcon from '@/assets/images/home/heartSignalIcon.svg';
 import MainBackground from '@/assets/images/home/mainBackground.svg';
 import AlertModal from '@/components/Alerts/AlertsModal';
 import CustomBottomSheet from '@/components/common/CustomBottomSheet';
-import AccountBannedModal from '@/components/home/AccountBannedModal';
 import ThemeCarousel from "@/components/home/ThemeCarousel";
 import { useChatOptionActions } from '@/zustand/stores/ChatOptionStore'; // ChatOptionStore 액션 임포트
 import useHomeStore, { Item, Theme } from '@/zustand/stores/HomeStore'; // HomeStore 및 Theme, Item 타입 임포트
@@ -280,11 +279,6 @@ const HomeScreen = () => {
         onClose={() => setAlertModalVisible(false)}
         notifications={fetchedNotifications}
         onReadComplete={fetchUnreadCount}
-      />
-
-      <AccountBannedModal
-        isVisible={isBannedModalVisible}
-        onConfirm={handleConfirmBannedModal}
       />
     </View>
   );

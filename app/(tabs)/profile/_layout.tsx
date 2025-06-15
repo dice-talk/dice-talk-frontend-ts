@@ -11,7 +11,7 @@ export default function ProfileLayout() {
         <Stack.Screen name="ChangePasswordPage" />
         <Stack.Screen name="PaymentScreen" />
         
-        <Stack.Screen name="question/_layout" />
+        <Stack.Screen name="question" />
       </Stack>
     );
 }

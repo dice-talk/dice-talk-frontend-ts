@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router'; // Expo Router 사용
 import { useState } from 'react';
 import {
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +20,8 @@ import { loginMember } from '@/api/loginApi'; // EmailAPI를 loginAPI 등으로 
 // AsyncStorage는 스토어 사용으로 대체 가능성 있음 (필요시 유지)
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sendPushTokenToServer } from '@/api/notificationApi'; // <<<<<< [수정] 주석 해제
+import AlertModal from '@/components/common/AlertModal';
+import Toast from '@/components/common/Toast';
 import useAuthStore from '@/zustand/stores/authStore'; // <<<<<< 스토어 임포트
 // import Constants from 'expo-constants'; // notificationUtils로 이동
 // import * as Device from 'expo-device'; // notificationUtils로 이동
@@ -63,6 +64,23 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showAccountBannedModal, setShowAccountBannedModal] = useState<boolean>(false); // 모달 표시 상태
 
+  // Toast 상태
+  const [showToast, setShowToast] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string>("");
+
+  // AlertModal 상태
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertOnConfirm, setAlertOnConfirm] = useState<(() => void) | null>(null);
+
+  const showAlert = (title: string, message: string, onConfirm?: () => void) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertOnConfirm(onConfirm ? () => onConfirm : null);
+    setIsAlertVisible(true);
+  };
+
   const validateEmail = (text: string): void => {
     setEmail(text);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -79,7 +97,8 @@ export default function LoginScreen() {
 
   const handleLogin = async (): Promise<void> => {
     if (!canSubmit) {
-      Alert.alert("입력 오류", "이메일과 비밀번호를 올바르게 입력해주세요.");
+      setToastMessage("이메일과 비밀번호를 올바르게 입력해주세요.");
+      setShowToast(true);
       return;
     }
 
@@ -119,18 +138,22 @@ export default function LoginScreen() {
         // loginMember 내부에서 false를 반환하는 경우는 현재 없지만, 방어적으로 로직 추가
         // (대부분의 실패는 에러를 throw하므로 catch 블록으로 감)
         console.error('loginMember가 false를 반환 (예상치 못한 경우)');
-        Alert.alert('로그인 실패', '로그인에 실패했습니다. 다시 시도해주세요.');
+        setToastMessage("로그인에 실패했습니다. 다시 시도해주세요.");
+        setShowToast(true);
       }
     } catch (error: any) {
-      // loginMember 함수에서 throw된 에러를 여기서 처리합니다.
-      // console.error('로그인 요청 실패 (LoginScreen catch):', error);
-
-      // 사용자가 요청한 조건: error.response.data.code가 403인지 확인
-      if(error.response?.data?.code === 403) {
+      if (error.response?.status === 500) {
+        showAlert(
+          '오류',
+          '이미 존재하는 회원입니다',
+          () => router.replace('/(onBoard)/FindInfo')
+        );
+      } else if(error.response?.data?.code === 403) {
         setShowAccountBannedModal(true);
       } else {
         const errMsg = error.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
-        Alert.alert('로그인 실패', errMsg);
+        setToastMessage(errMsg);
+        setShowToast(true);
       }
     } finally {
       setIsLoading(false);
@@ -232,6 +255,22 @@ export default function LoginScreen() {
         isVisible={showAccountBannedModal}
         // AccountBannedModal은 onConfirm prop을 받습니다.
         onConfirm={() => setShowAccountBannedModal(false)} 
+      />
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        onHide={() => setShowToast(false)}
+      />
+      <AlertModal
+        visible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onConfirm={() => {
+          setIsAlertVisible(false);
+          if (alertOnConfirm) {
+            alertOnConfirm();
+          }
+        }}
       />
     </SafeAreaView>
   );

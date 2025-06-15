@@ -1,4 +1,7 @@
+import { getProfileSvg } from '@/utils/getProfileSvg';
 import { create } from 'zustand';
+import useAuthStore from './authStore';
+import useSharedProfileStore from './sharedProfileStore';
 
 // API 응답에 따라 더 구체적인 타입 정의가 필요할 수 있습니다.
 export interface ChatMessage {
@@ -61,6 +64,25 @@ const useChatRoomStore = create<ChatRoomState>((set) => ({
   ...initialState,
   actions: {
     setChatRoomDetails: (details) => {
+      // 1. 현재 사용자 ID 가져오기
+      const currentMemberId = useAuthStore.getState().memberId;
+
+      // 2. 참여자 목록에서 현재 사용자 정보 찾기
+      const currentUserParticipant = details.chatParts?.find(
+        (p) => p.memberId === currentMemberId
+      );
+
+      // 3. 현재 사용자 정보를 기반으로 sharedProfileStore 업데이트
+      if (currentUserParticipant) {
+        const profileSvg = getProfileSvg(currentUserParticipant.nickname);
+        useSharedProfileStore.getState().actions.setSharedProfile({
+          nickname: currentUserParticipant.nickname,
+          profileImage: profileSvg,
+          themeId: details.themeId,
+          isInChat: true,
+        });
+      }
+      
       console.log('✅ setChatRoomDetails 호출됨. 전달된 chats 데이터:', JSON.stringify(details.chats, null, 2));
       set((state) => ({
         ...state,
@@ -71,7 +93,11 @@ const useChatRoomStore = create<ChatRoomState>((set) => ({
         roomEvents: details.roomEvents != null ? details.roomEvents : state.roomEvents,
       }));
     },
-    clearChatRoomDetails: () => set({ ...initialState, actions: useChatRoomStore.getState().actions }), // actions는 유지
+    clearChatRoomDetails: () => {
+        set({ ...initialState, actions: useChatRoomStore.getState().actions });
+        // 채팅방 나가면 공유 프로필 정보도 초기화
+        useSharedProfileStore.getState().actions.clearSharedProfile();
+    },
     setRemainingTimeForTimer: (seconds) =>
       set({ remainingTimeForTimer: seconds }),
   },

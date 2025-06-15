@@ -184,24 +184,17 @@ export default function QuestionDetailPage() {
 
   const handleEdit = () => {
     if (!questionDetail) return;
+    
+    // 1. 수정 모드 진입에 필요한 최소한의 상태만 변경합니다.
     setEditTitle(questionDetail.title);
     setEditContent(questionDetail.content);
-    // FileButton 초기화를 위해, questionDetail에서 ExistingImage[] 형식으로 변환
-    const initialImagesForFileButton: ExistingImage[] = questionDetail.questionImages?.map(img => ({
-      id: img.questionImageId,
-      url: img.imageUrl,
-    })) || [];
-    // handleImagesChange 콜백을 통해 FileButton이 내부 상태를 설정하고 그 결과를 전달할 것임.
-    // 따라서 여기서는 FileButton에 initialExistingImages만 전달하면 됨.
-    // setCurrentDisplayImageUris, setNewImageUrisForUpload, setRetainedImageIdsForDto는
-    // handleImagesChange 콜백에서 FileButton이 주는 정보로 업데이트될 것.
-    // 명시적으로 초기화한다면:
-    setCurrentDisplayImageUris(initialImagesForFileButton.map(img => img.url));
-    setNewImageUrisForUpload([]);
-    setRetainedImageIdsForDto(initialImagesForFileButton.map(img => img.id));
-
     setCharCount(questionDetail.content?.length || 0);
     setIsEditMode(true);
+
+    // 2. 이미지 관련 상태 설정(setCurrentDisplayImageUris 등)은 제거합니다.
+    // 이 역할은 isEditMode가 true로 바뀌어 FileButton이 렌더링된 후,
+    // FileButton 내부의 useEffect가 onImagesChange를 호출하여 처리하도록 위임합니다.
+    // 이렇게 하면 불필요한 렌더링과 로직 중복을 막을 수 있습니다.
   };
 
   const handleCancelEdit = () => {
@@ -355,7 +348,11 @@ export default function QuestionDetailPage() {
       setToastMessage("문의가 삭제되었습니다.");
       setShowToast(true);
       setModalVisible(false);
-      router.replace("/profile/QuestionPage"); 
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/profile/QuestionPage"); 
+      }
     } catch (error) {
       setToastMessage("문의 삭제에 실패했습니다.");
       setShowToast(true);

@@ -1,16 +1,23 @@
+import React from 'react';
+import { SvgProps } from 'react-native-svg';
 import { create } from 'zustand';
+
+// SVG 컴포넌트 타입을 다른 파일에서 재사용할 수 있도록 export
+export type SvgComponent = React.FC<SvgProps>;
 
 // 스토어의 상태 타입을 정의합니다.
 interface SharedProfileState {
   nickname: string | null;
-  profileImage: string | null; // URL 또는 로컬 이미지 식별자 (타입은 사용에 따라 ImageSourcePropType이 될 수도 있음)
+  profileImage: SvgComponent | string | null; // SVG 컴포넌트, URL 문자열, 또는 null
+  themeId: number | null; // 테마 ID 추가
   totalDice: number;
   isInChat: boolean;
   // hasCompletedInitialProfileView: boolean; // "사용자 최초 1번 본인 정보 표시" 요건용 (선택적)
   actions: {
     setSharedProfile: (data: Partial<Omit<SharedProfileState, 'actions'>>) => void;
     setNickname: (nickname: string | null) => void;
-    setProfileImage: (profileImage: string | null) => void;
+    setProfileImage: (profileImage: SvgComponent | string | null) => void; // 타입 확장
+    setThemeId: (themeId: number | null) => void; // 테마 ID 설정 액션 추가
     setTotalDice: (totalDice: number) => void;
     setIsInChat: (isInChat: boolean) => void;
     // setHasCompletedInitialProfileView: (completed: boolean) => void; // 선택적
@@ -23,6 +30,7 @@ const useSharedProfileStore = create<SharedProfileState>((set) => ({
   // 초기 상태 값
   nickname: null,
   profileImage: null, 
+  themeId: null, // 초기값 추가
   totalDice: 0,
   isInChat: false,
   // hasCompletedInitialProfileView: false, // 선택적
@@ -41,6 +49,10 @@ const useSharedProfileStore = create<SharedProfileState>((set) => ({
       console.log('sharedProfileStore: setProfileImage', profileImage ? 'Image Present' : 'Image Null');
       set({ profileImage });
     },
+    setThemeId: (themeId) => {
+        console.log('sharedProfileStore: setThemeId', themeId);
+        set({ themeId });
+    },
     setTotalDice: (totalDice) => {
       console.log('sharedProfileStore: setTotalDice', totalDice);
       set({ totalDice });
@@ -55,6 +67,7 @@ const useSharedProfileStore = create<SharedProfileState>((set) => ({
       set({
         nickname: null,
         profileImage: null,
+        themeId: null, // 초기화 추가
         totalDice: 0,
         isInChat: false,
         // hasCompletedInitialProfileView: false, // 필요시 초기화

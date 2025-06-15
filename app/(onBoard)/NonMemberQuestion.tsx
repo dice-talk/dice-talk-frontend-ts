@@ -1,4 +1,5 @@
 import { createGuestQuestion } from "@/api/questionApi";
+import AlertModal from "@/components/common/AlertModal";
 import GradientHeader from "@/components/common/GradientHeader";
 import Toast from "@/components/common/Toast";
 import QuestionSuccessModal from "@/components/login/QuestionSuccessModal";
@@ -7,7 +8,6 @@ import FileButton, { ExistingImage, ImageChangePayload } from "@/components/prof
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Dimensions,
   Platform,
   ScrollView,
@@ -31,6 +31,7 @@ export default function QuestionRegisterPage() {
   const [toastMessage, setToastMessage] = useState<string>("");
   const [selectedImageUris, setSelectedImageUris] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
   const height = Dimensions.get("window").height;
 
   const memoizedInitialExistingImages = useMemo<ExistingImage[]>(() => [], []);
@@ -40,17 +41,7 @@ export default function QuestionRegisterPage() {
       setEmailValue(params.verifiedEmail);
       setIsEmailVerified(true);
     } else {
-      Alert.alert(
-        "이메일 인증 필요", 
-        "문의를 작성하려면 먼저 이메일 인증을 완료해야 합니다.",
-        [
-          { 
-            text: "확인", 
-            onPress: () => router.replace("/(onBoard)/EmailVerificationForQuestion") 
-          }
-        ],
-        { cancelable: false }
-      );
+      setIsAlertVisible(true);
     }
   }, [params, router]);
 
@@ -98,62 +89,61 @@ export default function QuestionRegisterPage() {
     }
   };
 
-  if (!isEmailVerified && !params.verifiedEmail) {
-    return null;
-  }
-
   return (
     <SafeAreaView style={styles.container}>
         <GradientHeader title="문의하기" />
-      <ScrollView style={[styles.content, { height: height * 0.8 }]} keyboardShouldPersistTaps="handled">
-        <Text style={styles.questionText}>문의 내용은 가능한 자세히 작성해주세요</Text>
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>이메일 (인증 완료)</Text>
-          <TextInput
-            style={[styles.input, styles.disabledInput]}
-            value={emailValue}
-            editable={false}
-            placeholderTextColor="#9CA3AF"
-          />
-          <View style={styles.underline} />
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>제목</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="무엇이 궁금하신가요?"
-            placeholderTextColor="#9CA3AF"
-            value={titleValue}
-            onChangeText={setTitleValue}
-          />
-          <View style={styles.underline} />
-        </View>
+      
+      {isEmailVerified && (
+        <ScrollView style={[styles.content, { height: height * 0.8 }]} keyboardShouldPersistTaps="handled">
+          <Text style={styles.questionText}>문의 내용은 가능한 자세히 작성해주세요</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>이메일 (인증 완료)</Text>
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={emailValue}
+              editable={false}
+              placeholderTextColor="#9CA3AF"
+            />
+            <View style={styles.underline} />
+          </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>제목</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="무엇이 궁금하신가요?"
+              placeholderTextColor="#9CA3AF"
+              value={titleValue}
+              onChangeText={setTitleValue}
+            />
+            <View style={styles.underline} />
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>내용</Text>
-          <TextInput
-            style={styles.textArea}
-            placeholder="자세한 내용을 적어주시면 더 정확히 답변드릴 수 있어요."
-            placeholderTextColor="#9CA3AF"
-            value={contentValue}
-            onChangeText={handleContentChange}
-            multiline={true}
-            textAlignVertical="top"
-            maxLength={500}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>내용</Text>
+            <TextInput
+              style={styles.textArea}
+              placeholder="자세한 내용을 적어주시면 더 정확히 답변드릴 수 있어요."
+              placeholderTextColor="#9CA3AF"
+              value={contentValue}
+              onChangeText={handleContentChange}
+              multiline={true}
+              textAlignVertical="top"
+              maxLength={500}
+            />
+            <Text style={styles.charCount}>{charCount}/500</Text>
+          </View>
+
+          <FileButton 
+            onImagesChange={handleImagesChange}
+            initialExistingImages={memoizedInitialExistingImages}
+            maxImages={5}
           />
-          <Text style={styles.charCount}>{charCount}/500</Text>
-        </View>
 
-        <FileButton 
-          onImagesChange={handleImagesChange}
-          initialExistingImages={memoizedInitialExistingImages}
-          maxImages={5}
-        />
-
-        <View style={styles.saveButtonContainer}>
-          <MediumButton title="등록" onPress={handlePostQuestion} />
-        </View>
-      </ScrollView>
+          <View style={styles.saveButtonContainer}>
+            <MediumButton title="등록" onPress={handlePostQuestion} />
+          </View>
+        </ScrollView>
+      )}
  
       <Toast
         visible={showToast}
@@ -169,6 +159,15 @@ export default function QuestionRegisterPage() {
         onGoHome={() => {
           setShowSuccessModal(false);
           router.replace({ pathname: '/(onBoard)' });
+        }}
+      />
+      <AlertModal
+        visible={isAlertVisible}
+        title="이메일 인증 필요"
+        message="문의를 작성하려면 먼저 이메일 인증을 완료해야 합니다."
+        onConfirm={() => {
+          setIsAlertVisible(false);
+          router.replace("/(onBoard)/EmailVerificationForQuestion");
         }}
       />
     </SafeAreaView>

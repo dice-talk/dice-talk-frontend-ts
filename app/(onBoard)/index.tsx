@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     width: width * 0.7, // 너비 조정
     marginTop: 5,
     padding: 5, // 터치 영역 확보
-    marginBottom: height * 0.03,
+    marginBottom: height * 0.04,
   },
   findInfoText: {
     color: '#B28EF8', // 색상 변경

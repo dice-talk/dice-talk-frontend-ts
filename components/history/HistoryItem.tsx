@@ -1,40 +1,44 @@
+import DiceFriendsIcon from '@/assets/images/home/diceFriendsIcon.svg';
+import HeartSignalIcon from '@/assets/images/home/heartSignalIcon.svg';
 import CircleProfile from '@/components/common/CircleProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// SVG 아이콘 import (원래대로 복원)
-import DaoSvgIcon from "@/assets/images/dice/dao.svg";
-import DoriSvgIcon from "@/assets/images/dice/dori.svg";
-import HanaSvgIcon from "@/assets/images/dice/hana.svg";
-import NemoSvgIcon from "@/assets/images/dice/nemo.svg";
-import SezziSvgIcon from "@/assets/images/dice/sezzi.svg";
-import YukdaengSvgIcon from "@/assets/images/dice/yukdaeng.svg";
+// // SVG 아이콘 import (원래대로 복원)
+// import DaoSvgIcon from "@/assets/images/dice/dao.svg";
+// import DoriSvgIcon from "@/assets/images/dice/dori.svg";
+// import HanaSvgIcon from "@/assets/images/dice/hana.svg";
+// import NemoSvgIcon from "@/assets/images/dice/nemo.svg";
+// import SezziSvgIcon from "@/assets/images/dice/sezzi.svg";
+// import YukdaengSvgIcon from "@/assets/images/dice/yukdaeng.svg";
 
-const SvgComponents = {
-  HanaSvg: HanaSvgIcon,
-  DoriSvg: DoriSvgIcon,
-  SezziSvg: SezziSvgIcon,
-  NemoSvg: NemoSvgIcon,
-  DaoSvg: DaoSvgIcon,
-  YukdaengSvg: YukdaengSvgIcon,
-};
-type SvgComponentsType = typeof SvgComponents;
+// const SvgComponents = {
+//   HanaSvg: HanaSvgIcon,
+//   DoriSvg: DoriSvgIcon,
+//   SezziSvg: SezziSvgIcon,
+//   NemoSvg: NemoSvgIcon,
+//   DaoSvg: DaoSvgIcon,
+//   YukdaengSvg: YukdaengSvgIcon,
+// };
+// type SvgComponentsType = typeof SvgComponents;
 
-// HistoryItemProps 타입 정의 (기존 정의 유지)
+// HistoryItemProps 타입 정의
 export interface HistoryItemProps {
   id: number | string;
   type: 'chat' | 'heart';
-  svgComponentName: keyof SvgComponentsType | React.FC<any>; // ImageSourcePropType 제거
-  name: string;
+  name: string; // '알 수 없는 사용자' 등 동적으로 변경될 이름
   content: string | null;
   createdAt: string;
   onPress?: (id: number | string) => void;
   roomType?: 'COUPLE' | string;
+  themeId?: number; // themeId를 props로 받음
+  onLongPress?: (id: number | string) => void; // 길게 누르기 콜백 함수
+  // 기존의 svgComponentName는 더 이상 직접 사용하지 않음
 }
 
-const { width } = Dimensions.get('window'); // width 변수 사용을 위해 추가
+const { width } = Dimensions.get('window');
 
 // 날짜 포맷팅 함수 (원래대로 복원)
 const formatDate = (dateString: string) => {
@@ -47,17 +51,7 @@ const formatDate = (dateString: string) => {
   }
 };
 
-// CircleProfile에 전달될 props의 타입을 명확히 정의
-interface CircleProfileRenderProps {
-  svgComponent?: React.FC<any>; // CircleProfile이 받을 수 있는 SVG 컴포넌트 타입
-  // imageSource?: ImageSourcePropType; // 제거
-  borderColor: string;
-  svgColor: string;
-  size: number;
-}
-
-const HistoryItem: React.FC<HistoryItemProps> = ({ id, name, type, svgComponentName, content, createdAt, onPress, roomType }) => {
-  console.log("Rendering HistoryItem (Stage 1) with id:", id, "type:", type, "svg:", svgComponentName);
+const HistoryItem: React.FC<HistoryItemProps> = ({ id, name, type, content, createdAt, onPress, roomType, themeId, onLongPress }) => {
   const isClickable = type === 'chat' && onPress;
 
   const handlePress = () => {
@@ -66,75 +60,37 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ id, name, type, svgComponentN
     }
   };
 
-  const getCircleProfileProps = (): CircleProfileRenderProps => {
-    let borderColor = '';
-    let svgColor = '';
-    const circleSize = styles.profileImageSize.width;
-    let actualSvgComponent: React.FC<any> | undefined = undefined;
-    // let imageSource: ImageSourcePropType | undefined = undefined; // 제거
-
-    if (typeof svgComponentName === 'function') {
-      actualSvgComponent = svgComponentName;
-    } else if (typeof svgComponentName === 'string' && SvgComponents[svgComponentName as keyof SvgComponentsType]) {
-      actualSvgComponent = SvgComponents[svgComponentName as keyof SvgComponentsType];
+  const handleLongPress = () => {
+    if (onLongPress && type === 'heart') {
+      onLongPress(id);
     }
-    // else if (svgComponentName) { // 제거
-    //   imageSource = svgComponentName as ImageSourcePropType; // 제거
-    // } // 제거
-
-    if (!actualSvgComponent) { // 조건 단순화
-        actualSvgComponent = HanaSvgIcon; // 기본 SVG 아이콘
-    }
-    
-    // if (imageSource && actualSvgComponent) { // 제거
-    //     actualSvgComponent = undefined; // imageSource가 있으면 SVG는 사용 안 함 // 제거
-    // } // 제거
-
-    if (type === 'chat') {
-      if (roomType === 'COUPLE') {
-        borderColor = '#DEC2DB';
-        if (actualSvgComponent === HanaSvgIcon || actualSvgComponent === SezziSvgIcon || actualSvgComponent === DaoSvgIcon) {
-          svgColor = '#9FC9FF';
-        } else if (actualSvgComponent === DoriSvgIcon || actualSvgComponent === NemoSvgIcon || actualSvgComponent === YukdaengSvgIcon) {
-          svgColor = '#F9BCC1';
-        } else {
-          svgColor = '#9FC9FF'; // 기본 커플 SVG 색상 (HanaSvgIcon 등이 기본값일 경우)
-        }
-      } else { // type === 'chat' && roomType !== 'COUPLE'
-        borderColor = '#6DA0E1';
-        svgColor = '#9FC9FF';
-      }
-    } else { // type === 'heart'
-      borderColor = '#B19ADE';
-      svgColor = '#DEC2DB';
-    }
-    
-    return {
-        svgComponent: actualSvgComponent, 
-        // imageSource, // 제거
-        borderColor, 
-        svgColor, 
-        size: circleSize
-    };
   };
 
-  const circleProps = getCircleProfileProps();
+  // themeId와 type에 따라 프로필과 이름을 동적으로 결정
+  let profileIcon: React.FC<any> | null = null;
+  let profileBackgroundColor = 'transparent';
+  let profileBorderColor = '#eee';
+  let displayName = name;
+  let displayNameColor = '#333333'; // 기본 이름 색상
 
-  const finalCircleProps: any = {
-    borderColor: circleProps.borderColor,
-    svgColor: circleProps.svgColor,
-    size: circleProps.size,
-  };
-
-  // if (circleProps.imageSource) { // 제거
-  //   finalCircleProps.imageSource = circleProps.imageSource; // 제거
-  // } else if (circleProps.svgComponent) { // imageSource가 없을 때만 svgComponent 고려 -> else if를 if로 변경
-  if (circleProps.svgComponent) { 
-    finalCircleProps.svgComponent = circleProps.svgComponent; // as React.FC<SvgProps>; // 타입 단언은 일단 보류
+  if (type === 'heart') {
+    //profileBorderColor = '#B19ADE'; // 하트 타입 기본 테두리 색상
+    if (themeId === 1) {
+      profileIcon = HeartSignalIcon;
+      profileBackgroundColor = '#DEC2DB';
+      displayName = "당신을 향한 익명의 하트";
+      displayNameColor = 'rgba(129, 49, 85, 0.81)'; // #813155의 81%
+    } else if (themeId === 2) {
+      profileIcon = DiceFriendsIcon;
+      profileBackgroundColor = '#6DA0E1';
+      displayName = "너의 비밀 친구가 보낸 쪽지";
+      displayNameColor = '#5C5279';
+    }
+  } else { // type === 'chat'
+    // 기존 채팅 아이템 로직 (현재는 수정 대상이 아니므로 단순화)
+    // 필요하다면 이 부분도 확장 가능
+    profileBorderColor = roomType === 'COUPLE' ? '#DEC2DB' : '#6DA0E1';
   }
-  // 둘 다 없으면 borderColor, svgColor, size만 전달되어 CircleProfile의 기본 이미지/아이콘 로직에 따름
-  // -> 이제 svgComponent가 항상 있으므로 (기본값 HanaSvgIcon), 이 주석은 약간 수정될 수 있음.
-  // HanaSvgIcon이 기본값이므로 finalCircleProps.svgComponent는 항상 설정됩니다.
 
   return (
     <View style={styles.outerContainer}>
@@ -146,19 +102,26 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ id, name, type, svgComponentN
       />
       <TouchableOpacity 
         style={styles.touchableContainer}
-        onPress={handlePress} 
-        disabled={!isClickable}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        delayLongPress={1000} // 1초 이상 누를 경우 onLongPress 호출
+        disabled={type === 'chat' && !isClickable}
         activeOpacity={isClickable ? 0.7 : 1}
       >
         <View style={styles.profileContainer}>
-          <CircleProfile
-            {...finalCircleProps} 
-          />
+          {profileIcon && (
+            <CircleProfile
+              svgComponent={profileIcon}
+              backgroundColor={profileBackgroundColor}
+              borderColor={profileBorderColor}
+              size={styles.profileImageSize.width}
+            />
+          )}
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">{name}</Text>
-          <Text style={styles.contentText} numberOfLines={1} ellipsizeMode="tail">{content || (type === 'heart' ? '하트 메시지가 없습니다.' : '채팅 내용이 없습니다.')}</Text>
+          <Text style={[styles.nameText, { color: displayNameColor }]} numberOfLines={1} ellipsizeMode="tail">{displayName}</Text>
+          <Text style={styles.contentText} numberOfLines={1} ellipsizeMode="tail">{content || (type === 'heart' ? ' ' : '채팅 내용이 없습니다.')}</Text>
         </View>
 
         <View style={styles.metaContainer}>
@@ -196,21 +159,20 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   profileImageSize: {
-    width: 50,
-    height: 50,
+    width: 55,
+    height: 55,
   },
   contentContainer: {
     flex: 1,
     justifyContent: 'center',
   },
   nameText: {
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: 'Pretendard-SemiBold',
-    color: '#333333',
     marginBottom: 5,
   },
   contentText: {
-    fontSize: 13,
+    fontSize: 15,
     fontFamily: 'Pretendard-Regular',
     color: '#767676',
   },
