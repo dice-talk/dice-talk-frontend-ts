@@ -30,7 +30,8 @@ export default function Chat() {
   // 예시: const setRemainingTimeForTimer = useChatRoomStore(state => state.setRemainingTimeForTimer);
   const { setChatRoomDetails, setRemainingTimeForTimer } = useChatRoomStore((state) => state.actions);
 
-  const CHAT_ROOM_MAX_LIFESPAN_SECONDS = 49 * 60 * 60; // 채팅방 최대 수명 (49시간)
+  // ChatRoom.tsx 및 ChatEventNotice.tsx의 CHAT_ROOM_END_OFFSET와 동일한 값 (25분 = 1500초)
+  const CHAT_ROOM_TOTAL_DURATION_SECONDS = 25 * 60; 
 
   const eventBannersForDisplay: EventBannerData[] = useMemo(() => {
     if (!noticesFromStore) return [];
@@ -98,10 +99,10 @@ export default function Chat() {
               const currentTime = Date.now();
               const elapsedTimeSeconds = Math.floor((currentTime - roomCreationTime) / 1000);
 
-              if (elapsedTimeSeconds >= CHAT_ROOM_MAX_LIFESPAN_SECONDS) {
+              if (elapsedTimeSeconds >= CHAT_ROOM_TOTAL_DURATION_SECONDS) {
                 // 방이 49시간 경과로 만료됨
                 if (isActive) {
-                  console.log(`[ChatIndex] Room ${currentFetchedRoomId} has expired. Elapsed: ${elapsedTimeSeconds}s. Max lifespan: ${CHAT_ROOM_MAX_LIFESPAN_SECONDS}s.`);
+                  console.log(`[ChatIndex] Room ${currentFetchedRoomId} has expired. Elapsed: ${elapsedTimeSeconds}s. Max lifespan: ${CHAT_ROOM_TOTAL_DURATION_SECONDS}s.`);
                   setHomeChatRoomId(0); // HomeStore에서 방이 없는 것으로 처리
                   setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
                   setRemainingTimeForTimer(null); // 타이머 정보 없음
@@ -109,7 +110,7 @@ export default function Chat() {
                 }
               } else {
                 // 방이 아직 유효함
-                let timeLeftSeconds = CHAT_ROOM_MAX_LIFESPAN_SECONDS - elapsedTimeSeconds;
+                let timeLeftSeconds = CHAT_ROOM_TOTAL_DURATION_SECONDS - elapsedTimeSeconds;
                 timeLeftSeconds = Math.max(0, timeLeftSeconds);
                 setRemainingTimeForTimer(timeLeftSeconds); // ChatRoomStore의 타이머 업데이트
                 // HomeStore의 chatRoomId는 currentFetchedRoomId로 이미 설정되어 있어야 함

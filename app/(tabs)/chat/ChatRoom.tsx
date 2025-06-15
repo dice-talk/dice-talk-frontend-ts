@@ -50,24 +50,22 @@ interface ChatMessage {
   isMe?: boolean; // 내가 보낸 메시지인지 여부
   memberId: number; // memberId 추가
 }
-// ChatEventNotice.tsx 에서 가져온 시간 상수
-const SECRET_MESSAGE_START_OFFSET = 23 * 60 * 60; // 시크릿 메시지 시작까지 23시간
-const SECRET_MESSAGE_DURATION = 1 * 60 * 60; // 시크릿 메시지 1시간 진행
-const SECRET_MESSAGE_END_OFFSET = SECRET_MESSAGE_START_OFFSET + SECRET_MESSAGE_DURATION; // 24시간 시점
 
-// 1단계: 시크릿 메시지 종료 후 ~ 40시간 (총 16시간)
-const CUPID_INTERIM_START_OFFSET = SECRET_MESSAGE_END_OFFSET; // 24시간 시점
-const CUPID_INTERIM_END_OFFSET = 40 * 60 * 60; // 1단계 종료: 채팅방 생성 후 40시간
+// 시간 상수 (초 단위) - ChatEventNotice.tsx와 동일하게 설정
+const SECRET_MESSAGE_START_OFFSET = 5 * 60; // 채팅방 생성 후 5분 뒤 시크릿 메시지 시작
+const SECRET_MESSAGE_DURATION = 5 * 60;     // 시크릿 메시지 5분 진행
+const SECRET_MESSAGE_END_OFFSET = SECRET_MESSAGE_START_OFFSET + SECRET_MESSAGE_DURATION; // 2분 시점
 
-// 2단계: 1단계 종료 후 (40시간) ~ 48시간 (총 8시간)
-const CUPID_MAIN_EVENT_START_OFFSET = CUPID_INTERIM_END_OFFSET; // 2단계 시작: 1단계 종료 직후 (40시간)
-const CUPID_MAIN_EVENT_DURATION = 8 * 60 * 60; // 큐피드 메인 이벤트 8시간 진행
-const CUPID_MAIN_EVENT_END_OFFSET = CUPID_MAIN_EVENT_START_OFFSET + CUPID_MAIN_EVENT_DURATION; // 2단계 종료: 채팅방 생성 후 48시간
+const CUPID_INTERIM_START_OFFSET = SECRET_MESSAGE_END_OFFSET; // 2분 시점 (시크릿 메시지 결과 확인 기간 / 큐피드 시작 전)
+const CUPID_INTERIM_DURATION = 5 * 60; // 5분 진행
+const CUPID_INTERIM_END_OFFSET = CUPID_INTERIM_START_OFFSET + CUPID_INTERIM_DURATION; // 3분 시점
 
-// 큐피드 메인 이벤트 종료 후 채팅방 종료까지의 유예 시간
-const POST_CUPID_MAIN_DURATION = 1 * 60 * 60; // 1시간
-const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURATION; // 채팅방 실제 종료 시점: 49시간
+const CUPID_MAIN_EVENT_START_OFFSET = CUPID_INTERIM_END_OFFSET; // 3분 시점 (큐피드 이벤트 진행)
+const CUPID_MAIN_EVENT_DURATION = 5 * 60; // 큐피드 메인 이벤트 5분 진행
+const CUPID_MAIN_EVENT_END_OFFSET = CUPID_MAIN_EVENT_START_OFFSET + CUPID_MAIN_EVENT_DURATION; // 4분 시점
 
+const POST_CUPID_MAIN_DURATION = 5 * 60; // 5분 (큐피드 결과 확인 기간 / 채팅방 종료 카운트다운)
+const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURATION; // 채팅방 실제 종료 시점: 5분
 // 시간 포맷 함수
 const formatTime = (totalSeconds: number) => {
   const h = Math.floor(totalSeconds / 3600);
@@ -263,29 +261,27 @@ const ChatRoom = () => {
       let newPhase = "";
       let newActiveNoticeType: typeof activeNoticeType = null;
 
-      if (elapsedSeconds < SECRET_MESSAGE_START_OFFSET) {
+      if (elapsedSeconds < SECRET_MESSAGE_START_OFFSET) { // 0-1분
         targetTimestamp = creationTimestamp + SECRET_MESSAGE_START_OFFSET * 1000;
         newPhase = "PRE_SECRET";
-        newActiveNoticeType = "SECRET_MESSAGE_START";
-      } else if (elapsedSeconds < SECRET_MESSAGE_END_OFFSET) {
+        newActiveNoticeType = null; // PRE_SECRET 단계에서는 GptNotice를 표시하지 않음
+      } else if (elapsedSeconds < SECRET_MESSAGE_END_OFFSET) { // 1-2분
         targetTimestamp = creationTimestamp + SECRET_MESSAGE_END_OFFSET * 1000;
         newPhase = "SECRET";
         newActiveNoticeType = "SECRET_MESSAGE_START";
-      } else if (elapsedSeconds < CUPID_INTERIM_END_OFFSET) {
+      } else if (elapsedSeconds < CUPID_INTERIM_END_OFFSET) { // 2-3분
         targetTimestamp = creationTimestamp + CUPID_INTERIM_END_OFFSET * 1000;
         newPhase = "CUPID_INTERIM";
         newActiveNoticeType = "SECRET_MESSAGE_RESULT"; // 시크릿 메시지 결과 확인 우선
-      } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) {
+      } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) { // 3-4분
         targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_END_OFFSET * 1000;
         newPhase = "CUPID_MAIN";
-        // CUPID_MAIN 단계에서는 짝대기 참여를 우선으로 표시
-        // 사용자가 이미 참여했거나, 선택 시간이 종료된 후 결과 확인으로 변경하는 로직은 추가 상태 관리가 필요할 수 있음
         newActiveNoticeType = "LOVE_ARROW_START"; 
-      } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) {
+      } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) { // 4-5분
         targetTimestamp = creationTimestamp + CHAT_ROOM_END_OFFSET * 1000;
         newPhase = "COUNTDOWN_TO_END";
-        newActiveNoticeType = null; // 이 단계에서는 특정 GptNotice 없음
-      } else {
+        newActiveNoticeType = "LOVE_ARROW_RESULT"; 
+      } else { // 5분 이후
         targetTimestamp = currentTimestamp;
         newPhase = "POST_EVENT";
         newActiveNoticeType = null; // 이벤트 종료 후 GptNotice 없음
@@ -507,33 +503,34 @@ const ChatRoom = () => {
   };
   
 
-  const getNoticeText = (noticeType: "SECRET_MESSAGE_START" | "SECRET_MESSAGE_RESULT" | "LOVE_ARROW_START" | "LOVE_ARROW_RESULT"): string => {
-    const timeStr = formatTime(remainingSecondsForDisplay);
+  const getNoticeText = (noticeType: "SECRET_MESSAGE_START" | "SECRET_MESSAGE_RESULT" | "LOVE_ARROW_START" | "LOVE_ARROW_RESULT" | null): string => {
+    if (!noticeType) return "[시스템] 공지사항"; // activeNoticeType이 null일 경우 또는 POST_EVENT
+
+    // const timeStr = formatTime(remainingSecondsForDisplay); // 시간 표시 제거
     const cupidEventName = curThemeId === 2 ? "우정의 짝대기" : "사랑의 짝대기";
 
     switch (noticeType) {
       case "SECRET_MESSAGE_START":
-        return `[시스템] 시크릿 메시지 이벤트가 시작되었습니다.`; // 기본값 또는 해당 페이즈 아닐 때
-      
-      case "SECRET_MESSAGE_RESULT":
-        if (currentEventPhase === "CUPID_INTERIM") { // 시크릿 메시지 종료 후 ~ 짝대기 시작 전
-          return `[시스템] 시크릿 메시지 결과를 확인해주세요!!`;
+        if (currentEventPhase === "PRE_SECRET") { // 0-1분
+          return `[시스템] 시크릿 메시지 이벤트가 곧 시작됩니다.`;
+        } else if (currentEventPhase === "SECRET") { // 1-2분
+          return `[시스템] 시크릿 메시지 이벤트 진행 중! 지금 참여하기`;
         }
-        return `[시스템] 시크릿 메시지 결과를 확인해주세요!!`; // 기본값 또는 해당 페이즈 아닐 때
+        return `[시스템] 시크릿 메시지 이벤트 준비 중...`; // 혹시 모를 예외 케이스
+
+      case "SECRET_MESSAGE_RESULT":
+        // CUPID_INTERIM (2-3분)
+        return `[시스템] 시크릿 메시지 결과 확인하기 (${cupidEventName} 이벤트가 곧 시작됩니다.)`;
 
       case "LOVE_ARROW_START":
-        if (currentEventPhase === "CUPID_INTERIM") { // 짝대기 이벤트 시작 전
-          return `[시스템] ${cupidEventName} 이벤트가 시작되었습니다.`;
-        }
-        return `[시스템] ${curThemeId === 2 ? "우정의 짝대기" : "사랑의 짝대기"} 이벤트가 시작되었습니다.`; // 기본값
+        // CUPID_MAIN (3-4분)
+        return `[시스템] ${cupidEventName} 이벤트 진행 중! 지금 참여하기`;
 
       case "LOVE_ARROW_RESULT":
-        if (currentEventPhase === "CUPID_MAIN") { // 짝대기 이벤트 진행 중 (결과 확인 기간)
-          return `[시스템] ${cupidEventName} 결과를 확인해주세요!!`;
-        }
-        return `[시스템] ${curThemeId === 2 ? "우정의 짝대기" : "사랑의 짝대기"} 결과를 확인해주세요!!`; // 기본값
+        // COUNTDOWN_TO_END (4-5분)
+        return `[시스템] ${cupidEventName} 결과 확인하기 (채팅방이 곧 종료됩니다.)`;
       default:
-        return "[시스템] 공지사항";
+        return "[시스템] 현재 진행중인 이벤트가 없습니다."; // noticeType이 null이거나 예상 못한 값일 때
     }
   };
   
@@ -670,7 +667,6 @@ const ChatRoom = () => {
         <LoveArrow
           visible={showLoveArrow}
           onClose={handleLoveArrowClose}
-          gender="MALE"
           remainingCount={1}
 
         />
