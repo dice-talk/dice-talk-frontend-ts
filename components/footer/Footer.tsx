@@ -1,3 +1,4 @@
+import useChatNotificationStore from "@/zustand/stores/chatNotificationStore";
 import { Dimensions, StyleSheet, View } from "react-native";
 import FooterButton from "./FooterButton";
 
@@ -7,6 +8,7 @@ type FooterProps = {
   };
 
 export default function Footer({ currentTab, onTabPress }: FooterProps) {
+  const { hasUnread } = useChatNotificationStore();
 //   const segments = useSegments();
 //   const currentTab = segments?.[segments.length - 1] ?? "home";
    const screenHeight = Dimensions.get("window").height; // ✅ 기기 높이
@@ -16,7 +18,7 @@ export default function Footer({ currentTab, onTabPress }: FooterProps) {
     <View style={[styles.footer, { height: footerHeight }]}>
       <FooterButton name="home" active={currentTab === "home"} onPress={() => onTabPress("home")} />
       <FooterButton name="history" active={currentTab === "history"} onPress={() => onTabPress("history")} />
-      <FooterButton name="chat" active={currentTab === "chat"} onPress={() => onTabPress("chat")} />
+      <FooterButton name="chat" active={currentTab === "chat"} onPress={() => onTabPress("chat")} hasNotification={hasUnread} />
       <FooterButton name="profile" active={currentTab === "profile"} onPress={() => onTabPress("profile")} />
       <FooterButton name="plus" active={currentTab === "plus"} onPress={() => onTabPress("plus")} />
     </View>

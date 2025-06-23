@@ -1,6 +1,8 @@
 import { attemptAutoLogin } from '@/api/authApi'; // 자동 로그인 함수 임포트
 // import { useMemberInfoStore } from '@/zustand/stores/memberInfoStore'; // 기존 스토어 임포트 제거
 import useAuthStore from '@/zustand/stores/authStore'; // 새로운 authStore 임포트
+import useChatNotificationStore from '@/zustand/stores/chatNotificationStore'; // [추가] 채팅 알림 스토어
+import useNotificationStore from '@/zustand/stores/notificationStore'; // [추가] 딥링크 처리를 위한 스토어
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications'; // <<<<<< [추가]
@@ -18,11 +20,11 @@ SplashScreen.preventAutoHideAsync();
 // #############################################################################
 Notifications.setNotificationHandler({
   handleNotification: async (): Promise<Notifications.NotificationBehavior> => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true, // 채팅 알림은 소리가 나는 것이 좋을 수 있습니다.
-    shouldSetBadge: true, // 안 읽은 메시지 수 등을 표시할 때 유용
-    shouldShowBanner: true, // iOS foreground 알림 배너 표시 (일반적으로 true)
-    shouldShowList: true,   // Android foreground 알림 리스트 표시 (일반적으로 true)
+    shouldShowAlert: false, // [수정] 앱이 포그라운드에 있을 때 시스템 알림을 표시하지 않음
+    shouldPlaySound: false, // [수정] 소리도 재생하지 않음
+    shouldSetBadge: true,   // 앱 아이콘의 뱃지 카운트는 업데이트 (백그라운드/종료 상태에서 유용)
+    shouldShowBanner: false, // [추가] 타입 에러 해결을 위해 명시적으로 false 설정
+    shouldShowList: false,   // [추가] 타입 에러 해결을 위해 명시적으로 false 설정
   }),
 });
 
@@ -124,9 +126,25 @@ export default function RootLayout() {
             // 여기서는 appInitializationPromise가 완료되었으므로, 자동 로그인 시도는 끝난 것으로 간주합니다.
             
             if (!isAppInitialized) { // 아직 앱 최종 준비가 안 되었다면, 라우팅 및 스플래시 처리
-                if (accessToken) { // authStore의 accessToken 유무로 최종 로그인 상태 판단
+                // 자동 로그인이 완료된 이 시점에서, 스토어의 최신 상태를 직접 가져와 최종 판단합니다.
+                const finalAccessToken = useAuthStore.getState().accessToken;
+                const pendingChatRoomId = useNotificationStore.getState().initialChatRoomId;
+        
+                if (finalAccessToken && pendingChatRoomId) {
+                    // 우선순위 1: 로그인되었고, 처리할 알림이 있는 경우 -> 해당 채팅방으로 이동
+                    console.log(`앱 초기화 완료. 보류 중인 알림을 처리합니다. 채팅방 ID: ${pendingChatRoomId}`);
+                    router.replace({ // replace를 사용하여 스택에 이전 화면이 남지 않도록 함
+                        pathname: '/(tabs)/chat/ChatRoom',
+                        params: { chatRoomId: pendingChatRoomId },
+                    });
+                    // 처리 후에는 반드시 상태를 초기화하여 중복 이동을 방지합니다.
+                    useNotificationStore.getState().setInitialChatRoomId(null);
+        
+                } else if (finalAccessToken) {
+                    // 우선순위 2: 로그인만 된 경우 -> 홈으로 이동
                     router.replace('/(tabs)/home');
                 } else {
+                    // 우선순위 3: 로그인 안된 경우 -> 온보딩/로그인 화면으로 이동
                     router.replace('/(onBoard)');
                 }
 
@@ -146,27 +164,29 @@ export default function RootLayout() {
         }
     });
 
+    // [추가] 앱이 포그라운드에 있을 때 알림을 '수신'했을 때의 리스너
+    const notificationReceivedListener = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification Received while app in foreground:', notification.request.identifier);
+      // '빨간 점'을 표시하기 위해 Zustand 스토어 상태를 업데이트
+      useChatNotificationStore.getState().setHasUnread(true);
+    });
+
     // 알림 탭 시 반응 리스너 (앱 전역에서 관리)
     const notificationResponseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification Response Received (RootLayout):', JSON.stringify(response, null, 2));
+      console.log('Notification Response Received (RootLayout). Storing chatRoomId for deferred navigation.');
       const data = response.notification.request.content.data;
       if (data && typeof data === 'object' && data.chatRoomId) {
-        const chatRoomIdValue = String(data.chatRoomId); // chatRoomId 값을 문자열로 확실히 변환
-        if (isAppInitialized && accessToken) {
-          router.push({
-            pathname: '/(tabs)/chat/ChatRoom', // ChatRoom.tsx 파일에 해당
-            params: { chatRoomId: chatRoomIdValue }, // 쿼리 파라미터로 chatRoomId 전달
-          }); 
-          console.log('알림 탭: ChatRoom으로 이동 시도 -> chatRoomId:', chatRoomIdValue);
-        } else {
-          console.log('알림 탭: 앱 미준비 또는 미로그인 상태로 ChatRoom(chatRoomId:'+chatRoomIdValue+') 이동 불가');
-        }
+        const chatRoomIdValue = String(data.chatRoomId);
+        // 즉시 이동하는 대신, chatRoomId를 스토어에 저장합니다.
+        useNotificationStore.getState().setInitialChatRoomId(chatRoomIdValue);
+        console.log(`Saved chatRoomId: ${chatRoomIdValue} to handle after app initialization.`);
       } else {
-        console.log('알림 탭: chatRoomId 데이터 없음 또는 data 형식이 올바르지 않음.', data);
+        console.log('Notification tap response did not contain a valid chatRoomId.');
       }
     });
 
     return () => {
+      Notifications.removeNotificationSubscription(notificationReceivedListener); // [추가] 리스너 제거
       Notifications.removeNotificationSubscription(notificationResponseListener);
     };
   }, [fontsLoaded, fontError, router, setAppInitialized, isAppInitialized, accessToken]);

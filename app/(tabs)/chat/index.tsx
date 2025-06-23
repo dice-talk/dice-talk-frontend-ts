@@ -1,16 +1,18 @@
-import { getCurrentChatRoomId, getChatRoomInfo } from "@/api/ChatApi"; // getCurrentChatRoomId 추가
+import { getChatRoomInfo, getCurrentChatRoomId } from "@/api/ChatApi"; // getCurrentChatRoomId 추가
 import ChatCustomButton from "@/components/chat/ChatCustomButton";
 import ChatMain from "@/components/chat/ChatMain";
 import EventBannerComponent, { EventBannerData } from "@/components/common/EventBannerComponent"; // HomeStore는 이미 아래에서 chatRoomIdFromHomeStore로 사용됩니다.
 import useChat from '@/utils/useChat'; // useChat 훅 import
-import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; 
+import useChatNotificationStore from "@/zustand/stores/chatNotificationStore";
+import useChatRoomStore from "@/zustand/stores/ChatRoomStore";
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
-import { useRouter, useFocusEffect } from "expo-router"; // useFocusEffect 추가
+import { useFocusEffect, useRouter } from "expo-router"; // useFocusEffect 추가
 import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가w
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 
 export default function Chat() {
   const router = useRouter();
+  const setHasUnread = useChatNotificationStore((state) => state.setHasUnread);
   const noticesFromStore = useHomeStore((state) => state.notices);
   // HomeStore에서 chatRoomId를 가져옵니다.
   const chatRoomIdFromHomeStore : number | null = useHomeStore((state) => state.chatRoomId);
@@ -55,6 +57,9 @@ export default function Chat() {
   // 화면이 포커스될 때마다 실행
   useFocusEffect(
     useCallback(() => {
+      // [추가] 화면에 들어오면 '읽지 않음' 상태를 해제합니다.
+      setHasUnread(false);
+
       let isActive = true; // 컴포넌트 언마운트 또는 포커스 아웃 시 상태 업데이트 방지
 
       const fetchChatData = async () => {
@@ -159,7 +164,7 @@ export default function Chat() {
       fetchChatData();
 
       return () => { isActive = false; }; // 클린업 함수
-    }, [setHomeChatRoomId, setChatRoomDetails, setRemainingTimeForTimer]) // Zustand setter 함수들은 참조가 안정적이라고 가정
+    }, [setHomeChatRoomId, setChatRoomDetails, setRemainingTimeForTimer, setHasUnread]) // Zustand setter 함수들은 참조가 안정적이라고 가정
   );
   
   // HomeStore의 chatRoomId를 사용하여 useChat 훅 사용
