@@ -64,7 +64,7 @@ const userBaseInfo: Record<string, { name: string }> = {
   '2': { name: '두 얼굴의 매력 두리' },
   '3': { name: '세침한 세찌' },
   '4': { name: '네모지만 부드러운 네몽' },
-  '5': { name: '단호하데 다정한 다오' },
+  '5': { name: '단호한데 다정한 다오' },
   '6': { name: '육감적인 직감파 육땡' },
 };
 

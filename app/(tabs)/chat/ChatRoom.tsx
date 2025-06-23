@@ -1,4 +1,5 @@
 import { getFilteredRoomEvents, getPickEventsForRoom, RoomEventFromApi } from "@/api/EventApi"; // getPickEventsForRoom 추가
+import { getChatRoomInfo } from "@/api/ChatApi";
 import SideBar from "@/app/(tabs)/chat/SideBar"; // ← 만든 사이드바 컴포넌트 import
 import DaoSvg from "@/assets/images/dice/dao.svg";
 import DoriSvg from "@/assets/images/dice/dori.svg";
@@ -66,14 +67,6 @@ const CUPID_MAIN_EVENT_END_OFFSET = CUPID_MAIN_EVENT_START_OFFSET + CUPID_MAIN_E
 
 const POST_CUPID_MAIN_DURATION = 5 * 60; // 5분 (큐피드 결과 확인 기간 / 채팅방 종료 카운트다운)
 const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURATION; // 채팅방 실제 종료 시점: 5분
-// 시간 포맷 함수
-const formatTime = (totalSeconds: number) => {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  const pad = (num: number) => (num < 10 ? `0${num}` : `${num}`);
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
-};
 
 const ChatRoom = () => {
   const router = useRouter();
@@ -83,7 +76,8 @@ const ChatRoom = () => {
   const { setChatRoomDetails, clearChatRoomDetails } = useChatRoomStore((state) => state.actions);
   // const originalThemeIdFromChatRoomStore = useChatRoomStore((state) => state.themeId); // ChatRoomStore에서 가져오던 themeId
   const curThemeId = useHomeStore((state) => state.curThemeId as number | undefined) ?? 1; // HomeStore에서 curThemeId 가져오기, 없으면 기본값 1
-  const setSharedProfile = useSharedProfileStore((state) => state.actions.setSharedProfile);
+  const themeName = useChatRoomStore((state) => state.themeName); // ChatRoomStore에서 테마 이름 가져오기
+
   const createdAt = useChatRoomStore((state) => state.createdAt); // 채팅방 생성 시간
   const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
   
@@ -94,7 +88,6 @@ const ChatRoom = () => {
   const [showNotice, setShowNotice] = useState(true);
   const [scrollViewMarginTop, setScrollViewMarginTop] = useState(SCREEN_HEIGHT * 0.075);
   const [selectedProfile, setSelectedProfile] = useState<{ nickname: string, SvgComponent: React.FC<SvgProps> } | null>(null);
-  const [showReadingTag, setShowReadingTag] = useState(true);
   const [showEnvelope, setShowEnvelope] = useState(false);
   const [showLoveLetterSelect, setShowLoveLetterSelect] = useState(false);
   const [showLoveArrow, setShowLoveArrow] = useState(false);
@@ -128,7 +121,7 @@ const ChatRoom = () => {
   // useChat 호출 예시 (chatRoomIdFromParams는 문자열이므로 Number(...) 처리)
   const roomIdNum = chatRoomIdFromParams ? Number(chatRoomIdFromParams) : 0;
   const initialChats = useChatRoomStore((state) => state.chats);
-  const { messages, isConnected, sendMessage, newMessagesArrived, setNewMessagesArrived } = useChat(roomIdNum, initialChats); // setNewMessagesArrived 추가
+  const { messages, sendMessage, newMessagesArrived, setNewMessagesArrived } = useChat(roomIdNum, initialChats); // setNewMessagesArrived 추가
 
 
   useEffect(() => {
@@ -501,6 +494,20 @@ const ChatRoom = () => {
       setShowUnmatchedModal(true);
     }
   };
+
+  // 사이드바를 열 때 채팅방 정보를 새로고침하는 핸들러
+  const handleToggleSidebar = async () => {
+    try {
+      console.log("사이드바 열기: 채팅방 정보 갱신 시도...");
+      await getChatRoomInfo(); // API를 호출하여 chatParts 등 최신 정보로 갱신
+      console.log("채팅방 정보 갱신 완료.");
+    } catch (error) {
+      console.error("사이드바 열기 중 채팅방 정보 갱신 실패:", error);
+      // 필요하다면 사용자에게 오류 알림을 표시할 수 있습니다.
+    } finally {
+      setSidebarOpen(true); // API 호출 결과와 상관없이 사이드바를 엽니다.
+    }
+  };
   
 
   const getNoticeText = (noticeType: "SECRET_MESSAGE_START" | "SECRET_MESSAGE_RESULT" | "LOVE_ARROW_START" | "LOVE_ARROW_RESULT" | null): string => {
@@ -550,10 +557,11 @@ const ChatRoom = () => {
         <View style={[styles.headerContainer, { zIndex: sidebarOpen ? 2 : 3 }]}>
             {/* ChatHeader 표시 */}
         <ChatHeader
-            title="하트시그널"
-            fontColor="#A45C73"
+          // curThemeId에 따라 동적으로 제목과 색상 변경
+          title={themeName || (curThemeId === 2 ? "다이스 프렌즈" : "하트시그널")}
+          fontColor={curThemeId === 2 ? "#6DA0E1" : "#A45C73"}
             backgroundColor="#ffffff"
-                  onToggleSidebar={() => setSidebarOpen(true)}
+                  onToggleSidebar={handleToggleSidebar}
 
             />
             {showNotice && activeNoticeType && (
