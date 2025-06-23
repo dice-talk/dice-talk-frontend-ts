@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Animated, Dimensions, Platform, Pressable, StyleSheet, Text } from "react-native";
+import { Animated, Dimensions, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 // 안전한 아이콘 타입 정의
 const validIcons = [
@@ -17,9 +17,11 @@ const validIcons = [
     name: "home" | "history" | "chat" | "profile" | "plus";
     active: boolean;
     onPress: () => void;
+    hasNotification?: boolean;
   };  
 
-export default function FooterButton({ name, active, onPress }: FooterItemProps) {
+export default function FooterButton({ name, active, onPress, hasNotification }: FooterItemProps) {
+    const screenWidth = Dimensions.get("window").width;
     const screenHeight = Dimensions.get("window").height;
     const footerHeight = screenHeight * 0.1;
     const iconName = {
@@ -57,40 +59,46 @@ export default function FooterButton({ name, active, onPress }: FooterItemProps)
             //android_ripple={{ color: '#F3E6FF', borderless: false }}
         >
             <Animated.View style={{ alignItems: 'center', transform: [{ scale }] }}>
-                {/* 바깥 원: 그라데이션 테두리 */}
-                <LinearGradient
-                    colors={["#B28EF8", "#F476E5"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={{
-                        width: outerSize,
-                        height: outerSize,
-                        borderRadius: outerSize / 2,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: outerBorderWidth,
-                        marginTop: 20,
-                    }}
-                >
-                    {/* 안쪽 원: 내부 그라데이션(선택 시), 테두리 그라데이션(비선택 시 흰 배경) */}
+                <View>
+                    {/* 바깥 원: 그라데이션 테두리 */}
                     <LinearGradient
-                        colors={active ? ["#B28EF8", "#F476E5"] : ["#fff", "#fff"]}
+                        colors={["#B28EF8", "#F476E5"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={{
-                            width: innerSize,
-                            height: innerSize,
-                            borderRadius: innerSize / 2,
+                            width: outerSize,
+                            height: outerSize,
+                            borderRadius: outerSize / 2,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderWidth: innerBorderWidth,
-                            borderColor: 'transparent',
+                            padding: outerBorderWidth,
+                            marginTop: 20,
                         }}
                     >
-                        {/* 아이콘 */}
-                        <Ionicons name={iconName} size={iconSize} color={active ? '#fff' : '#B28EF8'} />
+                        {/* 안쪽 원: 내부 그라데이션(선택 시), 테두리 그라데이션(비선택 시 흰 배경) */}
+                        <LinearGradient
+                            colors={active ? ["#B28EF8", "#F476E5"] : ["#fff", "#fff"]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{
+                                width: innerSize,
+                                height: innerSize,
+                                borderRadius: innerSize / 2,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderWidth: innerBorderWidth,
+                                borderColor: 'transparent',
+                            }}
+                        >
+                            {/* 아이콘 */}
+                            <Ionicons name={iconName} size={iconSize} color={active ? '#fff' : '#B28EF8'} />
+                        </LinearGradient>
                     </LinearGradient>
-                </LinearGradient>
+                    {/* [추가] 알림 점 */}
+                    {hasNotification && (
+                        <View style={[styles.notificationDot, { right: 3 }]} />
+                    )}
+                </View>
                 {/* 텍스트 */}
                 <Text style={{
                     fontFamily: active ? "Pretendard-Bold" : "Pretendard",
@@ -112,5 +120,15 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         paddingVertical: 6,
+    },
+    notificationDot: {
+        position: 'absolute',
+        width: 10,
+        height: 10,
+        borderRadius: 10,
+        backgroundColor: '#FF3B30', // iOS 표준 레드 색상
+        top: 20, // 아이콘의 상단 여백(20)과 비슷하게 설정
+        borderWidth: 1.5,
+        borderColor: 'white', // 배경과 구분되도록 테두리 추가
     },
 });

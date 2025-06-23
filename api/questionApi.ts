@@ -37,13 +37,36 @@ export interface Question {
   questionId: number;
   title: string;
   content: string;
-  questionStatus: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_COMPLETED";
+  questionStatus: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_GUEST" | "QUESTION_GUEST_ANSWERED" | "QUESTION_DELETED" | "QUESTION_DEACTIVED";
   memberId: number;
   answer: Answer | null;
   questionImages: QuestionImage[] | null;
   createdAt: string;
   modifiedAt: string;
 }
+
+// [추가] 한글 상태를 영문 Enum으로 변환하는 맵과 변환 함수
+const statusKoToEnMap: { [key: string]: Question['questionStatus'] | string } = {
+  "비회원 문의": "QUESTION_GUEST",
+  "비회원 답변 완료": "QUESTION_GUEST_ANSWERED",
+  "접수됨": "QUESTION_REGISTERED",
+  "답변 완료": "QUESTION_ANSWERED",
+  "삭제됨": "QUESTION_DELETED",
+  "비활성화": "QUESTION_DEACTIVED",
+};
+
+const transformQuestionStatus = (question: Question): Question => {
+  const rawStatus = question.questionStatus as string;
+  const transformedStatus = statusKoToEnMap[rawStatus] as Question['questionStatus'] | undefined;
+  
+  if (transformedStatus) {
+    return { ...question, questionStatus: transformedStatus };
+  }
+  
+  // 맵에 없는 값이 오면 콘솔에 경고를 남기고 원본 값을 유지
+  console.warn(`[transformQuestionStatus] Unknown question status received: "${rawStatus}".`);
+  return question;
+};
 
 export const createQuestion = async ({ dto, imageUris }: CreateQuestionParams) => {
     const formData = new FormData();
@@ -176,8 +199,12 @@ export const getQuestions = async (page: number = 1, size: number = 10, sortBy: 
     }>(
         `/questions/my-questions?size=${size}&page=${page}&sort=${sortBy}`
       );
+      
+      // [수정] 응답 받은 각 질문의 상태를 변환
+      const transformedQuestions = response.data.data.map(transformQuestionStatus);
+
       return {
-        questions: response.data.data, 
+        questions: transformedQuestions, 
         totalElements: response.data.pageInfo.totalElements,
         totalPages: response.data.pageInfo.totalPages,
         currentPage: response.data.pageInfo.page, 
@@ -189,33 +216,13 @@ export const getQuestions = async (page: number = 1, size: number = 10, sortBy: 
     }
   };
 
-// 한글 상태를 영문 Enum으로 변환하는 맵
-const statusKoToEnMap: { [key: string]: Question['questionStatus'] } = {
-  "접수됨": "QUESTION_REGISTERED",
-  "답변 완료": "QUESTION_ANSWERED",
-  "처리 완료": "QUESTION_COMPLETED", // '처리 완료'가 QUESTION_COMPLETED에 해당한다고 가정
-};
-
 // getQuestionDetail 함수 수정
 export const getQuestionDetail = async (questionId: number): Promise<Question> => {
     try {
-      // 백엔드가 SingleResponseDto<Question> 형태로 응답하므로, axios의 제네릭 타입을 그에 맞게 수정
-      // 즉, response.data의 타입은 { data: Question } 형태가 됨
       const response = await axiosWithToken.get<{ data: Question }>(`/questions/${questionId}`);
       
-      const questionData = response.data.data;
-
-      // questionStatus 값을 변환
-      const rawStatus = questionData.questionStatus as string;
-      if (statusKoToEnMap[rawStatus]) {
-        questionData.questionStatus = statusKoToEnMap[rawStatus];
-      } else {
-        // 맵에 없는 값이 오면 콘솔에 경고를 남기고, 원본 값을 유지하거나 기본값으로 설정할 수 있습니다.
-        console.warn(`[getQuestionDetail] Unknown question status received: "${rawStatus}".`);
-      }
-
-      // 실제 Question 객체는 response.data.data에 있음
-      return questionData; 
+      // [수정] 응답 받은 질문 데이터의 상태를 변환 함수를 통해 변환
+      return transformQuestionStatus(response.data.data); 
     } catch (error) {
       console.error("🚨 질문 상세 조회 실패:", error);
       throw error;

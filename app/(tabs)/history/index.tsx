@@ -132,7 +132,7 @@ export default function HistoryScreen() {
   };
 
   const handleChatItemPress = (chatRoomId: number | string) => {
-    router.push({ pathname: '/(tabs)/chat', params: { chatRoomId: chatRoomId.toString() } });
+    router.push({ pathname: '/(tabs)/history/ChatHistoryDetail' as any, params: { chatRoomId: chatRoomId.toString() } });
   };
 
   const handleHeartItemLongPress = (id: number | string) => {

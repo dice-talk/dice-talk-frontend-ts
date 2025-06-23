@@ -1,5 +1,5 @@
 // /Users/6feetlife/Desktop/newDiceTalk/dice-talk-frontend-ts/api/itemApi.ts
-import { axiosWithoutToken } from "./axios/axios"; // 인증 토큰이 필요한 경우
+import { axiosWithoutToken, axiosWithToken } from "./axios/axios"; // 인증 토큰이 필요한 경우
 
 // 아이템 상세 정보 API 응답 데이터 타입 (실제 API 스펙에 맞게 정의 필요)
 interface ItemDetailsData {
@@ -8,6 +8,29 @@ interface ItemDetailsData {
   description: string;
   price: number;
   // 기타 필요한 필드들...
+}
+
+// API 응답 데이터 타입을 정의합니다.
+export interface Item {
+    itemId: number;
+    itemName: string;
+    description: string;
+    itemImage: string;
+    dicePrice: number;
+    createdAt: string;
+    modifiedAt: string;
+}
+
+interface PageInfo {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+}
+
+interface ItemsResponse {
+    data: Item[];
+    pageInfo: PageInfo;
 }
 
 /**
@@ -35,4 +58,20 @@ export const getItemDetails = async (itemId: number): Promise<ItemDetailsData | 
     // 에러 처리는 프로젝트의 요구사항에 맞게 조정 (예: 특정 에러 코드에 따른 분기 처리)
     return null;
   }
+};
+
+/**
+ * 다이스로 구매 가능한 아이템 목록을 조회합니다.
+ * @param page 페이지 번호 (기본값: 1)
+ * @param size 페이지당 아이템 수 (기본값: 10)
+ * @returns Promise<ItemsResponse>
+ */
+export const getAllItems = async (page: number = 1, size: number = 10): Promise<ItemsResponse> => {
+    try {
+        const response = await axiosWithToken.get<ItemsResponse>(`/items?page=${page}&size=${size}`);
+        return response.data;
+    } catch (error) {
+        console.error("🚨 아이템 목록 조회 실패:", error);
+        throw error;
+    }
 };
