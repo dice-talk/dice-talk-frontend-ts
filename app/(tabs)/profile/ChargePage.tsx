@@ -1,3 +1,4 @@
+import { getAllItems, Item } from '@/api/ItemApi';
 import { requestTossPayment } from '@/api/paymentApi';
 import { getAllProducts } from '@/api/productApi';
 import CurrentDiceInfo from '@/components/charge/CurrentDiceInfo';
@@ -5,11 +6,10 @@ import DiceProductItem from '@/components/charge/DiceProductItem';
 import PurchasableFunctionItem from '@/components/charge/PurchasableFunctionItem';
 import GradientHeader from '@/components/common/GradientHeader';
 import { Product } from '@/types/Product';
-import useHomeStore, { Item as StoreItem } from '@/zustand/stores/HomeStore';
 import useSharedProfileStore from '@/zustand/stores/sharedProfileStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,7 +24,7 @@ import {
 // 데이터 타입 (PurchasableFunctionItemProps, DiceProductItemProps에서 가져오거나 여기서 간단히 정의)
 interface FunctionItemData {
   id: string; // StoreItem의 itemId가 number이므로 string으로 변환 필요
-  iconName?: string; // 실제 아이콘 시스템에 따라 달라짐
+  iconImage?: string | null; // 실제 아이콘 시스템에 따라 달라짐
   title: string;
   diceCost: number;
 }
@@ -47,29 +47,26 @@ export default function ChargePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRequestingPayment, setIsRequestingPayment] = useState(false);
   
-  // HomeStore에서 아이템 목록 가져오기
-  const storeItems = useHomeStore((state) => state.items);
+  // [추가] 기능 아이템 상태
+  const [functionItems, setFunctionItems] = useState<FunctionItemData[]>([]);
+  const [isItemsLoading, setIsItemsLoading] = useState(true);
+
   // Zustand 스토어에서 totalDice 가져오기
   const totalDice = useSharedProfileStore((state) => state.totalDice);
 
-  // 스토어 아이템을 FunctionItemData 형식으로 변환 (useMemo 사용)
-  const purchasableFunctionsData: FunctionItemData[] = useMemo(() => {
-    if (!storeItems) return [];
-    return storeItems.map((item: StoreItem) => ({
-      id: item.itemId.toString(), // itemId를 문자열로 변환
-      title: item.itemName,
-      diceCost: item.dicePrice,
-      iconName: item.itemImage, // itemImage를 iconName으로 사용 (실제 아이콘 표시 로직은 PurchasableFunctionItem에서 처리)
-    }));
-  }, [storeItems]);
-
-  // [수정] 컴포넌트 마운트 시 백엔드에서 상품 목록을 가져옵니다.
+  // [수정] 컴포넌트 마운트 시 백엔드에서 상품 및 아이템 목록을 모두 가져옵니다.
   useEffect(() => {
-    const fetchDiceProducts = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await getAllProducts(1, 10); // 1페이지, 10개 항목
-        if (response && response.data && Array.isArray(response.data)) { 
-          const mappedProducts: ProductItemData[] = response.data.map((product: Product) => ({
+        // 병렬로 API 호출
+        const [productsResponse, itemsResponse] = await Promise.all([
+          getAllProducts(1, 10),
+          getAllItems(1, 10)
+        ]);
+        
+        // 상품 목록 처리
+        if (productsResponse && productsResponse.data && Array.isArray(productsResponse.data)) { 
+          const mappedProducts: ProductItemData[] = productsResponse.data.map((product: Product) => ({
             id: product.productId,
             diceAmount: product.productName,
             price: product.price,
@@ -80,14 +77,31 @@ export default function ChargePage() {
         } else {
           setDiceProducts([]);
         }
+
+        // 기능 아이템 목록 처리
+        if (itemsResponse && itemsResponse.data && Array.isArray(itemsResponse.data)) {
+          const mappedItems: FunctionItemData[] = itemsResponse.data.map((item: Item) => ({
+            id: item.itemId.toString(),
+            title: item.itemName,
+            description: item.description,
+            diceCost: item.dicePrice,
+            iconImage: item.itemImage,
+          }));
+          setFunctionItems(mappedItems);
+        } else {
+          setFunctionItems([]);
+        }
+
       } catch (error) {
-        Alert.alert('오류', '상품 목록을 불러오는 데 실패했습니다.');
+        Alert.alert('오류', '데이터를 불러오는 데 실패했습니다.');
         setDiceProducts([]);
+        setFunctionItems([]);
       } finally {
         setIsLoading(false);
+        setIsItemsLoading(false);
       }
     };
-    fetchDiceProducts();
+    fetchInitialData();
   }, []);
 
   const handleProductPress = async (item: ProductItemData) => {
@@ -136,32 +150,31 @@ export default function ChargePage() {
       <ScrollView>
         <CurrentDiceInfo currentDiceCount={totalDice} />
 
-        {purchasableFunctionsData.length > 0 ? (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>다이스로 사용할 수 있는 기능</Text>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>다이스로 사용할 수 있는 기능</Text>
+          {isItemsLoading ? (
+            <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+          ) : functionItems.length > 0 ? (
             <FlatList
               horizontal
-              data={purchasableFunctionsData}
+              data={functionItems}
               renderItem={({ item, index }) => (
                 <PurchasableFunctionItem
-                  iconName={item.iconName} 
+                  iconImage={item.iconImage || undefined}
                   title={item.title}
                   diceCost={item.diceCost}
                   isFirstItem={index === 0}
-                  isLastItem={index === purchasableFunctionsData.length - 1}
+                  isLastItem={index === functionItems.length - 1}
                 />
               )}
               keyExtractor={(item) => item.id}
               showsHorizontalScrollIndicator={false}
-              ItemSeparatorComponent={() => <View style={{ width: 10 }} />} 
+              ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
             />
-          </View>
-        ) : (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>다이스로 사용할 수 있는 기능</Text>
+          ) : (
             <Text style={styles.emptyText}>사용 가능한 기능 아이템이 없습니다.</Text>
-          </View>
-        )}
+          )}
+        </View>
 
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>다이스 충전</Text>

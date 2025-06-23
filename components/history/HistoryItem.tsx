@@ -86,10 +86,6 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ id, name, type, content, crea
       displayName = "너의 비밀 친구가 보낸 쪽지";
       displayNameColor = '#5C5279';
     }
-  } else { // type === 'chat'
-    // 기존 채팅 아이템 로직 (현재는 수정 대상이 아니므로 단순화)
-    // 필요하다면 이 부분도 확장 가능
-    profileBorderColor = roomType === 'COUPLE' ? '#DEC2DB' : '#6DA0E1';
   }
 
   return (
@@ -109,25 +105,43 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ id, name, type, content, crea
         activeOpacity={isClickable ? 0.7 : 1}
       >
         <View style={styles.profileContainer}>
-          {profileIcon && (
+          {type === 'heart' && profileIcon ? (
             <CircleProfile
               svgComponent={profileIcon}
               backgroundColor={profileBackgroundColor}
               borderColor={profileBorderColor}
               size={styles.profileImageSize.width}
             />
-          )}
+          ) : type === 'chat' ? (
+            <View style={[styles.chatProfileCircle, { borderColor: '#B19ADE' }]}>
+              <Ionicons name="chatbubbles-outline" size={30} color="#B19ADE" />
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={[styles.nameText, { color: displayNameColor }]} numberOfLines={1} ellipsizeMode="tail">{displayName}</Text>
-          <Text style={styles.contentText} numberOfLines={1} ellipsizeMode="tail">{content || (type === 'heart' ? ' ' : '채팅 내용이 없습니다.')}</Text>
+          {type === 'chat' ? (
+            <>
+              <Text style={styles.chatContentText} numberOfLines={1} ellipsizeMode="tail">
+                {content || '채팅 내용이 없습니다.'}
+              </Text>
+              <Text style={styles.chatDateText} numberOfLines={1}>
+                {formatDate(createdAt)}
+              </Text>
+            </>
+          ) : ( // type === 'heart'
+            <>
+              <Text style={[styles.nameText, { color: displayNameColor }]} numberOfLines={1} ellipsizeMode="tail">{displayName}</Text>
+              <Text style={styles.contentText} numberOfLines={1} ellipsizeMode="tail">{content || ' '}</Text>
+            </>
+          )}
         </View>
 
         <View style={styles.metaContainer}>
-          <Text style={styles.dateText}>{formatDate(createdAt)}</Text>
-          {type === 'chat' && (
+          {type === 'chat' ? (
             <Ionicons name="chevron-forward" size={20} color="#C5C5C5" style={styles.arrowIcon} />
+          ) : (
+            <Text style={styles.dateText}>{formatDate(createdAt)}</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -152,7 +166,7 @@ const styles = StyleSheet.create({
   touchableContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 12,
     paddingHorizontal: 20,
   },
   profileContainer: { 
@@ -161,6 +175,14 @@ const styles = StyleSheet.create({
   profileImageSize: {
     width: 55,
     height: 55,
+  },
+  chatProfileCircle: {
+    width: 55,
+    height: 55,
+    borderRadius: 27.5,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   contentContainer: {
     flex: 1,
@@ -176,15 +198,28 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Regular',
     color: '#767676',
   },
+  chatContentText: {
+    fontSize: 15,
+    fontFamily: 'Pretendard-Regular',
+    color: '#333333',
+    marginBottom: 5,
+  },
+  chatDateText: {
+    fontSize: 12,
+    fontFamily: 'Pretendard-Regular',
+    color: '#A5A5A5',
+  },
   metaContainer: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-end', // 세로 중앙 정렬을 위해 추가
+    // justifyContent: 'center', // 가로 중앙 정렬을 위해 추가
+    // height: '100%', // 부모 높이만큼 채우기
     marginLeft: 10,
   },
   dateText: {
     fontSize: 12,
     fontFamily: 'Pretendard-Regular',
     color: '#A5A5A5',
-    marginBottom: 5,
+    // marginBottom: 5, // 하트 내역에서는 불필요한 여백 제거
   },
   arrowIcon: {},
 });

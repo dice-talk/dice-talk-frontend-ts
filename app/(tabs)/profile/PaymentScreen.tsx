@@ -18,7 +18,7 @@ const TossPaymentWebView = () => {
 
   // 벡엔드 키 검증 및 UI 렌더링을 위한 임시 조치
   // 백엔드에서 올바른 '위젯용 클라이언트 키'를 제공하면 이 줄은 삭제해야 합니다.
-  const temporaryFixedClientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+  // const temporaryFixedClientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
 
   // customerKey는 WebView 내에서 임의로 생성하거나,
   // 필요 시 백엔드 응답에 포함시켜서 전달받을 수 있습니다.
@@ -28,9 +28,9 @@ const TossPaymentWebView = () => {
 
   useEffect(() => {
     // 모든 필수 파라미터가 있는지 확인
-    if (isWebViewLoaded && webViewRef.current && amount && orderId && orderName && temporaryFixedClientKey) {
+    if (isWebViewLoaded && webViewRef.current && amount && orderId && orderName && clientKey) {
       const paymentInfo = {
-        clientKey: temporaryFixedClientKey, // 임시 키 사용
+        clientKey: clientKey, // 임시 키 대신 props로 받은 키 사용
         customerKey,
         amount: Number(amount),
         orderId,
@@ -38,10 +38,10 @@ const TossPaymentWebView = () => {
         successUrl: 'dicetalkts://payment-success',
         failUrl: 'dicetalkts://payment-fail',
       };
-      console.log("WebView로 전달하는 결제 정보 (임시 키 사용):", paymentInfo);
+      console.log("WebView로 전달하는 결제 정보:", paymentInfo);
       webViewRef.current.postMessage(JSON.stringify(paymentInfo));
     }
-  }, [isWebViewLoaded, amount, orderId, orderName, temporaryFixedClientKey]);
+  }, [isWebViewLoaded, amount, orderId, orderName, clientKey]);
 
   const handleWebViewMessage = (event: any) => {
     try {

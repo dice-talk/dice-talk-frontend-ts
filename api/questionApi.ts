@@ -37,7 +37,7 @@ export interface Question {
   questionId: number;
   title: string;
   content: string;
-  questionStatus: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_COMPLETED" | "QUESTION_GUEST" | "QUESTION_GUEST_ANSWERED" | "QUESTION_DELETED" | "QUESTION_DEACTIVED";
+  questionStatus: "QUESTION_REGISTERED" | "QUESTION_ANSWERED" | "QUESTION_GUEST" | "QUESTION_GUEST_ANSWERED" | "QUESTION_DELETED" | "QUESTION_DEACTIVED";
   memberId: number;
   answer: Answer | null;
   questionImages: QuestionImage[] | null;
