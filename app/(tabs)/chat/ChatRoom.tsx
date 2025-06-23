@@ -25,7 +25,6 @@ import useChat from "@/utils/useChat"; // 실제 경로에 맞춰 조정
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
-import useSharedProfileStore from "@/zustand/stores/sharedProfileStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from "expo-router"; // useRouter 추가
@@ -33,6 +32,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Dimensions, Keyboard, KeyboardEvent, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 
+import {
+  SECRET_MESSAGE_START_OFFSET, SECRET_MESSAGE_END_OFFSET,
+  CUPID_INTERIM_END_OFFSET, CUPID_MAIN_EVENT_END_OFFSET,
+  CHAT_ROOM_END_OFFSET
+} from "@/constants/chatEventTimes"; // 시간 상수 임포트
 
 const nicknameToSvgMap: Record<string, React.FC<SvgProps>> = {
   "한가로운 하나": Hana, "두 얼굴의 매력 두리": DoriSvg, "세침한 세찌": SezziSvg,
@@ -40,33 +44,6 @@ const nicknameToSvgMap: Record<string, React.FC<SvgProps>> = {
 };
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// 채팅 메시지 데이터 타입 정의
-interface ChatMessage {
-  id: number;
-  profileImage: any;
-  nickname: string;
-  message: string;
-  time: string;
-  isMe?: boolean; // 내가 보낸 메시지인지 여부
-  memberId: number; // memberId 추가
-}
-
-// 시간 상수 (초 단위) - ChatEventNotice.tsx와 동일하게 설정
-const SECRET_MESSAGE_START_OFFSET = 5 * 60; // 채팅방 생성 후 5분 뒤 시크릿 메시지 시작
-const SECRET_MESSAGE_DURATION = 5 * 60;     // 시크릿 메시지 5분 진행
-const SECRET_MESSAGE_END_OFFSET = SECRET_MESSAGE_START_OFFSET + SECRET_MESSAGE_DURATION; // 2분 시점
-
-const CUPID_INTERIM_START_OFFSET = SECRET_MESSAGE_END_OFFSET; // 2분 시점 (시크릿 메시지 결과 확인 기간 / 큐피드 시작 전)
-const CUPID_INTERIM_DURATION = 5 * 60; // 5분 진행
-const CUPID_INTERIM_END_OFFSET = CUPID_INTERIM_START_OFFSET + CUPID_INTERIM_DURATION; // 3분 시점
-
-const CUPID_MAIN_EVENT_START_OFFSET = CUPID_INTERIM_END_OFFSET; // 3분 시점 (큐피드 이벤트 진행)
-const CUPID_MAIN_EVENT_DURATION = 5 * 60; // 큐피드 메인 이벤트 5분 진행
-const CUPID_MAIN_EVENT_END_OFFSET = CUPID_MAIN_EVENT_START_OFFSET + CUPID_MAIN_EVENT_DURATION; // 4분 시점
-
-const POST_CUPID_MAIN_DURATION = 5 * 60; // 5분 (큐피드 결과 확인 기간 / 채팅방 종료 카운트다운)
-const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURATION; // 채팅방 실제 종료 시점: 5분
 
 const ChatRoom = () => {
   const router = useRouter();

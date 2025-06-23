@@ -2,32 +2,17 @@ import CountdownTimer from "@/components/common/CountdownTimer";
 import { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 import { SvgProps } from "react-native-svg";
+import {
+  SECRET_MESSAGE_START_OFFSET, SECRET_MESSAGE_END_OFFSET,
+  CUPID_INTERIM_END_OFFSET, CUPID_MAIN_EVENT_END_OFFSET,
+  CHAT_ROOM_END_OFFSET
+} from "@/constants/chatEventTimes"; // 시간 상수 임포트
 import useHomeStore from "@/zustand/stores/HomeStore";
-
 interface ChatEventNoticeProps {
   icon?: React.FC<SvgProps>;
   backgroundColor?: string;
   createdAt: string | null; // 스토어에서 ISO 문자열 또는 유사한 형식으로 예상
 }
-
-// 시간 상수 (초 단위)
-const SECRET_MESSAGE_START_OFFSET = 5 * 60; // 채팅방 생성 후 5분 뒤 시크릿 메시지 시작
-const SECRET_MESSAGE_DURATION = 5 * 60;     // 시크릿 메시지 5분 진행
-const SECRET_MESSAGE_END_OFFSET = SECRET_MESSAGE_START_OFFSET + SECRET_MESSAGE_DURATION; // 2분 시점
-
-// 1단계: 시크릿 메시지 종료 후 (2분) ~ 큐피드 이벤트 시작 전 (3분) (시크릿 메시지 결과 확인 가능)
-const CUPID_INTERIM_START_OFFSET = SECRET_MESSAGE_END_OFFSET; // 2분 시점
-const CUPID_INTERIM_DURATION = 5 * 60; // 5분 진행
-const CUPID_INTERIM_END_OFFSET = CUPID_INTERIM_START_OFFSET + CUPID_INTERIM_DURATION; // 3분 시점
-
-// 2단계: 큐피드 이벤트 (3분 ~ 4분)
-const CUPID_MAIN_EVENT_START_OFFSET = CUPID_INTERIM_END_OFFSET; // 3분 시점
-const CUPID_MAIN_EVENT_DURATION = 5 * 60; // 큐피드 메인 이벤트 5분 진행
-const CUPID_MAIN_EVENT_END_OFFSET = CUPID_MAIN_EVENT_START_OFFSET + CUPID_MAIN_EVENT_DURATION; // 4분 시점
-
-// 큐피드 메인 이벤트 종료 후 (4분) ~ 채팅방 종료까지 (5분) (큐피드 결과 확인 가능 및 채팅방 종료 카운트다운)
-const POST_CUPID_MAIN_DURATION = 5 * 60; // 5분
-const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURATION; // 채팅방 실제 종료 시점: 5분
 
 const ChatEventNotice = ({
   icon: Icon,

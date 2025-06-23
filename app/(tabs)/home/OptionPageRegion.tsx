@@ -49,14 +49,6 @@ const OptionPageRegion = () => {
 
   return (
     <View style={styles.container}>
-      {/* 사용자 본인의 지역 정보 표시 섹션 */}
-      <View style={{ marginLeft: width * 0.05, alignItems: 'flex-start', marginTop: height * 0.02 }}>
-        <TextBox
-          width={width * 0.15}
-          height={height * 0.11}
-          text="내 지역"
-        />
-      </View>
       <View style={styles.textContainer}>
         <Text style={styles.textStyle}>{userRegion || '지역 정보 없음'}</Text>
       </View>
@@ -129,7 +121,7 @@ const styles = StyleSheet.create({
   textBoxContainer: {
     marginLeft: width * 0.1,
     alignItems: 'flex-start',
-    // marginTop: height * 0.02, // GradientLine 아래의 TextBox와의 간격 조정
+    marginTop: height * 0.1, // GradientLine 아래의 TextBox와의 간격 조정
   },
   buttonContainer: {
     marginTop: height * 0.15, // 원하는 만큼 조정 (0.15도 가능)

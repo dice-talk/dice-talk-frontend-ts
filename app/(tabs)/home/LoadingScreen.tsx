@@ -124,7 +124,7 @@ export default function LoadingScreen() {
       <Text style={[styles.title, { color: '#8B5CF6', marginTop: -50 }]}>대기실</Text>
       {/* 실시간 대기열 인원 표시 */}
      <Text style={{ fontSize: 16, marginBottom: 20 }}>
-       현재 대기열 인원: {queueStatus.count}명
+       현재 대기열 인원: {queueStatus.count}명/6명
      </Text>
       <View style={styles.circleContainer}>
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
