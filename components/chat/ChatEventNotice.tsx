@@ -2,32 +2,17 @@ import CountdownTimer from "@/components/common/CountdownTimer";
 import { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 import { SvgProps } from "react-native-svg";
+import {
+  SECRET_MESSAGE_START_OFFSET, SECRET_MESSAGE_END_OFFSET,
+  CUPID_INTERIM_END_OFFSET, CUPID_MAIN_EVENT_END_OFFSET,
+  CHAT_ROOM_END_OFFSET
+} from "@/constants/chatEventTimes"; // 시간 상수 임포트
 import useHomeStore from "@/zustand/stores/HomeStore";
-
 interface ChatEventNoticeProps {
   icon?: React.FC<SvgProps>;
   backgroundColor?: string;
   createdAt: string | null; // 스토어에서 ISO 문자열 또는 유사한 형식으로 예상
 }
-
-// 시간 상수 (초 단위)
-const SECRET_MESSAGE_START_OFFSET = 23 * 60 * 60; // 시크릿 메시지 시작까지 23시간
-const SECRET_MESSAGE_DURATION = 1 * 60 * 60; // 시크릿 메시지 1시간 진행
-const SECRET_MESSAGE_END_OFFSET = SECRET_MESSAGE_START_OFFSET + SECRET_MESSAGE_DURATION; // 24시간 시점
-
-// 1단계: 시크릿 메시지 종료 후 ~ 40시간 (총 16시간)
-const CUPID_INTERIM_START_OFFSET = SECRET_MESSAGE_END_OFFSET; // 24시간 시점
-const CUPID_INTERIM_END_OFFSET = 40 * 60 * 60; // 1단계 종료: 채팅방 생성 후 40시간
-const CUPID_INTERIM_DURATION = CUPID_INTERIM_END_OFFSET - CUPID_INTERIM_START_OFFSET; // 1단계 진행 시간: 16시간
-
-// 2단계: 1단계 종료 후 (40시간) ~ 48시간 (총 8시간)
-const CUPID_MAIN_EVENT_START_OFFSET = CUPID_INTERIM_END_OFFSET; // 2단계 시작: 1단계 종료 직후 (40시간)
-const CUPID_MAIN_EVENT_DURATION = 8 * 60 * 60; // 큐피드 메인 이벤트 8시간 진행
-const CUPID_MAIN_EVENT_END_OFFSET = CUPID_MAIN_EVENT_START_OFFSET + CUPID_MAIN_EVENT_DURATION; // 2단계 종료: 채팅방 생성 후 48시간
-
-// 큐피드 메인 이벤트 종료 후 채팅방 종료까지의 유예 시간
-const POST_CUPID_MAIN_DURATION = 1 * 60 * 60; // 1시간
-const CHAT_ROOM_END_OFFSET = CUPID_MAIN_EVENT_END_OFFSET + POST_CUPID_MAIN_DURATION; // 채팅방 실제 종료 시점: 49시간
 
 const ChatEventNotice = ({
   icon: Icon,
@@ -77,35 +62,27 @@ const ChatEventNotice = ({
       let targetTimestamp = 0;
       let newPhase = "";
 
-      if (elapsedSeconds < SECRET_MESSAGE_START_OFFSET) {
+      if (elapsedSeconds < SECRET_MESSAGE_START_OFFSET) { // 0-1분
         newTitle = "다음 이벤트";
         newNoticeText = "시크릿 메시지 시작까지";
         targetTimestamp = creationTimestamp + SECRET_MESSAGE_START_OFFSET * 1000;
         newPhase = "PRE_SECRET";
-      } else if (elapsedSeconds < SECRET_MESSAGE_END_OFFSET) {
+      } else if (elapsedSeconds < SECRET_MESSAGE_END_OFFSET) { // 1-2분
         newTitle = "시크릿 메시지";
         newNoticeText = "시크릿 메시지 종료까지";
         targetTimestamp = creationTimestamp + SECRET_MESSAGE_END_OFFSET * 1000;
         newPhase = "SECRET";
-      } else if (elapsedSeconds < CUPID_INTERIM_END_OFFSET) {
+      } else if (elapsedSeconds < CUPID_INTERIM_END_OFFSET) { // 2-3분 (시크릿 결과 확인 기간 / 큐피드 시작 전)
         newTitle = curThemeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
         newNoticeText = curThemeId === 2 ? "우정의 짝대기 이벤트 시작까지" : "큐피드의 짝대기 이벤트 시작까지";
         targetTimestamp = creationTimestamp + CUPID_INTERIM_END_OFFSET * 1000;
         newPhase = "CUPID_INTERIM";
-      } else if (elapsedSeconds < CUPID_MAIN_EVENT_START_OFFSET) {
+      } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) { // 3-4분 (큐피드 이벤트 진행)
         newTitle = curThemeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
         newNoticeText = curThemeId === 2 ? "우정의 짝대기 선택 종료까지" : "큐피드의 짝대기 선택 종료까지";
-        targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_START_OFFSET * 1000;
-        newPhase = "PRE_CUPID_MAIN";
-      } else if (elapsedSeconds < CUPID_MAIN_EVENT_END_OFFSET) {
-        newTitle = curThemeId === 2 ? "우정의 짝대기" : "큐피드의 짝대기";
-        newNoticeText = curThemeId === 2 ? "매칭 결과 확인 종료까지" : "매칭 결과 확인 종료까지";
         targetTimestamp = creationTimestamp + CUPID_MAIN_EVENT_END_OFFSET * 1000;
-        newPhase = "CUPID_MAIN";
-      } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) {
-        // 채팅방 종료 문구는 테마에 따라 변경할 필요가 없어 보이지만,
-        // 만약 필요하다면 여기도 themeId 조건을 추가할 수 있습니다.
-        // 예: newTitle = curThemeId === 2 ? "우정 채팅 종료" : "채팅방 종료";
+        newPhase = "CUPID_MAIN"; // 이전 PRE_CUPID_MAIN, CUPID_MAIN을 통합하여 이벤트 진행 단계로 명확화
+      } else if (elapsedSeconds < CHAT_ROOM_END_OFFSET) { // 4-5분 (큐피드 결과 확인 기간 / 채팅방 종료 카운트다운)
         newTitle = "채팅방 종료"; 
         newNoticeText = "채팅방 종료까지";
         targetTimestamp = creationTimestamp + CHAT_ROOM_END_OFFSET * 1000;

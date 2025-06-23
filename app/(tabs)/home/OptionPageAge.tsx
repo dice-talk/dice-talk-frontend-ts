@@ -93,16 +93,6 @@ const OptionPageAge = () => {
 
   return (
     <View style={styles.container}>
-      <View style={{ marginLeft: width * 0.05, alignItems: 'flex-start' }}>
-        <TextBox
-          width={width * 0.1}
-          height={height * 0.11}
-          text="지역"
-        />
-      </View>
-      <View style={styles.textContainer}>
-        <Text style={styles.textStyle}>{userStoredRegion || '지역 정보 없음'}</Text>
-      </View>
       <GradientLine />
       <View style={styles.textBoxContainer}>
         <TextBox
@@ -168,6 +158,7 @@ const styles = StyleSheet.create({
   textBoxContainer: {
     marginLeft: width * 0.1,
     alignItems: 'flex-start',
+    marginTop: height * 0.13,
   },
   buttonContainer: {
     marginTop: height * 0.05, // 원하는 만큼 조정 (0.15도 가능)

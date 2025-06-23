@@ -41,7 +41,6 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
   const createdAtFromStore = useChatRoomStore((state) => state.createdAt); // createdAt 가져오기
 
   // 기본 색상 설정
-
   let sidebarCloseColor = themeId === 2 ? "#9FC9FF" : "#F9BCC1";
   let bottomLineColor = themeId === 2 ? "#6DA0E1" : "#F3D4EE";
 
@@ -50,7 +49,9 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
       return [];
     }
 
-    return chatParts.map((part: ChatParticipant) => {
+    return chatParts
+      .filter(part => part.exitStatus !== 'MEMBER_EXIT') // 'MEMBER_EXIT' 상태인 참여자 제외
+      .map((part: ChatParticipant) => {
       let SvgComponent: React.FC<SvgProps>;
 
       switch (part.nickname) {

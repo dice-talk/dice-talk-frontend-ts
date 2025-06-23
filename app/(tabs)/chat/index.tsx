@@ -7,6 +7,7 @@ import useChatRoomStore, { ChatRoomDetails } from "@/zustand/stores/ChatRoomStor
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore";
 import { useRouter, useFocusEffect } from "expo-router"; // useFocusEffect 추가
 import { useCallback, useEffect, useMemo, useState } from "react"; // useCallback 추가w
+import { CHAT_ROOM_END_OFFSET } from "@/constants/chatEventTimes"; // 채팅방 총 시간 상수 임포트
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 
 export default function Chat() {
@@ -29,8 +30,6 @@ export default function Chat() {
   // 예시: const setChatRoomDetails = useChatRoomStore(state => state.setChatRoomDetails);
   // 예시: const setRemainingTimeForTimer = useChatRoomStore(state => state.setRemainingTimeForTimer);
   const { setChatRoomDetails, setRemainingTimeForTimer } = useChatRoomStore((state) => state.actions);
-
-  const CHAT_ROOM_MAX_LIFESPAN_SECONDS = 49 * 60 * 60; // 채팅방 최대 수명 (49시간)
 
   const eventBannersForDisplay: EventBannerData[] = useMemo(() => {
     if (!noticesFromStore) return [];
@@ -98,10 +97,10 @@ export default function Chat() {
               const currentTime = Date.now();
               const elapsedTimeSeconds = Math.floor((currentTime - roomCreationTime) / 1000);
 
-              if (elapsedTimeSeconds >= CHAT_ROOM_MAX_LIFESPAN_SECONDS) {
+              if (elapsedTimeSeconds >= CHAT_ROOM_END_OFFSET) {
                 // 방이 49시간 경과로 만료됨
                 if (isActive) {
-                  console.log(`[ChatIndex] Room ${currentFetchedRoomId} has expired. Elapsed: ${elapsedTimeSeconds}s. Max lifespan: ${CHAT_ROOM_MAX_LIFESPAN_SECONDS}s.`);
+                  console.log(`[ChatIndex] Room ${currentFetchedRoomId} has expired. Elapsed: ${elapsedTimeSeconds}s. Max lifespan: ${CHAT_ROOM_END_OFFSET}s.`);
                   setHomeChatRoomId(0); // HomeStore에서 방이 없는 것으로 처리
                   setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
                   setRemainingTimeForTimer(null); // 타이머 정보 없음
@@ -109,7 +108,7 @@ export default function Chat() {
                 }
               } else {
                 // 방이 아직 유효함
-                let timeLeftSeconds = CHAT_ROOM_MAX_LIFESPAN_SECONDS - elapsedTimeSeconds;
+                let timeLeftSeconds = CHAT_ROOM_END_OFFSET - elapsedTimeSeconds;
                 timeLeftSeconds = Math.max(0, timeLeftSeconds);
                 setRemainingTimeForTimer(timeLeftSeconds); // ChatRoomStore의 타이머 업데이트
                 // HomeStore의 chatRoomId는 currentFetchedRoomId로 이미 설정되어 있어야 함
@@ -199,22 +198,32 @@ export default function Chat() {
           <ChatCustomButton
             label="입장"
             onPress={() => {
-              if (chatRoomIdFromHomeStore && chatRoomIdFromHomeStore !== 0) { // HomeStore의 ID 사용
-                router.push({
-                  pathname: '/chat/ChatRoom',
-                  params: {
-                    chatRoomId: String(chatRoomIdFromHomeStore), // HomeStore ID 사용
-                    themeId: String(themeIdFromStore || 1), // ChatRoomStore의 themeId 또는 기본값
-                  },
-                });
-              } else if (!error) { // 기존 방이 없고, API 호출 중 오류도 없었다면 새 방 참여 시도
-                // 참여 중인 방이 없고 오류도 없는 경우 (예: 사용자가 아직 어떤 방에도 참여하지 않음)
-                // "참여중인 채팅방이 없습니다." UI가 표시되므로, 입장 버튼이 다른 역할을 하거나 비활성화될 수 있습니다.
-                alert("참여할 채팅방이 없습니다. 새로운 채팅방을 찾아보세요."); // 또는 다른 UX 제공
-              } else {
-                alert("참여할 수 있는 채팅방이 없습니다. 잠시 후 다시 시도해주세요.");
-                console.warn("입장 버튼 클릭: 참여할 방 없음 또는 오류 발생. Error state:", error);
-              }
+              (async () => { // 비동기 로직을 위해 async 함수로 변경
+                if (chatRoomIdFromHomeStore && chatRoomIdFromHomeStore !== 0) { // HomeStore의 ID 사용
+                  try {
+                    // getChatRoomInfo를 호출하여 모든 채팅방 상세 정보(메시지 포함)를 가져오고 ChatRoomStore를 업데이트합니다.
+                    const roomDetails = await getChatRoomInfo(); // <-- 이 부분이 요청하신 내용입니다.
+
+                    if (roomDetails) { // roomDetails가 성공적으로 불러와졌는지 확인
+                      router.push({
+                        pathname: '/chat/ChatRoom',
+                        params: { chatRoomId: String(chatRoomIdFromHomeStore), themeId: String(themeIdFromStore || 1) },
+                      });
+                    } else {
+                      alert("채팅방 정보를 불러오는 데 실패했습니다. 다시 시도해주세요.");
+                      console.error("Failed to fetch room details via getChatRoomInfo.");
+                    }
+                  } catch (loadError) {
+                    console.error("채팅 메시지 로드 실패:", loadError);
+                    alert("채팅 메시지를 불러오는 데 실패했습니다. 다시 시도해주세요.");
+                  }
+                } else if (!error) {
+                  alert("참여할 채팅방이 없습니다. 새로운 채팅방을 찾아보세요.");
+                } else {
+                  alert("참여할 수 있는 채팅방이 없습니다. 잠시 후 다시 시도해주세요.");
+                  console.warn("입장 버튼 클릭: 참여할 방 없음 또는 오류 발생. Error state:", error);
+                }
+              })(); // 즉시 실행
             }}
           containerStyle={{
             marginBottom: 20,
@@ -222,6 +231,7 @@ export default function Chat() {
           }}
           textStyle={{ fontSize: 18 }}
         />
+
           </View>
         </>
       )}

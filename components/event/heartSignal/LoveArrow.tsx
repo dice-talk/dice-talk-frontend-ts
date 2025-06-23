@@ -16,13 +16,14 @@ import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
-import { useState, useMemo } from "react"; // useMemo 추가
+import { useState, useMemo } from "react";
 import CustomCostModal from "@/components/common/CustomCostModal"; // CustomCostModal 임포트
 import InsufficientItemModal from "@/components/common/DiceRechargeModal"; // InsufficientItemModal 임포트
+import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // SharedProfileStore 임포트
+
 interface LoveArrowProps {
   visible: boolean;
   onClose: () => void;
-  gender?: "MALE" | "FEMALE";
   remainingCount: number;
 }
 
@@ -55,8 +56,11 @@ const MALE_CHARACTERS_DEFAULT: CharacterInfo[] = [
   { name: "육감적인 직감파 육땡", ColoredSvgComponent: YukdaengSvg }, // '육댕'이 아닌 '육땡'으로 가정
 ];
 
-const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE" }) => {
-  const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null); // themeId prop 제거
+// LoveLetterSelect.tsx와 동일한 트리거 닉네임 목록
+const TRIGGER_NICKNAMES = ["한가로운 하나", "세침한 세찌", "단호한데 다정한 다오"];
+
+const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose }) => {
+  const [selectedCharacterIndex, setSelectedCharacterIndex] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [showCustomCostModal, setShowCustomCostModal] = useState(false);
   const [showInsufficientItemModal, setShowInsufficientItemModal] = useState(false);
@@ -67,14 +71,22 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
   const currentChatRoomId = useChatRoomStore((state) => state.chatRoomId);
   const roomEvents = useChatRoomStore((state) => state.roomEvents);
   const curThemeId = useHomeStore((state) => state.curThemeId); // HomeStore에서 curThemeId 가져오기
+  const currentUserNickname = useSharedProfileStore((state) => state.nickname); // 현재 사용자 닉네임
 
-  // curThemeId와 gender에 따른 색상 설정
-  // curThemeId가 2이면 무조건 #9FC9FF, 아니면 gender에 따라 결정
-  const selectedColor = curThemeId === 2
-    ? "#9FC9FF"
-    : (gender === "MALE" ? "#F9BCC1" : "#9FC9FF");
   const unselectedColor = "#FFFFFF";
-  
+
+  const selectedColor = useMemo(() => {
+    if (curThemeId === 2) {
+      return "#9FC9FF"; // 친구 테마일 경우 통일된 색상
+    }
+    // 현재 사용자가 TRIGGER_NICKNAMES (여성 캐릭터 그룹)에 포함되면,
+    // 상대방은 MALE_CHARACTERS_DEFAULT (남성 캐릭터 그룹)가 되므로, 남성 캐릭터 그룹 색상 사용
+    if (currentUserNickname && TRIGGER_NICKNAMES.includes(currentUserNickname)) {
+      return "#FEBFC8"; // 남성 캐릭터 그룹(테마1)에 대한 선택 색상을 #FEBFC8로 변경
+    }
+    // 그렇지 않으면 상대방은 FEMALE_CHARACTERS_DEFAULT (여성 캐릭터 그룹), 여성 캐릭터 그룹 색상 사용
+    return "#9FC9FF"; // 여성 캐릭터 그룹에 대한 선택 색상
+  }, [curThemeId, currentUserNickname]);
   // 테마별 UI 색상 설정
   const titleColor = curThemeId === 2 ? "#9FC9FF" : "#F9BCC1";
   const confirmButtonColor = curThemeId === 2 ? "#9FC9FF" : "#FEBFC8";
@@ -95,11 +107,13 @@ const LoveArrow: React.FC<LoveArrowProps> = ({ visible, onClose, gender = "MALE"
         })
         .filter(Boolean) as CharacterInfo[]; // null 값 제거 및 타입 단언
     } else {
-      // themeId가 2가 아닐 경우 기존 gender 기반 로직 사용
-      return gender === "MALE" ? FEMALE_CHARACTERS_DEFAULT : MALE_CHARACTERS_DEFAULT;
+      // curThemeId가 2가 아닐 경우, 현재 사용자 닉네임에 따라 상대방 캐릭터 목록 결정
+      if (currentUserNickname && TRIGGER_NICKNAMES.includes(currentUserNickname)) {
+        return MALE_CHARACTERS_DEFAULT;
+      }
+      return FEMALE_CHARACTERS_DEFAULT;
     }
-  }, [curThemeId, chatParts, currentAuthMemberId, gender]);
-
+  }, [curThemeId, chatParts, currentAuthMemberId, currentUserNickname]);
 
   const handleSelectCharacter = (index: number) => {
     setSelectedCharacterIndex(index === selectedCharacterIndex ? null : index);
@@ -322,16 +336,17 @@ const styles = StyleSheet.create({
   },
   charactersContainer: {
     flexDirection: "row",
-    justifyContent: "space-evenly", // Changed from "space-between"
-    alignItems: "center",
-    width: SCREEN_WIDTH * 0.9, // Increased from 0.85
-    flexWrap: "wrap", // 아이템들이 화면을 넘어갈 경우 다음 줄로 넘어가도록 설정
+    justifyContent: "space-between",
+    width: SCREEN_WIDTH * 0.85,
+    flexWrap: "nowrap", // prevent wrapping to next line
+    gap: 0, // remove any additional spacing
   },
   characterItem: {
     alignItems: "center",
-    padding: 12, // Reduced padding
+    paddingVertical: 6,
+    paddingHorizontal: 2,
     borderRadius: 15,
-    width: SCREEN_WIDTH * 0.3, // Increased width
+    width: SCREEN_WIDTH * 0.28, // slightly smaller width to fit 3 items
   },
   characterIcon: {
     marginTop: 5,
@@ -342,7 +357,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "white",
     textAlign: "center",
-    maxWidth: SCREEN_WIDTH * 0.28,
   },
   confirmButton: {
     paddingVertical: 5,
@@ -389,7 +403,7 @@ const styles = StyleSheet.create({
   },
   characterItemFreinds: {
     alignItems: "center",
-    width: SCREEN_WIDTH * 0.26,
+    width: SCREEN_WIDTH * 0.3, // 일반 테마와 동일하게 너비 증가
     paddingVertical: 2,
   },
   friendBoardImage: {

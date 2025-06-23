@@ -122,12 +122,9 @@ export default function LoadingScreen() {
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { color: '#8B5CF6', marginTop: -50 }]}>대기실</Text>
-           {/* 실시간 대기열 인원·참여자 표시 */}
-     <Text style={{ fontSize: 16, marginBottom: 4 }}>
-       현재 대기열 인원: {queueStatus.count}명
-     </Text>
-     <Text style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
-       ({queueStatus.participants.join(', ')})
+      {/* 실시간 대기열 인원 표시 */}
+     <Text style={{ fontSize: 16, marginBottom: 20 }}>
+       현재 대기열 인원: {queueStatus.count}명/6명
      </Text>
       <View style={styles.circleContainer}>
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
