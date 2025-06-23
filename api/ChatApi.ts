@@ -1,10 +1,11 @@
 import useAuthStore from "@/zustand/stores/authStore"; // 경로 수정 가능성 있음
-import useChatRoomStore, { ChatItem, ChatRoomDetails } from "@/zustand/stores/ChatRoomStore"; // 새로 만든 ChatRoomStore 임포트, ChatItem 추가
+import useChatRoomStore, { ChatItem, ChatRoomDetails, ChatMessage, PageInfo } from "@/zustand/stores/ChatRoomStore"; // 새로 만든 ChatRoomStore 임포트, ChatItem, ChatMessage, PageInfo 추가
 
 import useHomeStore, { useHomeActions } from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import axios from "axios"; // axios.isAxiosError를 사용하기 위해 임포트
 
 import { axiosWithToken } from "./axios/axios";
+import { Page, ReportChatMessageDto, ReportChatParticipantDto, ReportRoomEventDto } from "./reportApi"; // Import Page and DTOs from reportApi
 
 // isPossible API 응답 데이터 타입 (실제 API 스펙에 맞게 조정 필요)
 interface IsPossibleResponseData {
@@ -20,9 +21,9 @@ interface ApiChatRoomInfoData {
   roomType: string;
   themeId?: number; // API 응답에 themeId가 포함될 수 있다고 가정 (선택적)
   themeName: string;
-  chats: any[]; // 실제 타입으로 변경 권장
-  chatParts: any[]; // 실제 타입으로 변경 권장
-  roomEvents: any[]; // 실제 타입으로 변경 권장
+  chats: Page<ReportChatMessageDto>; // Changed to Page<ReportChatMessageDto>
+  chatParts: ReportChatParticipantDto[]; // Changed to ReportChatParticipantDto[]
+  roomEvents: ReportRoomEventDto[]; // Changed to ReportRoomEventDto[]
   roomStatus: string;
   items?: ChatItem[]; // API 응답에 items가 포함될 수 있도록 추가 (선택적 필드로 정의)
   // 기타 필요한 필드들...
@@ -82,7 +83,7 @@ export const getCurrentChatRoomId = async (): Promise<number | null> => {
       console.warn("🚨 getCurrentChatRoomId: memberId가 AuthStore에 없습니다. 로그인 상태를 확인해주세요.");
       setChatRoomDetails({ chatRoomId: null });
       setHomeChatRoomId(0); // HomeStore도 업데이트 (방 없음 상태)
-      return null;
+    return null; // Return null for chatPageInfo
     }
 
     const requestUrl = `/chat-rooms/curChatRoom`; // API 엔드포인트
@@ -108,7 +109,7 @@ export const getCurrentChatRoomId = async (): Promise<number | null> => {
     console.error("🚨 현재 채팅방 ID (curChatRoomId) 조회 실패:", error);
     // 에러 발생 또는 방 없음(404) 시 ChatRoomStore와 HomeStore 모두 초기화/업데이트
     setChatRoomDetails({ chatRoomId: null });
-    setHomeChatRoomId(0); // HomeStore는 0으로 설정 (방 없음 상태)
+    setHomeChatRoomId(0); // HomeStore는 0으로 설정 (방 없음 상태) // Also clear chatPageInfo
 
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       console.log("ℹ️ 현재 참여중인 채팅방이 없습니다 (404).");
@@ -194,8 +195,8 @@ export const getChatRoomInfo = async (
     console.log("ℹ️ getChatRoomInfo: HomeStore의 chatRoomId가 null입니다. 상세 정보 조회를 건너뜁니다.");
     const { setChatRoomDetails } = useChatRoomStore.getState().actions;
     setChatRoomDetails({
-        chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null,
-        chats: [], chatParts: [], roomEvents: [], remainingTimeForTimer: null
+        chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, // Clear chatPageInfo
+        chats: [], chatParts: [], roomEvents: [], remainingTimeForTimer: null, chatPageInfo: null
     });
     return null;
   }
@@ -216,6 +217,22 @@ export const getChatRoomInfo = async (
     
     const { setChatRoomDetails } = useChatRoomStore.getState().actions;
 
+    // Convert ReportChatMessageDto[] to ChatMessage[] (canonical for store)
+    const convertedChats: ChatMessage[] = (apiData.chats?.content || []).map(dto => ({
+      chatId: dto.chatId,
+      message: dto.message,
+      memberId: dto.memberId,
+      nickname: dto.nickName || '알 수 없는 사용자', // Handle nickName to nickname conversion
+      createdAt: dto.createdAt,
+    }));
+
+    const chatPageInfo: PageInfo | null = apiData.chats ? {
+      page: apiData.chats.number,
+      size: apiData.chats.size,
+      totalElements: apiData.chats.totalElements,
+      totalPages: apiData.chats.totalPages,
+    } : null;
+
     // ChatRoomStore에 저장할 다른 상세 정보 (chatRoomId 제외)
     const otherDetailsFromApi: Omit<ChatRoomDetails, 'chatRoomId' | 'remainingTimeForTimer'> = {
       createdAt: apiData.createdAt,
@@ -224,9 +241,10 @@ export const getChatRoomInfo = async (
       themeName: apiData.themeName,
       items: apiData.items || [],
       roomStatus: apiData.roomStatus,
-      chats: apiData.chats || [],
+      chats: convertedChats, // Use converted chats
       chatParts: apiData.chatParts || [],
       roomEvents: apiData.roomEvents || [],
+      chatPageInfo: chatPageInfo, // Pass page info
     };
 
     // API 응답으로 받은 chatRoomId (apiData.chatRoomId)가 0인 경우
@@ -250,7 +268,7 @@ export const getChatRoomInfo = async (
     const returnedDetails: ChatRoomDetails = {
       ...otherDetailsFromApi,
       chatRoomId: apiData.chatRoomId, // API 응답에서 받은 ID
-      remainingTimeForTimer: null, // 초기값은 null로 설정
+      remainingTimeForTimer: null, // 초기값은 null로 설정 // Return null for page info
     };
     return returnedDetails;
 
@@ -258,9 +276,9 @@ export const getChatRoomInfo = async (
     // console.error(`🚨 채팅방 상세 정보(요청 ID: ${chatRoomIdFromHomeStore}) 조회 실패:`, error);
     // ChatRoomStore는 에러 발생 시 항상 초기화합니다.
     const { setChatRoomDetails } = useChatRoomStore.getState().actions;
-    setChatRoomDetails({
+    setChatRoomDetails({ // Clear chatPageInfo
         chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null,
-        chats: [], chatParts: [], roomEvents: [], remainingTimeForTimer: null
+        chats: [], chatParts: [], roomEvents: [], remainingTimeForTimer: null, chatPageInfo: null
     });
 
     // 만약 HomeStore의 chatRoomId가 이미 0이었고 API 요청에서 에러가 발생했다면,
@@ -277,6 +295,7 @@ export const getChatRoomInfo = async (
         chatParts: [],
         roomEvents: [],
         items: [],
+        chatPageInfo: null, // Return null for page info
         remainingTimeForTimer: null,
         roomStatus: "ROOM_ACTIVE"
       };
