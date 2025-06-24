@@ -49,7 +49,6 @@ interface ReportModalProps {
 // 신고 페이지에서 사용할 메시지 타입 (isChecked와 memberId 포함)
 interface ReportableChatMessage extends ReportChatMessageDto {
   isChecked: boolean;
-  nickName: string | null;
   profileImageUri?: string; // 프로필 이미지 URI (SVG 또는 일반 이미지)
 }
 

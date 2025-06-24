@@ -7,7 +7,7 @@ export interface ReportChatMessageDto {
   chatId: number;
   message: string;
   memberId: number;
-  nickName: string | null; // API 응답에서는 null일 수 있음
+  nickname: string | null; // API 응답에서는 null일 수 있음
   chatRoomId: number;    // API 응답에서는 0으로 올 수 있음
   createdAt: string;     // 메시지 생성 시각 (ISO 8601 형식 문자열)
 }

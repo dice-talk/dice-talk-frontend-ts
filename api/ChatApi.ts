@@ -222,7 +222,7 @@ export const getChatRoomInfo = async (
       chatId: dto.chatId,
       message: dto.message,
       memberId: dto.memberId,
-      nickname: dto.nickName || '알 수 없는 사용자', // Handle nickName to nickname conversion
+      nickname: dto.nickname || '알 수 없는 사용자', // Handle nickname to nickname conversion
       createdAt: dto.createdAt,
     }));
 
