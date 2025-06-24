@@ -20,6 +20,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.yeoseunga.dicetalkts",
       "googleServicesFile": "./google-services.json",
+      "usesCleartextTraffic": true,
       "enableProguardInReleaseBuilds": true,
       "enableShrinkResources": true,
       "enableR8": true,
