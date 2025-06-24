@@ -9,10 +9,10 @@ import ActiveUser from '@/components/chat/ActiveUser';
 import ChatEventNotice from "@/components/chat/ChatEventNotice";
 import ChatFooter from "@/components/chat/ChatFooter";
 import useChatRoomStore, { ChatParticipant } from '@/zustand/stores/ChatRoomStore'; // ChatRoomStore 임포트
+import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore
 import React, { useEffect, useMemo, useRef } from "react"; // useMemo와 React 임포트
 import { Animated, Dimensions, Pressable, StyleSheet, View } from "react-native";
 import { SvgProps } from "react-native-svg";
-import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore
 
 interface SideBarProps {
   visible: boolean;
@@ -70,7 +70,7 @@ const SideBar = ({ visible, onClose, onProfilePress }: SideBarProps) => {
         case "단호한데 다정한 다오":
           SvgComponent = Dao;
           break;
-        case "육감적인 직감파 육땡": // "육땡"을 "육댕"으로 가정 (Yukdaeng SVG)
+        case "육감적인 직감파 육댕": // "육땡"을 "육댕"으로 가정 (Yukdaeng SVG)
           SvgComponent = Yukdaeng;
           break;
         default:

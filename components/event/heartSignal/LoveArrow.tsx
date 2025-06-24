@@ -1,25 +1,25 @@
 // 컬러 SVG import
+import { sendRoomEvent } from "@/api/EventApi"; // sendRoomEvent 임포트
 import DaoSvg from "@/assets/images/dice/dao.svg";
 import DoriSvg from "@/assets/images/dice/dori.svg"; // 이미 존재
 import HanaSvg from "@/assets/images/dice/hana.svg";
 import NemoSvg from "@/assets/images/dice/nemo.svg";
 import SezziSvg from "@/assets/images/dice/sezzi.svg";
 import YukdaengSvg from "@/assets/images/dice/yukdaeng.svg";
-import CountPlusSvg from "@/assets/images/event/countPlus.svg";
 import FriendLetterForm from "@/assets/images/event/friend_letterForm.svg";
 import LetterForm from "@/assets/images/event/LetterForm.svg";
+import CustomCostModal from "@/components/common/CustomCostModal"; // CustomCostModal 임포트
+import InsufficientItemModal from "@/components/common/DiceRechargeModal"; // InsufficientItemModal 임포트
 import ToastMessage from "@/components/common/ToastMessage"; // 이미 존재
-import { sendRoomEvent } from "@/api/EventApi"; // sendRoomEvent 임포트
-import { EventMessageData } from "@/zustand/stores/SecretMessageStore"; // EventMessageData 타입 임포트
 import useArrowEventStore from "@/zustand/stores/ArrowEventStore"; // ArrowEventStore 임포트
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트
 import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 및 ChatParticipant 임포트
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+import { EventMessageData } from "@/zustand/stores/SecretMessageStore"; // EventMessageData 타입 임포트
+import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // SharedProfileStore 임포트
+import { useMemo, useState } from "react";
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SvgProps } from "react-native-svg";
-import { useState, useMemo } from "react";
-import CustomCostModal from "@/components/common/CustomCostModal"; // CustomCostModal 임포트
-import InsufficientItemModal from "@/components/common/DiceRechargeModal"; // InsufficientItemModal 임포트
-import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // SharedProfileStore 임포트
 
 interface LoveArrowProps {
   visible: boolean;
@@ -28,7 +28,6 @@ interface LoveArrowProps {
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 
 interface CharacterInfo {
   name: string;
@@ -42,7 +41,7 @@ const ALL_CHARACTERS_MAP: Record<string, React.FC<SvgProps>> = {
   "단호한데 다정한 다오": DaoSvg,
   "두 얼굴의 매력 두리": DoriSvg,
   "네모지만 부드러운 네몽": NemoSvg,
-  "육감적인 직감파 육땡": YukdaengSvg, // '육댕'이 아닌 '육땡'으로 가정 (다른 파일들과 일관성)
+  "육감적인 직감파 육댕": YukdaengSvg, // '육댕'이 아닌 '육땡'으로 가정 (다른 파일들과 일관성)
 };
 
 const FEMALE_CHARACTERS_DEFAULT: CharacterInfo[] = [

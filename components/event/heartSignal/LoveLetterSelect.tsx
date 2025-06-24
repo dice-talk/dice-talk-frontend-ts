@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // SharedProfileStore 임포트
-import SelectableOption from "./SelectableOption";
 import useAuthStore from "@/zustand/stores/authStore"; // AuthStore 임포트 (경로 가정)
-import useEventMessageStore from "@/zustand/stores/SecretMessageStore"; // EventMessageStore 임포트
 import useChatRoomStore, { ChatParticipant } from "@/zustand/stores/ChatRoomStore"; // ChatRoomStore 임포트
 import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+import useEventMessageStore from "@/zustand/stores/SecretMessageStore"; // EventMessageStore 임포트
+import useSharedProfileStore from "@/zustand/stores/sharedProfileStore"; // SharedProfileStore 임포트
+import { useEffect, useMemo, useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import SelectableOption from "./SelectableOption";
 
 // SVG 파일 import
 import DaoSvg from '@/assets/images/dice/dao.svg';

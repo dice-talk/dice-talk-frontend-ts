@@ -1,6 +1,6 @@
+import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore 임포트
 import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
-import useHomeStore from '@/zustand/stores/HomeStore'; // HomeStore 임포트
 import Svg, { Line, Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
@@ -381,7 +381,7 @@ const nicknameToIdMap: Record<string, number> = {
   "세침한 세찌": 3,
   "네모지만 부드러운 네몽": 4,
   "단호한데 다정한 다오": 5,
-  "육감적인 직감파 육땡": 6, // LoveArrow.tsx 기준
+  "육감적인 직감파 육댕": 6, // LoveArrow.tsx 기준
   // "육감적인 직감파 육댕": 6, // LoveLetterSelect.tsx 기준 - 일관성 필요 시 하나로 통일
 };
 
