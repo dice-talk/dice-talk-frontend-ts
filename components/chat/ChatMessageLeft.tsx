@@ -1,6 +1,8 @@
+import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
 import React from "react";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import useHomeStore from "@/zustand/stores/HomeStore"; // HomeStore 임포트
+// 시스템 프로필 기본 이미지 import
+import profileDefault from "@/assets/images/profile/profile_default.png";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -43,6 +45,10 @@ const ChatMessageLeft = ({
     profileBorderColor = "#9FC9FF";
     profileIconColor = "#9FC9FF";
   }
+
+  // 시스템 닉네임일 때는 profile_default.png 사용
+  const isSystem = nickname === "시스템";
+
   return (
     <View style={[
       styles.container, 
@@ -51,7 +57,9 @@ const ChatMessageLeft = ({
       {/* 프로필 이미지와 닉네임 - 연속 메시지가 아닐 때만 표시 */}
       {!isConsecutive && (
         <>
-          {typeof profileImage === 'string' ? (
+          {isSystem ? (
+            <Image source={profileDefault} style={[styles.profileImage, { borderColor: profileBorderColor }]} />
+          ) : typeof profileImage === 'string' ? (
             <Image source={{ uri: profileImage }} style={[styles.profileImage, { borderColor: profileBorderColor }]} />
           ) : (
             <TouchableOpacity onPress={onPressProfile}>

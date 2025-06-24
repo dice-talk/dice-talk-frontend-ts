@@ -18,9 +18,8 @@ export default function Chat() {
   // HomeStore에서 chatRoomId를 가져옵니다.
   const chatRoomIdFromHomeStore : number | null = useHomeStore((state) => state.chatRoomId);
   // Zustand 액션 함수들의 참조 안정성을 위해 직접 선택하거나,
-  // useHomeActions 훅이 안정적인 참조를 반환하도록 보장해야 합니다.
+  const { setCurThemeId, setChatRoomId: setHomeChatRoomId } = useHomeActions(); // setCurThemeId 추가
   // 예시: const setHomeChatRoomId = useHomeStore(state => state.setChatRoomId);
-  const { setChatRoomId: setHomeChatRoomId } = useHomeActions();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -117,6 +116,7 @@ export default function Chat() {
                 timeLeftSeconds = Math.max(0, timeLeftSeconds);
                 setRemainingTimeForTimer(timeLeftSeconds); // ChatRoomStore의 타이머 업데이트
                 // HomeStore의 chatRoomId는 currentFetchedRoomId로 이미 설정되어 있어야 함
+                setCurThemeId(detailedRoomInfo.themeId ?? 1); // HomeStore의 curThemeId 업데이트
                 // ChatRoomStore의 상세 정보는 getChatRoomInfo에 의해 이미 업데이트됨
                 setError(null);
               }
@@ -126,6 +126,7 @@ export default function Chat() {
               setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
               setRemainingTimeForTimer(null);
               // HomeStore는 getCurrentChatRoomId에서 이미 0으로 설정되었을 수 있음 (만약 isPossible=false이고 chatRoomId=0인 경우)
+              setCurThemeId(1); // 방이 없으므로 기본 테마로 설정
               // 또는 getChatRoomInfo가 0을 반환했으므로 HomeStore도 0으로 맞춰야 함.
               if (useHomeStore.getState().chatRoomId !== 0) {
                 setHomeChatRoomId(0);
@@ -140,12 +141,14 @@ export default function Chat() {
               if (useHomeStore.getState().chatRoomId !== 0) {
                 setHomeChatRoomId(0);
               }
+              setCurThemeId(1); // 오류 발생 시 기본 테마로 설정
             }
           } else {
             // getCurrentChatRoomId가 null 또는 0을 반환한 경우 (참여 중인 채팅방 없음)
             // getCurrentChatRoomId 내부에서 ChatRoomStore.chatRoomId와 HomeStore.chatRoomId는 이미 null 또는 0으로 설정됨
             setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
             setRemainingTimeForTimer(null);
+            setCurThemeId(1); // 참여중인 방이 없으므로 기본 테마로 설정
             // HomeStore는 getCurrentChatRoomId에서 이미 0으로 설정됨.
             setError(null); // "참여중인 채팅방이 없습니다." 상태 (오류 아님)
           }
@@ -156,14 +159,15 @@ export default function Chat() {
             setHomeChatRoomId(0); // 오류 발생 시, HomeStore의 chatRoomId를 0으로 설정
             setChatRoomDetails({ chatRoomId: null, themeId: null, createdAt: null, roomType: null, themeName: null, chats: [], chatParts: [], roomEvents: [] });
             setRemainingTimeForTimer(null);
+            setCurThemeId(1); // 오류 발생 시 기본 테마로 설정
           }
         }
       };
 
-      fetchChatData();
+      fetchChatData(); // fetchChatData 함수 호출
 
       return () => { isActive = false; }; // 클린업 함수
-    }, [setHomeChatRoomId, setChatRoomDetails, setRemainingTimeForTimer, setHasUnread]) // Zustand setter 함수들은 참조가 안정적이라고 가정
+    }, [setCurThemeId, setHomeChatRoomId, setChatRoomDetails, setRemainingTimeForTimer, setHasUnread]) // Zustand setter 함수들은 참조가 안정적이라고 가정
   );
   
   // HomeStore의 chatRoomId를 사용하여 useChat 훅 사용
