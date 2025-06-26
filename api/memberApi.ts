@@ -5,7 +5,7 @@ import useSignupProgressStore from "@/zustand/stores/signupProgressStore"; // �
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { useAnonymousStore } from "../zustand/stores/anonymous"; // 이 스토어는 sharedProfileStore로 대체됨
-import { axiosWithToken, axiosWithoutToken } from "./axios/axios";
+import { axiosWithToken } from "./axios/axios";
 
 // 회원가입 시 보내는 데이터 타입 정의
 interface MemberInfoCreation {
@@ -18,10 +18,9 @@ interface MemberInfoCreation {
 }
 
 // 회원가입 
-export const createMemberInfo = async (memberInfo: MemberInfoCreation) => {
-    console.log("memberApi - received data:", memberInfo);
+export const createMemberInfo = async (memberInfo: any) => { // 타입은 SignupInput에서 보내는 payload에 맞춤
     try {
-        const response = await axiosWithoutToken.post("/auth/register", memberInfo);
+        const response = await axiosWithToken.post("/auth/register", memberInfo);
         return response; // 성공 시 응답 객체 전체 반환
     } catch (error) {
         console.error("🚨 회원 정보 생성 실패:", error);
