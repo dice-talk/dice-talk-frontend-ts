@@ -6,7 +6,7 @@ import useNotificationStore from '@/zustand/stores/notificationStore'; // [추�
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications'; // <<<<<< [추가]
-import { SplashScreen, Stack, useRouter } from 'expo-router';
+import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'; // usePathname 추가
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native'; // <<<<<< [수정] AppState 임포트
@@ -81,6 +81,7 @@ export default function RootLayout() {
   });
 
   const router = useRouter();
+  const pathname = usePathname(); // 현재 경로 가져오기
 
   // 새로운 authStore에서 상태 및 액션 구독
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -126,26 +127,29 @@ export default function RootLayout() {
             // 여기서는 appInitializationPromise가 완료되었으므로, 자동 로그인 시도는 끝난 것으로 간주합니다.
             
             if (!isAppInitialized) { // 아직 앱 최종 준비가 안 되었다면, 라우팅 및 스플래시 처리
-                // 자동 로그인이 완료된 이 시점에서, 스토어의 최신 상태를 직접 가져와 최종 판단합니다.
-                const finalAccessToken = useAuthStore.getState().accessToken;
-                const pendingChatRoomId = useNotificationStore.getState().initialChatRoomId;
-        
-                if (finalAccessToken && pendingChatRoomId) {
-                    // 우선순위 1: 로그인되었고, 처리할 알림이 있는 경우 -> 해당 채팅방으로 이동
-                    console.log(`앱 초기화 완료. 보류 중인 알림을 처리합니다. 채팅방 ID: ${pendingChatRoomId}`);
-                    router.replace({ // replace를 사용하여 스택에 이전 화면이 남지 않도록 함
-                        pathname: '/(tabs)/chat/ChatRoom',
-                        params: { chatRoomId: pendingChatRoomId },
-                    });
-                    // 처리 후에는 반드시 상태를 초기화하여 중복 이동을 방지합니다.
-                    useNotificationStore.getState().setInitialChatRoomId(null);
-        
-                } else if (finalAccessToken) {
-                    // 우선순위 2: 로그인만 된 경우 -> 홈으로 이동
-                    router.replace('/(tabs)/home');
-                } else {
-                    // 우선순위 3: 로그인 안된 경우 -> 온보딩/로그인 화면으로 이동
-                    router.replace('/(onBoard)');
+                // 현재 경로가 온보딩/회원가입 관련이 아닐 때만 자동 라우팅 실행
+                if (!pathname.startsWith('/(onBoard)')) {
+                    // 자동 로그인이 완료된 이 시점에서, 스토어의 최신 상태를 직접 가져와 최종 판단합니다.
+                    const finalAccessToken = useAuthStore.getState().accessToken;
+                    const pendingChatRoomId = useNotificationStore.getState().initialChatRoomId;
+            
+                    if (finalAccessToken && pendingChatRoomId) {
+                        // 우선순위 1: 로그인되었고, 처리할 알림이 있는 경우 -> 해당 채팅방으로 이동
+                        console.log(`앱 초기화 완료. 보류 중인 알림을 처리합니다. 채팅방 ID: ${pendingChatRoomId}`);
+                        router.replace({ // replace를 사용하여 스택에 이전 화면이 남지 않도록 함
+                            pathname: '/(tabs)/chat/ChatRoom',
+                            params: { chatRoomId: pendingChatRoomId },
+                        });
+                        // 처리 후에는 반드시 상태를 초기화하여 중복 이동을 방지합니다.
+                        useNotificationStore.getState().setInitialChatRoomId(null);
+            
+                    } else if (finalAccessToken) {
+                        // 우선순위 2: 로그인만 된 경우 -> 홈으로 이동
+                        router.replace('/(tabs)/home');
+                    } else {
+                        // 우선순위 3: 로그인 안된 경우 -> 온보딩/로그인 화면으로 이동
+                        router.replace('/(onBoard)');
+                    }
                 }
 
                 SplashScreen.hideAsync().then(() => {
@@ -189,7 +193,7 @@ export default function RootLayout() {
       Notifications.removeNotificationSubscription(notificationReceivedListener); // [추가] 리스너 제거
       Notifications.removeNotificationSubscription(notificationResponseListener);
     };
-  }, [fontsLoaded, fontError, router, setAppInitialized, isAppInitialized, accessToken]);
+  }, [fontsLoaded, fontError, router, setAppInitialized, isAppInitialized, accessToken, pathname]);
 
   if (!fontsLoaded && !fontError) {
     return null;
