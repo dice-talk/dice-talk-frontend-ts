@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "dice-talk-ts",
+    "name": "다이스톡",
     "slug": "dice-talk-ts",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,14 +9,50 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yeoseunga.dicetalkts"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.yeoseunga.dicetalkts",
+      "googleServicesFile": "./google-services.json",
+      "usesCleartextTraffic": true,
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResources": true,
+      "enableR8": true,
+      "queries": [
+        {
+          "intent": [
+            {
+              "action": "android.intent.action.VIEW",
+              "data": {
+                "scheme": [
+                  "tosspay",
+                  "ispmobile",
+                  "shinhan-sr-ansimclick",
+                  "kb-acp",
+                  "mpocket.online.ansimclick",
+                  "lotteappcard",
+                  "nonghyupcardansimclick",
+                  "citispay",
+                  "citimobileapp",
+                  "kakaotalk",
+                  "payco",
+                  "lpayapp",
+                  "hanamopay",
+                  "wooripay",
+                  "nhallonepayansimclick",
+                  "hanawalletmembers"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -24,6 +60,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withAndroidQueries.js",
       "expo-router",
       [
         "expo-splash-screen",
@@ -33,10 +70,24 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#ffffff"
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "458f95eb-555e-469d-bd35-748548777a90"
+      }
+    },
+    "owner": "yeoseunga"
   }
 }
