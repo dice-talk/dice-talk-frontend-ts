@@ -16,7 +16,7 @@ export default function CongratulateScreen() {
     const handleLoginPress = (): void => {
         // 로그인 페이지로 이동 (경로 확인 필요)
         // 예: app/login/index.tsx 또는 app/(auth)/login.tsx 등
-        router.replace('/Login'); // 로그인 페이지 경로로 수정
+        router.replace('/(onBoard)/Login'); // 로그인 페이지 경로로 수정
     };
 
     return (

@@ -255,13 +255,7 @@ type CreateGuestQuestionParams = {
 export const createGuestQuestion = async ({ dto, imageUris }: CreateGuestQuestionParams) => {
   const formData = new FormData();
 
-  // DTO를 JSON 문자열로 변환하여 FormData에 추가 (백엔드가 받을 키 이름 확인 필요, 예: 'guestQuestionPostDto')
-  // 백엔드 Java DTO의 필드명이 title, content, email이므로, JSON.stringify(dto)가 이를 포함해야 함.
-  // @RequestPart("guestQuestionPostDto") GuestQuestionDto.GuestPost guestQuestionPostDto 와 같이 받는다면
-  // formData.append('guestQuestionPostDto', JSON.stringify(dto)); 와 같이 보내야 함.
-  // 만약 @ModelAttribute로 받는다면, 각 필드를 개별적으로 append해야 할 수도 있음.
-  // 여기서는 Spring Boot @RequestPart("dtoKeyName") String dtoString, @RequestPart List<MultipartFile> images 형태로 받는다고 가정하고,
-  // DTO 객체 전체를 하나의 JSON 문자열로 보내는 방식을 사용. (백엔드와 협의 필요)
+  // [수정] Swagger 명세에 따라, 백엔드가 'guestQuestionPostDto' 키로 받도록 수정
   formData.append('guestQuestionPostDto', JSON.stringify(dto)); 
   console.log("📝 [createGuestQuestion] DTO:", JSON.stringify(dto, null, 2));
   console.log("🖼️ [createGuestQuestion] Image URIs to be processed:", imageUris);

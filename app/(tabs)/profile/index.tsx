@@ -1,5 +1,5 @@
 // src/screens/Profile/ProfileScreen.tsx
-import { getAnonymousInfo } from "@/api/memberApi";
+import { getAnonymousInfo, getMemberDetailsForMyInfoPage } from "@/api/memberApi";
 import GradientLine from "@/components/common/GradientLine";
 import GradientBackground from "@/components/profile/GradientBackground";
 import LogoutButton from "@/components/profile/LogoutButton";
@@ -8,8 +8,9 @@ import ProfileInfoCard from "@/components/profile/ProfileInfoCard";
 import { getProfileSvg } from "@/utils/getProfileSvg";
 import useAuthStore from "@/zustand/stores/authStore";
 import useSharedProfileStore from "@/zustand/stores/sharedProfileStore";
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 
 // ProfileHeader가 기대하는 데이터 타입은 sharedProfileStore의 타입을 따름
@@ -32,51 +33,56 @@ export default function ProfileScreen() {
     const isProfileInitialized = useSharedProfileStore((state) => !!state.nickname); // 닉네임으로 초기화 여부 판단 (간단한 예시)
 
     // 로컬 로딩 상태 (sharedProfileStore가 초기화될 때까지)
-    const [isLoading, setIsLoading] = useState(!isProfileInitialized);
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchAndSetMemberInfo = async () => {
-            if (memberId) { // memberId가 있을 때만 API 호출
-                setIsLoading(true); // API 호출 시작 시 로딩 상태 true
-                console.log(`ProfileScreen: 회원 정보 조회 시도 (memberId: ${memberId})`);
+    // 화면이 포커스될 때마다 프로필 정보를 다시 불러옵니다.
+    useFocusEffect(
+        useCallback(() => {
+            const fetchProfileInfo = async () => {
+                if (!memberId) {
+                    console.log('[ProfileScreen] memberId 없음, 정보 조회 중단');
+                    setIsLoading(false);
+                    return;
+                }
+                console.log(`--- [ProfileScreen] 👤 프로필 정보 통합 조회 시작 (memberId: ${memberId}) ---`);
+                setIsLoading(true);
                 try {
-                    const apiData = await getAnonymousInfo(memberId); // memberId 전달
-                    if (apiData) {
-                        console.log("ProfileScreen: API 실제 데이터 받음:", apiData);
-                        // apiData.profile 대신 getProfileSvg를 사용하여 올바른 SVG를 가져옴
-                        const profileSvg = getProfileSvg(apiData.nickname);
-                        
-                        setSharedProfile({
-                            nickname: apiData.nickname,
-                            profileImage: profileSvg, // undefined 대신 SVG 컴포넌트를 저장
-                            totalDice: apiData.totalDice,
-                            isInChat: apiData.roomStatus === 'IN_CHAT' || apiData.exitStatus !== "ROOM_EXIT",
-                            themeId: null, // ProfileScreen에서는 특정 테마가 없으므로 null로 설정
-                        });
+                    // [수정] 두 API를 동시에 호출하여 데이터를 조합
+                    const [detailsData, anonymousData] = await Promise.all([
+                        getMemberDetailsForMyInfoPage(memberId),
+                        getAnonymousInfo(memberId)
+                    ]);
+
+                    console.log('--- [ProfileScreen] ✅ 상세 정보 응답 (totalDice용) ---', detailsData);
+                    console.log('--- [ProfileScreen] ✅ 공개 프로필 응답 (닉네임용) ---', anonymousData);
+
+                    if (detailsData && anonymousData) {
+                        const profileSvg = getProfileSvg(anonymousData.nickname);
+                        const profileDataToStore = {
+                            // 공개 프로필에서 닉네임, 프로필 이미지, 채팅 상태 등 가져오기
+                            nickname: anonymousData.nickname,
+                            profileImage: profileSvg || anonymousData.profileImage,
+                            isInChat: anonymousData.exitStatus ? anonymousData.exitStatus !== "ROOM_EXIT" : false,
+                            themeId: anonymousData.themeId,
+                            // 상세 정보에서 정확한 totalDice 가져오기
+                            totalDice: detailsData.totalDice,
+                        };
+                        console.log('--- [ProfileScreen] 💾 스토어에 저장할 통합 데이터 ---', profileDataToStore);
+                        setSharedProfile(profileDataToStore);
                     } else {
-                        console.log("ProfileScreen: API 응답이 없습니다 (getAnonymousInfo).");
-                        // 스토어는 이미 기본값을 가지고 있으므로 별도 처리 안 함, 또는 에러 상태 관리
+                        console.error("ProfileScreen: 상세 또는 공개 프로필 정보 조회에 실패했습니다.");
                     }
                 } catch (error) {
-                    console.error("ProfileScreen: 회원 정보 조회 실패 (getAnonymousInfo):", error);
-                    // 에러 발생 시 스토어 값을 초기화하거나, 사용자에게 알림
+                    console.error("ProfileScreen: 프로필 정보 통합 조회 실패", error);
                 } finally {
-                    setIsLoading(false); // API 호출 완료 시 로딩 상태 false
+                    setIsLoading(false);
+                    console.log('--- [ProfileScreen] ⏹️ 프로필 정보 조회/처리 완료 ---');
                 }
-            } else {
-                console.log("ProfileScreen: memberId 없음. 회원 정보 조회 건너뜀.");
-                setIsLoading(false); // memberId가 없으면 로딩할 필요 없음
-                // 로그아웃 상태이므로 sharedProfileStore는 clearSharedProfile에 의해 정리되었을 것임
-            }
-        };
+            };
 
-        // 마운트 시 또는 memberId 변경 시 데이터 가져오기
-        // (옵션: sharedProfileStore가 이미 초기화되었다면 API 호출 건너뛰기 가능)
-        if (!isProfileInitialized || memberId) { // 아직 초기화 안됐거나, memberId가 있어서 다시 가져와야 할 때
-             fetchAndSetMemberInfo();
-        }
-       
-    }, [memberId, setSharedProfile, isProfileInitialized]);
+            fetchProfileInfo();
+        }, [memberId, setSharedProfile])
+    );
 
     const handleTabPress = (tabName: TabPage) => {
         router.push(`/profile/${tabName}`);

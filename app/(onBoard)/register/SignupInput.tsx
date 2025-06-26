@@ -63,24 +63,13 @@ export default function SignupInput() {
     const handleSignup = async (): Promise<void> => {
         if (!isFormValid) {
             let alertMessage = '모든 필수 정보를 올바르게 입력해주세요.';
-            if (!emailFromStore) alertMessage = '이메일 정보가 없습니다. 이전 단계로 돌아가주세요.'; // 스토어 이메일 기준
+            if (!emailFromStore) alertMessage = '이메일 정보가 없습니다. 이전 단계로 돌아가주세요.';
             else if (!nameFromStore) alertMessage = '이름 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!genderFromStore) alertMessage = '성별 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!birthFromStore) alertMessage = '생년월일 정보가 없습니다. 본인인증을 다시 시도해주세요.';
             else if (!selectedCity || !selectedDistrict) alertMessage = '지역을 선택해주세요.';
             else if (!isPasswordValid) alertMessage = '비밀번호 형식이 올바르지 않습니다.';
             else if (!isPasswordMatch) alertMessage = '비밀번호가 일치하지 않습니다.';
-
-            console.log('--- isFormValid Check ---');
-            console.log('emailFromStore:', !!emailFromStore, emailFromStore);
-            console.log('nameFromStore:', !!nameFromStore, nameFromStore);
-            console.log('genderFromStore:', !!genderFromStore, genderFromStore);
-            console.log('birthFromStore:', !!birthFromStore, birthFromStore);
-            console.log('isPasswordValid:', isPasswordValid, password);
-            console.log('isPasswordMatch:', isPasswordMatch, password, confirmPassword);
-            console.log('selectedCity:', !!selectedCity, selectedCity);
-            console.log('selectedDistrict:', !!selectedDistrict, selectedDistrict);
-            console.log('-------------------------');
             
             Alert.alert('입력 오류', alertMessage);
             if (!nameFromStore || !genderFromStore || !birthFromStore) { 
@@ -91,7 +80,7 @@ export default function SignupInput() {
 
         const region = `${selectedCity} ${selectedDistrict}`; 
         const payload = {
-            email: emailFromStore, // 스토어 이메일 사용
+            email: emailFromStore,
             name: nameFromStore,
             gender: genderFromStore!,
             birth: birthDisplay,
@@ -104,28 +93,21 @@ export default function SignupInput() {
             const response = await createMemberInfo(payload);
             console.log('📡 회원가입 요청 성공:', response);
             
-            if (response && response.data) {
-                const { memberId, token, refreshToken: newRefreshToken } = response.data;
-                if (memberId && token) {
-                    setAuthInfo({ memberId, accessToken: token, refreshToken: newRefreshToken || '' });
-                    console.log('회원가입 후 로그인 정보 저장됨', {memberId});
-                } else {
-                    console.error('회원가입 응답에 memberId 또는 token이 없습니다.', response.data);
-                    Alert.alert('오류', '회원가입은 되었으나, 로그인 정보 처리에 실패했습니다. 다시 로그인해주세요.');
-                    router.replace('/(onBoard)');
-                    return;
-                }
+            // 서버가 201 Created 상태 코드를 반환하면 성공으로 간주
+            if (response && response.status === 201) {
+                // 회원가입 성공 시 스토어 데이터 정리
+                clearSignupData();
+                // push를 사용하여 화면 스택에 새 화면을 추가합니다.
+                // replace 대신 push를 사용하면 렌더링 충돌을 피할 수 있는 경우가 있습니다.
+                router.push('/(onBoard)/register/Congratulate');
             } else {
+                // 201이 아닌 다른 응답이 왔을 경우
                 console.error('회원가입 응답 구조가 예상과 다릅니다.', response);
                 Alert.alert('오류', '회원가입 처리 중 예기치 않은 오류가 발생했습니다.');
-                return;
             }
 
-            clearSignupData();
-            router.replace('/(onBoard)/register/Congratulate');
         } catch (err: any) {
             console.error('회원가입 실패:', err);
-            console.log('회원가입 실패:', err.status);
             let errMsg = '회원가입 중 문제가 발생했습니다.';
             if (err.response) {
                 const { status, data } = err.response;
